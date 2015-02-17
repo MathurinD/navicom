@@ -3,12 +3,15 @@ from curie.navicell import *
 import numpy as np
 import re
 from collections import OrderedDict as oDict
+from pprint import pprint
+
+DEBUG_NAVICOM = True
 
 def getLine(ll, split_char="\t"):
     ll = re.sub('\"', '', ll.strip())
-    ll = re.sub('\tNA', '\tNaN', ll) # Python float can convert "NaN" -> nan but not "NA"
+    ll = re.sub('\tNA', '\tNaN', ll) # Python float can convert "NaN" -> nan but not "NA" -> nan
     ll = ll.split(split_char)
-    for ii in ll:
+    for ii in range(len(ll)):
         try:
             ll[ii] = float(ll[ii])
         except:
@@ -29,10 +32,10 @@ class NaviCom():
         self.data = dict()
         self.annotations = dict()
         if (fname != ""):
-            try:
-                self.loadData(fname)
-            except:
-                print("Data could not be loaded, empty object returned")
+            #try:
+            self.loadData(fname)
+            #except:
+                #print("Data could not be loaded, empty object returned")
         self.defineModules(modules_dict)
 
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt"):
@@ -46,10 +49,10 @@ class NaviCom():
             if (re.search("^M ", ff[ll])):
                 # Import data
                 method = re.sub("^M ", "", ff[ll].strip())
-                print("Importing " + method)
-                samples = getLine(ff[ll+1])[1:]
+                print("Importing " + method + " data")
+                samples = getLine(ff[ll+1])
                 profile_data = dict()
-                profile_data["samples"] = oDict()
+                profile_data["samples"] = dict()
                 ii = 0
                 for el in samples:
                     profile_data["samples"][el] = ii
@@ -57,12 +60,16 @@ class NaviCom():
 
                 ll += 2
                 profile_data["genes"] = dict()
+                profile_data["data"] = list()
+                gid = 0
                 while(ll < len(ff) and not re.search("^M ", ff[ll]) and not re.search("^ANNOTATIONS", ff[ll])):
                     dl = getLine(ff[ll])
-                    profile_data[dl[1]] = dl[:-1] # Data in a list at index gene_name
+                    profile_data["data"].append(dl[1:]) # Data in a list at index gene_name
+                    profile_data["genes"][dl[0]] = gid
+                    gid += 1
 
                     ll += 1
-                all_data[method] = profile_data
+                all_data[method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"])
             elif (re.search("^ANNOTATIONS", ff[ll])):
                 # Import annotations
                 print("Importing Annotations")
@@ -154,7 +161,7 @@ class NaviData():
                 raise IndexError
 
     def __repr__(self):
-        rpr = "NaviData array with " + str(len(self.genes)) + " genes, and "
+        rpr = "NaviData array with " + str(len(self.genes)) + " genes and "
         rpr += str(len(self.samples)) + " samples"
         return(rpr)
             
