@@ -32,11 +32,14 @@ class NaviCom():
         self.data = dict()
         self.annotations = dict()
         if (fname != ""):
-            #try:
             self.loadData(fname)
-            #except:
-                #print("Data could not be loaded, empty object returned")
         self.defineModules(modules_dict)
+
+    def __repr__(self):
+        rpr = "NaviCom object with " + len(self.data) + " types of data:\n"
+        for method in self.data:
+            rpr += method + ": " + self.data[method] + "\n"
+        return(repr)
 
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt"):
         with open(fname) as file_conn:
@@ -133,7 +136,6 @@ class NaviCom():
         for data_type in self.data:
             print(data_type) # TODO
 
-    #def 
 
 class NaviData():
     """
