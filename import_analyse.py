@@ -6,6 +6,7 @@ from collections import OrderedDict as oDict
 from pprint import pprint
 
 DEBUG_NAVICOM = True
+VERBOSE_NAVICOM = True
 
 def getLine(ll, split_char="\t"):
     ll = re.sub('\"', '', ll.strip())
@@ -29,11 +30,16 @@ class NaviCom():
         options.browser_command = "firefox %s" # TODO Add user control
         self.nv = NaviCell(options)
         # Data
-        self.data = dict()
-        self.annotations = dict()
+        self.data = dict() # Raw data
+        self.annotations = dict() # Annotations of the samples
+        self.modules = dict() # Composition of each module
+        self.associated_modules = dict() # Number of modules each gene belong to
         if (fname != ""):
             self.loadData(fname)
-        self.defineModules(modules_dict)
+            self.defineModules(modules_dict)
+        # Analysed structures, indexed by data type
+        self.moduleAverage = dict()
+        #self.pcaAnalyse = dict()
 
     def __repr__(self):
         rpr = "NaviCom object with " + len(self.data) + " types of data:\n"
@@ -113,19 +119,27 @@ class NaviCom():
             if (modules_dict != ""):
                 # TODO get the list of modules from the file
                 with open(modules_dict) as ff:
-                    for line in ff.readLines():
+                    for line in ff.readlines():
                         ll = line.strip().split("\t")
                         module_name = ll[0]
                         self.modules[module_name] = list()
                         if (ll[1] != "na"):
-                            self.modules[module_name].append(ll[1])
-                        self.modules[module_name].append(ll[2:])
+                            self.modules[module_name] += ll[1]
+                        self.modules[module_name] += ll[2:]
+                        # Count the number of modules each gene belong to
+                        for gene in self.modules[module_name]:
+                            try:
+                                self.associated_modules[gene] += 1
+                            except KeyError:
+                                self.associated_modules[gene] = 1
+        """
         # Only keep genes with data
         for module in self.modules:
             keep = list()
             for gene in self.modules[module]:
-                if (gene in self.genes_list):
+                if (not gene in self.genes_list):
                     self.modules[module].remove(gene)
+        """
 
     def display(self):
         """
@@ -135,6 +149,34 @@ class NaviCom():
 
         for data_type in self.data:
             print(data_type) # TODO
+
+    def averageModule(self, dataType):
+        """
+        Perform module averaging for every modules for one data type
+        """
+        assert(dataType in self.data.keys())
+        data = self.data[dataType]
+        samples = list(data.samples.keys())
+        module_expression = dict()
+        for module in self.modules:
+            module_expression[module] = [0 for sample in samples]
+            non_nan = np.array([0 for sample in samples])
+            no_data = list()
+            for gene in self.modules[module]:
+                try:
+                    not_nan = [int(not np.isnan(dd)) for dd in data[gene].data]
+                    non_nan += not_nan
+                    module_expression[module] += data[gene].data * not_nan
+                except IndexError:
+                    no_data += [gene]
+            for gene in no_data:
+                self.modules[module].remove(gene)
+                if (VERBOSE_NAVICOM):
+                    print(gene + " removed")
+            module_expression[module] /= non_nan
+        # Put the averaging in a NaviData structure
+        self.moduleAverage[dataType] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples)
+
 
 
 class NaviData():
@@ -160,7 +202,26 @@ class NaviData():
             elif (index in self.samples):
                 return( NaviSlice(self.data[:,self.samples[index]], self.genes) )
             else:
-                raise IndexError
+                raise IndexError("'" + index + "' is neither a gene or sample name")
+        elif (isinstance(index, list) or isinstance(index, tuple)):
+            result = list()
+            for ii in index:
+                result.append(self[ii].data)
+            result = np.array(result)
+            if (index[0] in self.genes):
+                assert np.all([idx in self.genes for idx in index]), "Not all index are gene names"
+                genes = self.genes.copy()
+                for gene in self.genes:
+                    if (not gene in index):
+                        genes.pop(gene)
+                return( NaviData(result, genes, self.samples) )
+            elif (index[0] in self.samples):
+                assert np.all([idx in self.samples for idx in index]), "Not all index are sample names"
+                samples = self.samples.copy()
+                for sample in self.samples:
+                    if(not sample in index):
+                        samples.pop(sample)
+                return( NaviData(result.transpose(), self.genes, samples) )
 
     def __repr__(self):
         rpr = "NaviData array with " + str(len(self.genes)) + " genes and "
@@ -173,18 +234,36 @@ class NaviSlice():
     A slice from a NaviData array
     """
     def __init__(self, data, index_dict):
-        self.data = data
-        self.ids = index_dict
+        if (isinstance(data, np.ndarray)):
+            self.data = data
+        elif (isinstance(data, list)):
+            self.data = np.array(data)
+        else:
+            raise TypeError
+        if (isinstance(index_dict, dict)):
+            self.ids = index_dict
+        elif (isinstance(index_dict, list)):
+            self.ids = listToDictKeys(index_dict)
+        else:
+            raise TypeError
 
     def __getitem__(self, index):
         if (isinstance(index, int)):
             return(self.data[index])
         elif (isinstance(index, str)):
             return(self.data[self.ids[index]])
+        elif (isinstance(index, list)):
+            for ii in index:
+                return(self[ii])
 
     def __repr__(self):
         rpr = "NaviData slice with " + str(len(self.ids)) + " elements"
         return(rpr)
+
+    def __add__(self, nvslice):
+        assert(isinstance(nvslice, NaviSlice))
+        #assert(self.ids == nvslice.ids)
+        return(NaviSlice(self.data + nvslice.data, self.ids))
 
 def listToDictKeys(ilist):
     if (isinstance(ilist, dict)):
