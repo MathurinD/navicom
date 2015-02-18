@@ -192,6 +192,9 @@ class NaviData():
         self.data = np.array(data)
         self.genes = listToDictKeys(genes_list)
         self.samples = listToDictKeys(samples_list)
+        # For the iterator
+        self.itermode = ""
+        self.index = 0
 
     def __getitem__(self, index):
         if (isinstance(index, int)):
@@ -222,6 +225,28 @@ class NaviData():
                     if(not sample in index):
                         samples.pop(sample)
                 return( NaviData(result.transpose(), self.genes, samples) )
+
+    def __iter__(self, by="genes"):
+        if (not by in ["genes", "samples"]):
+            raise ValueError("'by' must be in ['genes', 'samples']")
+        self.iter_mode = by
+        if (by == "genes"):
+            self.index = 0
+        return(self)
+
+    def __next__(self):
+        try:
+            if (self.iter_mode == "genes"):
+                key = list(self.genes.keys())[self.index]
+                result = [key] + list(self.data[self.index,:])
+            elif (self.iter_mode == "samples"):
+                key = list(self.samples.keys())[self.index]
+                result = [key] + list(self.data[:,self.index])
+        except IndexError:
+            raise StopIteration
+        self.index += 1
+        return(result)
+
 
     def __repr__(self):
         rpr = "NaviData array with " + str(len(self.genes)) + " genes and "
@@ -255,6 +280,9 @@ class NaviSlice():
         elif (isinstance(index, list)):
             for ii in index:
                 return(self[ii])
+
+    def __iter__(self):
+        return(self.data.__iter__())
 
     def __repr__(self):
         rpr = "NaviData slice with " + str(len(self.ids)) + " elements"

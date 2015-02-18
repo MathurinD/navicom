@@ -10,4 +10,8 @@ nc.averageModule("gistic")
 print(nc.moduleAverage)
 nc.data['gistic']['PURA', 'AKT1']
 #nc.data['gistic']['PURA', 'truc'] # Error generating test
+print("Iteration over NaviData")
+for data in nc.moduleAverage['gistic']:
+    print(data)
+
 
