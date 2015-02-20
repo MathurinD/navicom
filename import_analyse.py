@@ -46,7 +46,7 @@ class NaviCom():
         self.exported_annotations = False
         self.browser_opened = False
         self.biotypes = dict()
-        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data"}
+        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data", "moduleAverage":"Continuous copy number data"}
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
@@ -125,7 +125,10 @@ class NaviCom():
         """
         Perform module averaging for every modules for one data type
         """
-        assert(dataType in self.data["raw"].keys())
+        assert dataType in self.data["raw"], "This type of data is not present"
+        assert len(self.modules)>0, "No module have been defined"
+
+        # Calculate average expression for each module
         data = self.data["raw"][dataType]
         samples = list(data.samples.keys())
         module_expression = dict()
@@ -141,12 +144,26 @@ class NaviCom():
                 except IndexError:
                     no_data += [gene]
             for gene in no_data:
-                self.modules[module].remove(gene)
+                #self.modules[module].remove(gene)
                 if (VERBOSE_NAVICOM):
-                    print(gene + " removed from the module")
+                    print(gene + " from module " + module + " has no " + dataType + " data")
             module_expression[module] /= non_nan
+
+        # Calculate average module expression for each gene
+        gene_module_average = list()
+        for gene in data.genes:
+            if gene in self.associated_modules:
+                gene_module_average.append(np.array([0. for sample in data.samples]))
+                for module in self.associated_modules[gene]:
+                    gene_module_average[-1] += module_expression[module] / len(self.associated_modules[gene])
+            else:
+                gene_module_average.append(np.array(list(data[gene])))
+                print(gene)
+
         # Put the averaging in a NaviData structure
-        self.data["moduleAverage"][dataType] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples)
+        #self.data["moduleAverage"][dataType] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples) # Usefull if NaviCell allow modules values one day
+        self.data["moduleAverage"][dataType] = NaviData(gene_module_average, list(data.genes), samples)
+        self.exported_data["moduleAverage"][dataType] = False
 
     def defineModules(self, modules_dict=""):
         """
@@ -167,14 +184,15 @@ class NaviCom():
                         module_name = ll[0]
                         self.modules[module_name] = list()
                         if (ll[1] != "na"):
-                            self.modules[module_name] += ll[1]
-                        self.modules[module_name] += ll[2:]
+                            self.modules[module_name] += ll[1:]
+                        else:
+                            self.modules[module_name] += ll[2:]
                         # Count the number of modules each gene belong to
                         for gene in self.modules[module_name]:
                             try:
-                                self.associated_modules[gene] += 1
+                                self.associated_modules[gene].append(module_name)
                             except KeyError:
-                                self.associated_modules[gene] = 1
+                                self.associated_modules[gene] = [module_name]
         """
         # Only keep genes with data
         for module in self.modules:
@@ -193,7 +211,7 @@ class NaviCom():
         for data_type in self.data:
             print(data_type) # TODO
 
-    def exportData(self, method, processing="raw"):
+    def exportData(self, method, processing="raw", name=""):
         """
         Export data to NaviCell, can be processed data
 
@@ -206,20 +224,36 @@ class NaviCom():
         if (processing in self.processings):
             if (method in self.data[processing] and method in self.methodBiotype):
                 if (not self.exported_data[processing][method]):
-                    self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), method, self.methodBiotype[method])
+                    if (name == ""):
+                        name = method + "_" + processing
+                    # Processing turn discrete data into continuous or color data
+                    if (processing in self.methodBiotype):
+                        biotype = self.methodBiotype[processing]
+                    else:
+                        biotype = self.methodBiotype[method]
+                    self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
+                    self.exported_data[processing][method] = True
             else:
                 raise KeyError("Method " + method + " with processing " + processing + "does not exist")
         else:
             raise KeyError("Processing " + processing + " does not exist")
 
     def checkBrowser(self):
+        """
+        Check if the browser is opened, and open it if it is not
+        """
         if (not self.browser_opened):
             print("Launching browser...")
             self.nv.launchBrowser()
             self.browser_opened = True
+        return(self.browser_opened)
 
     def exportAnnotations(self):
+        """
+        Export samples annotations to NaviCell
+        """
         self.checkBrowser()
+
         if (not self.exported_annotations):
             self.nv.sampleAnnotationImport(self.annotations.makeData())
             self.exported_annotations = True
@@ -234,7 +268,7 @@ class NaviData():
     def __init__(self, data, genes_list, samples_list, dType="data"):
         assert(len(data) == len(genes_list))
         for line in data:
-            assert(len(line) == len(samples_list))
+            assert len(line) == len(samples_list), "Incorrect length of line : " + line + ", length = " + str(len(line))
         # Initialise data and indexes
         self.data = np.array(data)
         self.rows = "genes"
