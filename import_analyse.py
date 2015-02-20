@@ -29,50 +29,59 @@ class NaviCom():
         options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
         options.browser_command = "firefox %s" # TODO Add user control
         self.nv = NaviCell(options)
-        # Data
+        # Data, classified per analyse type
+        self.processings = ["raw", "moduleAverage", "pcaComp", "geoSmooth"]
         self.data = dict() # Raw data
+        self.exported_data = dict()
+        for processing in self.processings:
+            self.data[processing] = dict()
+            self.exported_data[processing] = dict()
         self.annotations = dict() # Annotations of the samples
         self.modules = dict() # Composition of each module
         self.associated_modules = dict() # Number of modules each gene belong to
         if (fname != ""):
             self.loadData(fname)
             self.defineModules(modules_dict)
-        # Analysed structures, indexed by data type
-        self.moduleAverage = dict()
-        #self.pcaAnalyse = dict()
         # NaviCell export control
         self.exported_annotations = False
         self.browser_opened = False
+        self.biotypes = dict()
+        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data"}
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
         for method in self.data:
             rpr += method + ": " + self.data[method] + "\n"
+        rpr += "and " + str(len(self.moduleAverage)) + " modules average:\n"
+        for method in self.moduleAverage:
+            rpr += method + ": " + self.moduleAverage[method] + "\n"
         return(repr)
 
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt"):
         with open(fname) as file_conn:
             ff = file_conn.readlines()
             ll = 0
+        # TODO Being able to import NaviCell valid files (one data type or only annotations)
+        # Look for NAME or GENE in the first line and do not skip it
 
-        all_data = dict()
-        annot = dict()
         while (ll < len(ff)):
             if (re.search("^M ", ff[ll])):
                 # Import data
                 method = re.sub("^M ", "", ff[ll].strip())
                 print("Importing " + method + " data")
                 samples = getLine(ff[ll+1])
+                if (samples[0] == "GENE"):
+                    samples = samples[1:]
                 profile_data = dict()
                 profile_data["samples"] = oDict()
+                profile_data["genes"] = dict()
+                profile_data["data"] = list()
                 ii = 0
                 for el in samples:
                     profile_data["samples"][el] = ii
                     ii += 1
 
                 ll += 2
-                profile_data["genes"] = dict()
-                profile_data["data"] = list()
                 gid = 0
                 while(ll < len(ff) and not re.search("^M ", ff[ll]) and not re.search("^ANNOTATIONS", ff[ll])):
                     dl = getLine(ff[ll])
@@ -81,11 +90,15 @@ class NaviCom():
                     gid += 1
 
                     ll += 1
-                all_data[method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"])
+                self.data["raw"][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"])
+                self.exported_data["raw"][method] = False
             elif (re.search("^ANNOTATIONS", ff[ll])):
                 # Import annotations
                 print("Importing Annotations")
                 annotations_names = getLine(ff[ll+1])
+                if (annotations_names[0] == "NAME"):
+                    annotations_names = annotations_names[1:]
+                annot = dict()
                 annot["names"] = list()
                 annot["samples"] = list()
                 annot["annot"] = list()
@@ -106,17 +119,14 @@ class NaviCom():
                     annot["samples"].append(al[0])
 
                     ll = ll+1
-                annotations = NaviData(annot["annot"], annot["samples"], annot["names"], dType="annotations")
-
-        self.data = all_data
-        self.annotations = annotations
+                self.annotations = NaviData(annot["annot"], annot["samples"], annot["names"], dType="annotations")
 
     def averageModule(self, dataType):
         """
         Perform module averaging for every modules for one data type
         """
-        assert(dataType in self.data.keys())
-        data = self.data[dataType]
+        assert(dataType in self.data["raw"].keys())
+        data = self.data["raw"][dataType]
         samples = list(data.samples.keys())
         module_expression = dict()
         for module in self.modules:
@@ -136,7 +146,7 @@ class NaviCom():
                     print(gene + " removed from the module")
             module_expression[module] /= non_nan
         # Put the averaging in a NaviData structure
-        self.moduleAverage[dataType] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples)
+        self.data["moduleAverage"][dataType] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples)
 
     def defineModules(self, modules_dict=""):
         """
@@ -178,13 +188,33 @@ class NaviCom():
         """
         Display the data on a NaviCell map
         """
-        self.launchBrowser()
+        self.checkBrowser()
 
         for data_type in self.data:
             print(data_type) # TODO
 
+    def exportData(self, method, processing="raw"):
+        """
+        Export data to NaviCell, can be processed data
+
+        Args:
+            method (str) : name of the method to export
+            processing (str) : "" to export raw data, processing method to export processed data. See 'averageModule' and 'pcaComponent'
+        """
+        self.checkBrowser()
+
+        if (processing in self.processings):
+            if (method in self.data[processing] and method in self.methodBiotype):
+                if (not self.exported_data[processing][method]):
+                    self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), method, self.methodBiotype[method])
+            else:
+                raise KeyError("Method " + method + " with processing " + processing + "does not exist")
+        else:
+            raise KeyError("Processing " + processing + " does not exist")
+
     def checkBrowser(self):
         if (not self.browser_opened):
+            print("Launching browser...")
             self.nv.launchBrowser()
             self.browser_opened = True
 
@@ -257,8 +287,7 @@ class NaviData():
         if (not by in ["genes", "samples"]):
             raise ValueError("'by' must be in ['genes', 'samples']")
         self.iter_mode = by
-        if (by == "genes"):
-            self.index = 0
+        self.index = 0
         return(self)
 
     def __next__(self):
@@ -293,12 +322,14 @@ class NaviData():
         if (self.dType == "annotations"):
             ret = "NAME\t" + '\t'.join(self.annotations_names) + "\n"
             for line in self:
-                ret += "\t".join(line) + "\n"
-        elif (self.dType == "self"):
-            ret = "GENE\t" + '\t'.join(self.genes_names) + "\n"
+                ret += buildLine(line)
+        elif (self.dType == "data"):
+            ret = "GENE\t" + '\t'.join(self.samples_names) + "\n"
             for line in self:
                 if (line[0] in hugo_map or hugo_map == ""):
-                    ret += "\t".join(line) + "\n"
+                    ret += buildLine(line)
+        else:
+            raise ValueError("Data type must be 'data' or 'annotations'")
 
         return("@DATA\n" + ret)
             
@@ -351,6 +382,12 @@ def listToDictKeys(ilist):
         res[str(key)] = ii
         ii += 1
     return(res)
+
+def buildLine(line, sep="\t"):
+    ret = ""
+    for el in line:
+        ret += str(el) + sep
+    return(ret[:-1] + "\n")
 
 
 
