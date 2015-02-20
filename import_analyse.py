@@ -40,9 +40,12 @@ class NaviCom():
         # Analysed structures, indexed by data type
         self.moduleAverage = dict()
         #self.pcaAnalyse = dict()
+        # NaviCell export control
+        self.exported_annotations = False
+        self.browser_opened = False
 
     def __repr__(self):
-        rpr = "NaviCom object with " + len(self.data) + " types of data:\n"
+        rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
         for method in self.data:
             rpr += method + ": " + self.data[method] + "\n"
         return(repr)
@@ -53,7 +56,7 @@ class NaviCom():
             ll = 0
 
         all_data = dict()
-        annot_dict = dict()
+        annot = dict()
         while (ll < len(ff)):
             if (re.search("^M ", ff[ll])):
                 # Import data
@@ -61,7 +64,7 @@ class NaviCom():
                 print("Importing " + method + " data")
                 samples = getLine(ff[ll+1])
                 profile_data = dict()
-                profile_data["samples"] = dict()
+                profile_data["samples"] = oDict()
                 ii = 0
                 for el in samples:
                     profile_data["samples"][el] = ii
@@ -83,27 +86,57 @@ class NaviCom():
                 # Import annotations
                 print("Importing Annotations")
                 annotations_names = getLine(ff[ll+1])
-                annot_dict["annotations"] = oDict()
-                ii = 0
-                for annot in annotations_names:
-                    annot_dict["annotations"][annot] = ii
-                    annot_dict[annot] = list()
-                    ii += 1
-
+                annot["names"] = list()
+                annot["samples"] = list()
+                annot["annot"] = list()
+                not_all = not "all" in annotations_names
+                if (not_all):
+                    annot["names"].append("all")
+                    annot["annot"].append([1 for ii in range(nb_samples)])
+                for name in annotations_names:
+                    annot["names"].append(name)
                 ll += 2
                 while(ll < len(ff) and not re.search("^M ", ff[ll]) and not re.search("^ANNOTATIONS", ff[ll])):
                     al = getLine(ff[ll])
-                    # Gather each annotation for this sample
-                    spl = al[1]
-                    for name in annotations_names:
-                        annot = al[annot_dict["annotations"][name]]
-                        annot_dict[name].append(annot)
+                    # Gather each annotation for this sample and add all as the first column if necessary
+                    if (not_all):
+                        annot["annot"].append([1] + al[1:])
+                    else:
+                        annot["annot"].append(al[1:])
+                    annot["samples"].append(al[0])
+
                     ll = ll+1
-                if (not "all" in annotations_names):
-                    annot_dict["annotations"].append["all"]
-                    annot_dict["all"].append(1)
+                annotations = NaviData(annot["annot"], annot["samples"], annot["names"], dType="annotations")
+
         self.data = all_data
-        self.annotations = annot_dict
+        self.annotations = annotations
+
+    def averageModule(self, dataType):
+        """
+        Perform module averaging for every modules for one data type
+        """
+        assert(dataType in self.data.keys())
+        data = self.data[dataType]
+        samples = list(data.samples.keys())
+        module_expression = dict()
+        for module in self.modules:
+            module_expression[module] = [0 for sample in samples]
+            non_nan = np.array([0 for sample in samples])
+            no_data = list()
+            for gene in self.modules[module]:
+                try:
+                    not_nan = [int(not np.isnan(dd)) for dd in data[gene].data]
+                    non_nan += not_nan
+                    module_expression[module] += data[gene].data * not_nan
+                except IndexError:
+                    no_data += [gene]
+            for gene in no_data:
+                self.modules[module].remove(gene)
+                if (VERBOSE_NAVICOM):
+                    print(gene + " removed from the module")
+            module_expression[module] /= non_nan
+        # Put the averaging in a NaviData structure
+        self.moduleAverage[dataType] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples)
 
     def defineModules(self, modules_dict=""):
         """
@@ -150,32 +183,16 @@ class NaviCom():
         for data_type in self.data:
             print(data_type) # TODO
 
-    def averageModule(self, dataType):
-        """
-        Perform module averaging for every modules for one data type
-        """
-        assert(dataType in self.data.keys())
-        data = self.data[dataType]
-        samples = list(data.samples.keys())
-        module_expression = dict()
-        for module in self.modules:
-            module_expression[module] = [0 for sample in samples]
-            non_nan = np.array([0 for sample in samples])
-            no_data = list()
-            for gene in self.modules[module]:
-                try:
-                    not_nan = [int(not np.isnan(dd)) for dd in data[gene].data]
-                    non_nan += not_nan
-                    module_expression[module] += data[gene].data * not_nan
-                except IndexError:
-                    no_data += [gene]
-            for gene in no_data:
-                self.modules[module].remove(gene)
-                if (VERBOSE_NAVICOM):
-                    print(gene + " removed")
-            module_expression[module] /= non_nan
-        # Put the averaging in a NaviData structure
-        self.moduleAverage[dataType] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples)
+    def checkBrowser(self):
+        if (not self.browser_opened):
+            self.nv.launchBrowser()
+            self.browser_opened = True
+
+    def exportAnnotations(self):
+        self.checkBrowser()
+        if (not self.exported_annotations):
+            self.nv.sampleAnnotationImport(self.annotations.makeData())
+            self.exported_annotations = True
 
 
 
@@ -184,14 +201,24 @@ class NaviData():
     Custom class to store the data and be able to access rows and columns by name
     """
 
-    def __init__(self, data, genes_list, samples_list):
+    def __init__(self, data, genes_list, samples_list, dType="data"):
         assert(len(data) == len(genes_list))
         for line in data:
             assert(len(line) == len(samples_list))
         # Initialise data and indexes
         self.data = np.array(data)
+        self.rows = "genes"
         self.genes = listToDictKeys(genes_list)
+        self.genes_names = list(self.genes.keys())
+        self.cols = "samples"
         self.samples = listToDictKeys(samples_list)
+        self.samples_names = list(self.samples.keys())
+        if (dType == "annotations"):
+            self.cols = "annotations"
+            self.annotations = self.samples
+            self.annotations_names = self.samples_names
+            self.rows = "samples"
+        self.dType = dType
         # For the iterator
         self.itermode = ""
         self.index = 0
@@ -247,11 +274,33 @@ class NaviData():
         self.index += 1
         return(result)
 
-
     def __repr__(self):
-        rpr = "NaviData array with " + str(len(self.genes)) + " genes and "
-        rpr += str(len(self.samples)) + " samples"
+        rpr = "NaviData array with " + str(len(self.genes)) + " " + self.rows + " and "
+        rpr += str(len(self.samples)) + " " + self.cols
         return(rpr)
+
+    def makeData(self, hugo_map=""):
+        """ Builds a string suitable for NaviCell Web Service from a python matrix of gene/sample values or a NaviCom object.
+
+        Matrix format:
+        - first line is: GENE word followed by a tab separated list of sample names,
+        - each line begins with an gene name and must be followed by a tab separated list of gene/sample values.
+
+        Eliminates genes not present in the NaviCell map.
+        """
+
+        # Change header whether we have annotations or real self
+        if (self.dType == "annotations"):
+            ret = "NAME\t" + '\t'.join(self.annotations_names) + "\n"
+            for line in self:
+                ret += "\t".join(line) + "\n"
+        elif (self.dType == "self"):
+            ret = "GENE\t" + '\t'.join(self.genes_names) + "\n"
+            for line in self:
+                if (line[0] in hugo_map or hugo_map == ""):
+                    ret += "\t".join(line) + "\n"
+
+        return("@DATA\n" + ret)
             
 
 class NaviSlice():
@@ -295,8 +344,8 @@ class NaviSlice():
 
 def listToDictKeys(ilist):
     if (isinstance(ilist, dict)):
-        return(ilist)
-    res = dict()
+        return(oDict(ilist))
+    res = oDict()
     ii = 0
     for key in ilist:
         res[str(key)] = ii
