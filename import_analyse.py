@@ -421,7 +421,7 @@ def buildLine(line, sep="\t"):
     ret = ""
     for el in line:
         ret += str(el) + sep
-    return(ret[:-1] + "\n")
+    return(re.sub("NaN|nan", "NA", ret[:-1]) + "\n")
 
 
 
