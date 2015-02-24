@@ -138,9 +138,11 @@ class NaviCom():
             no_data = list()
             for gene in self.modules[module]:
                 try:
-                    not_nan = [int(not np.isnan(dd)) for dd in data[gene].data]
+                    not_nan = np.array([int(not np.isnan(dd)) for dd in data[gene].data])
                     non_nan += not_nan
-                    module_expression[module] += data[gene].data * not_nan
+                    non_nan_data = data[gene].data * not_nan
+                    non_nan_data[np.isnan(non_nan_data)] = 0
+                    module_expression[module] += non_nan_data
                 except IndexError:
                     no_data += [gene]
             for gene in no_data:
