@@ -29,6 +29,11 @@ class NaviCom():
         options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
         options.browser_command = "firefox %s" # TODO Add user control
         self.nv = NaviCell(options)
+        # NaviCell export control
+        self.exported_annotations = False
+        self.browser_opened = False
+        self.biotypes = dict()
+        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data", "moduleAverage":"Continuous copy number data"}
         # Data, indexed by processing then type of data
         self.processings = ["raw", "moduleAverage", "pcaComp", "geoSmooth"]
         self.data = dict() # All data
@@ -45,11 +50,6 @@ class NaviCom():
         if (fname != ""):
             self.loadData(fname)
             self.defineModules(modules_dict)
-        # NaviCell export control
-        self.exported_annotations = False
-        self.browser_opened = False
-        self.biotypes = dict()
-        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data", "moduleAverage":"Continuous copy number data"}
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
@@ -103,6 +103,8 @@ class NaviCom():
                 self.data["raw"][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"])
                 self.exported_data["raw"][method] = False
                 self.nameData(method, "raw")
+                if (not "uniform" in self.data):
+                    self.defineUniformData(profile_data["samples"], profile_data["genes"])
             elif (re.search("^ANNOTATIONS", ff[ll])):
                 # Import annotations
                 print("Importing Annotations")
@@ -131,6 +133,10 @@ class NaviCom():
 
                     ll = ll+1
                 self.annotations = NaviData(annot["annot"], annot["samples"], annot["names"], dType="annotations")
+
+    def defineUniformData(self, samples, genes):
+        self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
+        self.exportData("uniform")
 
     def averageModule(self, method):
         """
@@ -220,7 +226,7 @@ class NaviCom():
                     self.modules[module].remove(gene)
         """
 
-    def display(self, perform_list, colors="", samples="all"):
+    def display(self, perform_list, samples="all", colors=""):
         """
         Display data on the NaviCell map
         Args :
@@ -236,7 +242,7 @@ class NaviCom():
 
         # Selection of samples
         if (isinstance(samples, str)):
-            group = samples.split(":")
+            group = samples.split(":")[0]
             if (samples == "all"):
                 samples = "all: 1.0"
                 self.resetAnnotations()
@@ -250,12 +256,24 @@ class NaviCom():
         elif (isinstance(samples, list)):
             one_sample = samples[0]
 
+        # Control that the user does not try to display to many data or use several time the same display
         MAX_GLYPHS = 5
-        glyph = {"color":[False] * MAX_GLYPHS,
-                 "size":[False] * MAX_GLYPHS,
-                 "shape":[False] * MAX_GLYPHS}
+        GLYPH_TYPES = ["color", "size", "shape"]
+        glyph = {gtype:[False] * MAX_GLYPHS for gtype in GLYPH_TYPES}
+        if (len(samples) == 1):
+            glyph_samples = samples * MAX_GLYPHS
+            sample_for_glyph = [True] * MAX_GLYPHS
+        else:
+            glyph_samples = samples
+            sample_for_glyph = [True] * len(samples)
+            while (len(glyph_samples) < MAX_GLYPHS):
+                glyph_samples.append(None)
+                sample_for_glyph.append(False)
+        glyph_set = False
         heatmap_or_barplot = False
         map_staining = False
+
+        # Parse the perform_list and perform the corresponding display
         for data_name, dmode in perform_list:
             # Preprocessing of the list
             dmode = dmode.lower()
@@ -268,38 +286,74 @@ class NaviCom():
 
             # Perform the display depending of the selected mode
             if (re.match("^(glyph|color|size|shape)", dmode)):
-                glyph_setup = dmode.split("_| ")
-                if (len(glyph_setup) == 2):
-                    glyph_type = glyph_setup[1]
+                glyph_set = True
+                # Extract the glyph id and the setup
+                parse_setup = dmode.split("_")
+                glyph_setup = parse_setup
+                if (len(parse_setup) == 2):
                     try:
-                        glyph_number = int(glyph_setup[0][-1])
+                        glyph_setup = [parse_setup[1] + str(int(parse_setup[0][-1]))]
                     except ValueError:
-                        glyph_number = 0
-                        while (glyph[glyph_type][glyph_number]):
-                            glyph_number += 1
-                elif (len(glyph_setup) == 1):
-                    try:
-                        glyph_number = int(glyph_setup[0][-1])
-                        glyph_type = glyph_setup[0][:-1]
-                    except ValueError:
-                        glyph_type = glyph_setup[0]
-                        glyph_number = 0
-                        while (glyph[glyph_type][glyph_number]):
-                            glyph_number += 1
-                else:
+                        glyph_setup = [parse_setup[1]]
+                elif (len(parse_setup) != 1):
                     raise ValueError("Glyph specification '" + dmode + "' incorrect")
-                pass # Parse to find if color, shape or size should be used
+                try:
+                    glyph_number = int(glyph_setup[0][-1])
+                    glyph_type = glyph_setup[0][:-1]
+                except ValueError:
+                    glyph_type = glyph_setup[0]
+                    glyph_number = 1
+                    while (glyph[glyph_type][glyph_number-1]):
+                        glyph_number += 1
+                
+                if (not glyph_number in range(1, MAX_GLYPHS+1)):
+                    raise ValueError("Glyph number must be in [1," + str(MAX_GLYPHS) + "]")
+                if (not glyph_type in GLYPH_TYPES):
+                    raise ValueError("Glyph type must be one of " + str(GLYPH_TYPES))
+                if (glyph[glyph_type][glyph_number-1]):
+                    raise ValueError(glyph_type + " for glyph " + str(glyph_number) + " has already been specified")
+                glyph[glyph_type][glyph_number-1] = True
+                if (not glyph_samples[glyph_number-1]):
+                    raise ValueError("Incorrect glyph number : " + str(glyph_number) + ", only " + str(len(samples)) + " have been given")
+
+                cmd="self.nv.glyphEditorSelect" + glyph_type.capitalize() + "Datatable('', " + str(glyph_number) + ", '" + data_name + "')"
+                print(cmd)
+                exec(cmd)
             elif (re.match("map_?staining", dmode)):
-                self.nv.mapStainingEditorSelectDatatable('', data_name)
-                self.nv.mapStainingEditorSelectSample('', one_sample)
-                self.nv.mapStainingEditorApply('')
-                pass # Perform map staining
+                if (not map_staining):
+                    self.nv.mapStainingEditorSelectDatatable('', data_name)
+                    self.nv.mapStainingEditorSelectSample('', one_sample)
+                    self.nv.mapStainingEditorApply('')
+                    map_staining = True
+                else:
+                    raise ValueError("Map staining can only be applied once, use a separate call to the display function to change map staining")
+            elif (re.match("heatmap", dmode)):
+                print("Heatmap not implemented yet")
+            elif (re.match("barplot", dmode)):
+                print("Barplot not implemented yet")
+            else:
+                raise ValueError(dmode + " drawing mode does not exist")
 
         # Check that datatables are selected for all glyphs features (until default has been added)
-        for glyph in range(MAX_GLYPHS):
-            pass
+        if (glyph_set):
+            for glyph_id in range(MAX_GLYPHS):
+                nsets = sum(1 for cs in GLYPH_TYPES if glyph[cs][glyph_id])
+                if (nsets > 0):
+                    if (not sample_for_glyph[glyph_id]):
+                        raise ValueError("No sample has been attributed to glyph " + str(glyph_id+1))
+                    else:
+                        self.nv.glyphEditorSelectSample('', glyph_id+1, glyph_samples[glyph_id])
+                    if (not glyph["color"][glyph_id]):
+                        self.nv.glyphEditorSelectColorDatatable('', glyph_id+1, "uniform")
+                    if (not glyph["shape"][glyph_id]):
+                       self.nv.glyphEditorSelectShapeDatatable('', glyph_id+1, "uniform")
+                    if (not glyph["size"][glyph_id]):
+                        self.nv.glyphEditorSelectSizeDatatable('', glyph_id+1, "uniform")
+                    self.nv.glyphEditorApply('', glyph_id+1)
 
     #def displayGroups(self, groups, combine=T, method): # method in ["barplot", "heatmap", "glyph_TYPE"]
+    
+    #def addDisplay(self, perform_list, samples="all", colors=""):
 
     #def resetDisplay(self):
 
@@ -341,8 +395,10 @@ class NaviCom():
                     self.exported_data[processing][method] = True
                 elif (VERBOSE_NAVICOM):
                     print(method + " data with " + processing + " processing has already been exported")
+            elif (method == "uniform"): # Uniform data for glyphs
+                self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
             else:
-                raise KeyError("Method " + method + " with processing " + processing + "does not exist")
+                raise KeyError("Method " + method + " with processing " + processing + " does not exist")
         else:
             raise KeyError("Processing " + processing + " does not exist")
 
