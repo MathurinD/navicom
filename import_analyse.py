@@ -229,7 +229,7 @@ class NaviCom():
                     self.modules[module].remove(gene)
         """
 
-    def display(self, perform_list, samples="all: 1.0", colors=""):
+    def display(self, perform_list, samples="all: 1.0", colors="", module=''):
         """
         Display data on the NaviCell map
         Args :
@@ -244,6 +244,8 @@ class NaviCom():
         #self.resetDisplay() # Maybe not a good idea
 
         # Selection of samples
+        all_samples = False
+        all_groups = False
         if (isinstance(samples, str)):
             group = samples.split(":")[0]
             if (samples == "all"):
@@ -256,6 +258,10 @@ class NaviCom():
             samples = [samples]
         elif (isinstance(samples, list)):
             one_sample = samples[0]
+        if (samples[0] == "all" or samples[0] == "all_samples" or samples[0] == "samples"):
+            all_samples = True
+        elif ():
+            all_groups = True
 
         # Control that the user does not try to display to many data or use several time the same display
         MAX_GLYPHS = 5
@@ -272,6 +278,8 @@ class NaviCom():
                 sample_for_glyph.append(False)
         glyph_set = False
         heatmap = False
+        hsidx = 0
+        hdidx = 0
         barplot = False
         barplot_data = ""
         bidx = 0
@@ -323,14 +331,14 @@ class NaviCom():
                 if (not glyph_samples[glyph_number-1]):
                     raise ValueError("Incorrect glyph number : " + str(glyph_number) + ", only " + str(len(samples)) + " have been given")
 
-                cmd="self.nv.glyphEditorSelect" + glyph_type.capitalize() + "Datatable('', " + str(glyph_number) + ", '" + data_name + "')"
+                cmd="self.nv.glyphEditorSelect" + glyph_type.capitalize() + "Datatable(" + module +  ", " + str(glyph_number) + ", '" + data_name + "')"
                 print(cmd)
                 exec(cmd)
             elif (re.match("map_?staining", dmode)):
                 if (not map_staining):
-                    self.nv.mapStainingEditorSelectDatatable('', data_name)
-                    self.nv.mapStainingEditorSelectSample('', one_sample)
-                    self.nv.mapStainingEditorApply('')
+                    self.nv.mapStainingEditorSelectDatatable(module, data_name)
+                    self.nv.mapStainingEditorSelectSample(module, one_sample)
+                    self.nv.mapStainingEditorApply(module)
                     map_staining = True
                 else:
                     raise ValueError("Map staining can only be applied once, use a separate call to the display function to change map staining")
@@ -340,6 +348,7 @@ class NaviCom():
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the heatmap")
                 else:
                     heatmap = True
+                    sefl.nv.heatmapEditor
             elif (re.match("barplot", dmode)):
                 if (heatmap):
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the barplot")
@@ -350,13 +359,14 @@ class NaviCom():
                     else:
                         barplot = True
                         barplot_data = data_name
-                        self.nv.barplotEditorSelectDatatable('', data_name)
+                        self.nv.barplotEditorSelectDatatable(module, data_name)
                     # Export samples
-                    if (samples[0] == "all"):
-                        self.nv.barplotEditorAllSamples('')
-                    else:
+                    if (all_samples):
+                        self.nv.barplotEditorAllSamples(module)
+                    elif (samples[0] == "all_groups" or samples[0] == "groups"):
+                    elif (bidx == 0):
                         for spl in samples:
-                            self.nv.barplotEditorSelectSamples('', bidx, spl)
+                            self.nv.barplotEditorSelectSamples(module, bidx, spl)
                             bidx += 1
             else:
                 raise ValueError(dmode + " drawing mode does not exist")
@@ -370,16 +380,18 @@ class NaviCom():
                     if (not sample_for_glyph[glyph_id]):
                         raise ValueError("No sample has been attributed to glyph " + str(glyph_id+1))
                     else:
-                        self.nv.glyphEditorSelectSample('', glyph_id+1, glyph_samples[glyph_id])
+                        self.nv.glyphEditorSelectSample(module, glyph_id+1, glyph_samples[glyph_id])
                     if (not glyph["color"][glyph_id]):
-                        self.nv.glyphEditorSelectColorDatatable('', glyph_id+1, "uniform")
+                        self.nv.glyphEditorSelectColorDatatable(module, glyph_id+1, "uniform")
                     if (not glyph["shape"][glyph_id]):
-                       self.nv.glyphEditorSelectShapeDatatable('', glyph_id+1, "uniform")
+                       self.nv.glyphEditorSelectShapeDatatable(module, glyph_id+1, "uniform")
                     if (not glyph["size"][glyph_id]):
-                        self.nv.glyphEditorSelectSizeDatatable('', glyph_id+1, "uniform")
-                    self.nv.glyphEditorApply('', glyph_id+1)
+                        self.nv.glyphEditorSelectSizeDatatable(module, glyph_id+1, "uniform")
+                    self.nv.glyphEditorApply(module, glyph_id+1)
         if (barplot):
-            self.nv.barplotEditorApply('')
+            self.nv.barplotEditorApply(module)
+        if (heatmap):
+            self.nv.heatmapEditorApply(module)
 
     #def displayGroups(self, groups, combine=T, method): # method in ["barplot", "heatmap", "glyph_TYPE"]
     
@@ -387,20 +399,20 @@ class NaviCom():
 
     #def resetDisplay(self):
 
-    def resetAnnotations(self):
+    def resetAnnotations(self, module=''):
         for annot in self.annotations.annotations:
-            self.nv.sampleAnnotationSelectAnnotation('', annot, False)
-        self.nv.sampleAnnotationApply('')
+            self.nv.sampleAnnotationSelectAnnotation(module, annot, False)
+        self.nv.sampleAnnotationApply(module)
 
-    def selectAnnotations(self, annotations):
+    def selectAnnotations(self, annotations, module=''):
         if (isinstance(annotations, str)):
-            self.nv.sampleAnnotationSelectAnnotation('', annotations, True)
+            self.nv.sampleAnnotationSelectAnnotation(module, annotations, True)
         elif (isinstance(annotations, list)):
             for annot in annotations:
-                self.nv.sampleAnnotationSelectAnnotation('', annot, True)
+                self.nv.sampleAnnotationSelectAnnotation(module, annot, True)
         else:
             raise ValueError("'annotations' must be a string or a list")
-        self.nv.sampleAnnotationApply('')
+        self.nv.sampleAnnotationApply(module)
 
     def exportData(self, method, processing="raw", name=""):
         """
