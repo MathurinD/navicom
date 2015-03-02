@@ -50,6 +50,9 @@ class NaviCom():
         if (fname != ""):
             self.loadData(fname)
             self.defineModules(modules_dict)
+        # Identify the category of cBioportal data
+        self.MRNA = ["rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "mrna_median_Zscores", "mrna_merged_median_Zscores", "mrna_U133", "mrna_U133_Zscores","mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier"]
+
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
@@ -226,13 +229,13 @@ class NaviCom():
                     self.modules[module].remove(gene)
         """
 
-    def display(self, perform_list, samples="all", colors=""):
+    def display(self, perform_list, samples="all: 1.0", colors=""):
         """
         Display data on the NaviCell map
         Args :
             perform_list (list of 2-tuples): each tuple must contain the name of the data to display and the mode of display ("glyphN_(color|size|shape)", "barplot", "heatmap" or "map_staining"). Barplots and heatmaps cannot be displayed simultaneously. Several data types can be specified for heatmaps. Specifying "glyph" (without number) will automatically select a new glyph for each data using the same properties (shape, color or size) in glyphs (maximum of 5 glyphs).
             colors : range of colors to use (NOT IMPLEMENTED YET)
-            samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all samples are use for heatmaps and barplots
+            samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all samples are used for heatmaps and barplots
         """
         assert isinstance(perform_list, list), "perform list must be a list"
         assert isinstance(perform_list[0], tuple) and len(perform_list[0]) == 2, "perform list must be a list of 2-tuples"
@@ -244,13 +247,11 @@ class NaviCom():
         if (isinstance(samples, str)):
             group = samples.split(":")[0]
             if (samples == "all"):
-                samples = "all: 1.0"
                 self.resetAnnotations()
                 self.selectAnnotations("all")
             elif (group in self.annotations.annotations):
                 self.resetAnnotations()
                 self.selectAnnotations(group)
-                pass # Unckeck all groups and check the corresponding annotation
             one_sample = samples
             samples = [samples]
         elif (isinstance(samples, list)):
@@ -270,7 +271,10 @@ class NaviCom():
                 glyph_samples.append(None)
                 sample_for_glyph.append(False)
         glyph_set = False
-        heatmap_or_barplot = False
+        heatmap = False
+        barplot = False
+        barplot_data = ""
+        bidx = 0
         map_staining = False
 
         # Parse the perform_list and perform the corresponding display
@@ -278,9 +282,12 @@ class NaviCom():
             # Preprocessing of the list
             dmode = dmode.lower()
             if (isinstance(data_name, str)):
+                if (not re.match("_", data_name)):
+                    data_name = data_name + "_raw"
                 data_name = self.associated_data[data_name]
-            method = data_name[0]
-            processing = data_name[1]
+            processing = data_name[0]
+            method = data_name[1]
+            assert processing in self.processings, "Processing " + processing + " does not exist"
             self.exportData(method, processing)
             data_name = self.data_names[processing][method]
 
@@ -329,12 +336,33 @@ class NaviCom():
                     raise ValueError("Map staining can only be applied once, use a separate call to the display function to change map staining")
             elif (re.match("heatmap", dmode)):
                 print("Heatmap not implemented yet")
+                if (barplot):
+                    raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the heatmap")
+                else:
+                    heatmap = True
             elif (re.match("barplot", dmode)):
-                print("Barplot not implemented yet")
+                if (heatmap):
+                    raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the barplot")
+                else:
+                    # Check that it does not try to add new data, and simply adds samples
+                    if (barplot and data_name != barplot_data and data_name != "all"):
+                        raise ValueError("Barplot has already been set with different data, use a separate call to the display function to perform another barplot")
+                    else:
+                        barplot = True
+                        barplot_data = data_name
+                        self.nv.barplotEditorSelectDatatable('', data_name)
+                    # Export samples
+                    if (samples[0] == "all"):
+                        self.nv.barplotEditorAllSamples('')
+                    else:
+                        for spl in samples:
+                            self.nv.barplotEditorSelectSamples('', bidx, spl)
+                            bidx += 1
             else:
                 raise ValueError(dmode + " drawing mode does not exist")
 
         # Check that datatables are selected for all glyphs features (until default has been added)
+        # or complete, then apply the glyphs configuration
         if (glyph_set):
             for glyph_id in range(MAX_GLYPHS):
                 nsets = sum(1 for cs in GLYPH_TYPES if glyph[cs][glyph_id])
@@ -350,6 +378,8 @@ class NaviCom():
                     if (not glyph["size"][glyph_id]):
                         self.nv.glyphEditorSelectSizeDatatable('', glyph_id+1, "uniform")
                     self.nv.glyphEditorApply('', glyph_id+1)
+        if (barplot):
+            self.nv.barplotEditorApply('')
 
     #def displayGroups(self, groups, combine=T, method): # method in ["barplot", "heatmap", "glyph_TYPE"]
     
