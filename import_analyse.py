@@ -260,7 +260,7 @@ class NaviCom():
         for sample in samples:
             nGroups = 0
             groups = sample.split(":")
-            if (len(groups) > 1): # Skip the loop for samples
+            if (len(groups) > 1 or groups[0] in self.annotations.annotations): # Skip the loop for samples
                 if (first_groups):
                     first_groups = False
                     for group in groups:
@@ -365,27 +365,34 @@ class NaviCom():
                 else:
                     raise ValueError("Map staining can only be applied once, use a separate call to the display function to change map staining")
             elif (re.match("heatmap", dmode)):
-                print("Heatmap not implemented yet")
                 if (barplot):
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the heatmap")
                 else:
                     heatmap = True
-                    if (all_samples):
-                        self.nv.heatmapEditorAllSamples(module)
-                    elif (all_groups):
-                        self.nv.heatmapEditorAllGroups(module)
+                # Select data
+                self.nv.heatmapEditorSelectDatatable(module, hdidx, data_name)
+                hdidx += 1
+                # Select samples
+                if (all_samples):
+                    self.nv.heatmapEditorAllSamples(module)
+                elif (all_groups):
+                    self.nv.heatmapEditorAllGroups(module)
+                elif (hsidx == 0):
+                    for spl in samples:
+                        self.nv.heatmapEditorSelectSample(module, hsidx, spl)
+                        hsidx += 1
             elif (re.match("barplot", dmode)):
                 if (heatmap):
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the barplot")
                 else:
                     # Check that it does not try to add new data, and simply adds samples
-                    if (barplot and data_name != barplot_data and data_name != "all"):
+                    if (barplot or (data_name != barplot_data and data_name != "all") ):
                         raise ValueError("Barplot has already been set with different data, use a separate call to the display function to perform another barplot")
                     else:
                         barplot = True
                         barplot_data = data_name
                         self.nv.barplotEditorSelectDatatable(module, data_name)
-                    # Export samples
+                    # Select samples
                     if (all_samples):
                         self.nv.barplotEditorAllSamples(module)
                     elif (all_groups):
