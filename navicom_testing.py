@@ -8,11 +8,13 @@ VERBOSE_NAVICOM = False
 nc = NaviCom("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
 nc.exportAnnotations() # TODO move annotations export check to data export function
 
-nc.display([('log2CNA', 'heatmap')], 'OS_STATUS: NA')
-nc.display([('log2CNA', 'heatmap'), ('gistic', 'heatmap')], ['OS_STATUS', 'all_groups'])
+nc.display([('log2CNA', 'barplot')], ['OS_STATUS: NA; SEQUENCED: NA'])
 
 nc.display([('log2CNA', 'barplot')], 'OS_STATUS: NA')
-nc.display([('log2CNA', 'barplot')], ['OS_STATUS:SEQUENCED', 'all_groups'])
+nc.display([('log2CNA', 'barplot')], ['OS_STATUS; SEQUENCED', 'all_groups'])
+
+nc.display([('log2CNA', 'heatmap')], 'OS_STATUS: NA')
+nc.display([('log2CNA', 'heatmap'), ('gistic', 'heatmap')], ['OS_STATUS', 'all_groups'])
 
 nc.exportData("gistic")
 
