@@ -2,6 +2,7 @@
 from curie.navicell import *
 import numpy as np
 import re
+from time import sleep
 from collections import OrderedDict as oDict
 from pprint import pprint
 
@@ -29,24 +30,30 @@ class NaviCom():
         options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
         options.browser_command = "firefox %s" # TODO Add user control
         self.nv = NaviCell(options)
-        # Data, classified per analyse type
+        # NaviCell export control
+        self.exported_annotations = False
+        self.browser_opened = False
+        self.biotypes = dict()
+        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data", "moduleAverage":"Continuous copy number data"}
+        # Data, indexed by processing then type of data
         self.processings = ["raw", "moduleAverage", "pcaComp", "geoSmooth"]
-        self.data = dict() # Raw data
-        self.exported_data = dict()
+        self.data = dict() # All data
+        self.exported_data = dict() # Whether data have been exported yet
+        self.data_names = dict() # Name of the exported data
+        self.associated_data = dict() # Processing and method associated to each name
         for processing in self.processings:
             self.data[processing] = dict()
             self.exported_data[processing] = dict()
+            self.data_names[processing] = dict()
         self.annotations = dict() # Annotations of the samples
         self.modules = dict() # Composition of each module
         self.associated_modules = dict() # Number of modules each gene belong to
         if (fname != ""):
             self.loadData(fname)
             self.defineModules(modules_dict)
-        # NaviCell export control
-        self.exported_annotations = False
-        self.browser_opened = False
-        self.biotypes = dict()
-        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data", "moduleAverage":"Continuous copy number data"}
+        # Identify the category of cBioportal data
+        self.MRNA = ["rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "mrna_median_Zscores", "mrna_merged_median_Zscores", "mrna_U133", "mrna_U133_Zscores","mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier"]
+
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
@@ -56,6 +63,13 @@ class NaviCom():
         for method in self.moduleAverage:
             rpr += method + ": " + self.moduleAverage[method] + "\n"
         return(repr)
+    
+    def nameData(self, method, processing="raw", name=""):
+        if (name == ""):
+            name = method + "_" + processing
+        self.data_names[processing][method] = name
+        self.associated_data[name] = (processing, method)
+        return (name)
 
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt"):
         with open(fname) as file_conn:
@@ -92,6 +106,9 @@ class NaviCom():
                     ll += 1
                 self.data["raw"][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"])
                 self.exported_data["raw"][method] = False
+                self.nameData(method, "raw")
+                if (not "uniform" in self.data):
+                    self.defineUniformData(profile_data["samples"], profile_data["genes"])
             elif (re.search("^ANNOTATIONS", ff[ll])):
                 # Import annotations
                 print("Importing Annotations")
@@ -121,15 +138,19 @@ class NaviCom():
                     ll = ll+1
                 self.annotations = NaviData(annot["annot"], annot["samples"], annot["names"], dType="annotations")
 
-    def averageModule(self, dataType):
+    def defineUniformData(self, samples, genes):
+        self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
+        self.exportData("uniform")
+
+    def averageModule(self, method):
         """
         Perform module averaging for every modules for one data type
         """
-        assert dataType in self.data["raw"], "This type of data is not present"
+        assert method in self.data["raw"], "This type of data is not present"
         assert len(self.modules)>0, "No module have been defined"
 
         # Calculate average expression for each module
-        data = self.data["raw"][dataType]
+        data = self.data["raw"][method]
         samples = list(data.samples.keys())
         module_expression = dict()
         for module in self.modules:
@@ -148,7 +169,7 @@ class NaviCom():
             for gene in no_data:
                 #self.modules[module].remove(gene)
                 if (VERBOSE_NAVICOM):
-                    print(gene + " from module " + module + " has no " + dataType + " data")
+                    print(gene + " from module " + module + " has no " + method + " data")
             module_expression[module] /= non_nan
 
         # Calculate average module expression for each gene
@@ -163,9 +184,14 @@ class NaviCom():
                 print(gene)
 
         # Put the averaging in a NaviData structure
-        #self.data["moduleAverage"][dataType] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples) # Usefull if NaviCell allow modules values one day
-        self.data["moduleAverage"][dataType] = NaviData(gene_module_average, list(data.genes), samples)
-        self.exported_data["moduleAverage"][dataType] = False
+        #self.data["moduleAverage"][method] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples) # Usefull if NaviCell allow modules values one day
+        self.newProcessedData("moduleAverage", method, NaviData(gene_module_average, list(data.genes), samples))
+
+    def newProcessedData(self, processing, method, data):
+        assert processing in self.processings, "Processing " + processing + " is not handled"
+        self.data[processing][method] = data
+        self.exported_data[processing][method] = False
+        self.nameData(method, processing)
 
     def defineModules(self, modules_dict=""):
         """
@@ -204,14 +230,222 @@ class NaviCom():
                     self.modules[module].remove(gene)
         """
 
-    def display(self):
+    def display(self, perform_list, samples="all: 1.0", colors="", module=''):
         """
-        Display the data on a NaviCell map
+        Display data on the NaviCell map
+        Args :
+            perform_list (list of 2-tuples): each tuple must contain the name of the data to display and the mode of display ("glyphN_(color|size|shape)", "barplot", "heatmap" or "map_staining"). Barplots and heatmaps cannot be displayed simultaneously. Several data types can be specified for heatmaps. Specifying "glyph" (without number) will automatically select a new glyph for each data using the same properties (shape, color or size) in glyphs (maximum of 5 glyphs).
+            colors : range of colors to use (NOT IMPLEMENTED YET)
+            samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all samples from the list are used for heatmaps and barplots. Use 'all_samples' to use all samples or ['annot1:...:annotn', 'all_groups'] to use all groups corresponding to the combinations of annot1...annotn.
         """
+        assert isinstance(perform_list, list), "perform list must be a list"
+        assert isinstance(perform_list[0], tuple) and len(perform_list[0]) == 2, "perform list must be a list of 2-tuples"
         self.checkBrowser()
+        self.exportAnnotations()
+        #self.resetDisplay() # Maybe not a good idea
 
-        for data_type in self.data:
-            print(data_type) # TODO
+        # Selection of samples
+        all_samples = False
+        all_groups = False
+        if (isinstance(samples, str)):
+            one_sample = samples
+            samples = [samples]
+        elif (isinstance(samples, list)):
+            one_sample = samples[0]
+        # Select the groups that must be selected to produce the composite groups required and control that all groups are compatible (because lower order composition are not generated)
+        rGroups = 0 
+        groups_list = []
+        first_groups = True
+        self.resetAnnotations()
+        for sample in samples:
+            nGroups = 0
+            groups = sample.split(":")
+            if (len(groups) > 1 or groups[0] in self.annotations.annotations): # Skip the loop for samples
+                if (first_groups):
+                    first_groups = False
+                    for group in groups:
+                        if (group in self.annotations.annotations):
+                            if (DEBUG_NAVICOM):
+                                print("Selecting " + group)
+                            #self.selectAnnotations(group) # Useless as long as annotations are removed on data import
+                            groups_list.append(group)
+                            nGroups += 1
+                            rGroups += 1
+                else:
+                    for group in groups:
+                        if (group in self.annotations.annotations):
+                            assert group in groups_list, "Groups combinations are not compatibles"
+                            nGroups += 1
+                if (nGroups != rGroups and rGroups != 0 and nGroups != 0):
+                    raise ValueError("Groups combinations are not compatible")
+        if (samples[0] == "all" or samples[0] == "all_samples" or samples[0] == "samples"):
+            all_samples = True
+        elif (len(samples) > 1 and (samples[1] == "all_groups" or samples[1] == "groups")):
+            all_groups = True
+
+        # Control that the user does not try to display to many data or use several time the same display
+        MAX_GLYPHS = 5
+        GLYPH_TYPES = ["color", "size", "shape"]
+        glyph = {gtype:[False] * MAX_GLYPHS for gtype in GLYPH_TYPES}
+        if (len(samples) == 1):
+            glyph_samples = samples * MAX_GLYPHS
+            sample_for_glyph = [True] * MAX_GLYPHS
+        else:
+            glyph_samples = samples
+            sample_for_glyph = [True] * len(samples)
+            while (len(glyph_samples) < MAX_GLYPHS):
+                glyph_samples.append(None)
+                sample_for_glyph.append(False)
+        glyph_set = False
+        heatmap = False
+        hsidx = 0
+        hdidx = 0
+        barplot = False
+        barplot_data = ""
+        bidx = 0
+        map_staining = False
+
+        # Preprocess the perform list to get valid data_name, and export data that have not been exported yet
+        for perf_id in range(len(perform_list)):
+            data_name = perform_list[perf_id][0]
+            if (isinstance(data_name, str)):
+                if (not re.match("_", data_name)):
+                    data_name = data_name + "_raw"
+                data_name = self.associated_data[data_name]
+            processing = data_name[0]
+            method = data_name[1]
+            assert processing in self.processings, "Processing " + processing + " does not exist"
+            self.exportData(method, processing)
+            perform_list[perf_id] = (self.data_names[processing][method], perform_list[perf_id][1])
+
+        self.selectAnnotations(groups_list) # Write annotations AFTER the export
+        # Perform the display depending of the selected mode
+        for data_name, dmode in perform_list:
+            dmode = dmode.lower()
+            if (re.match("^(glyph|color|size|shape)", dmode)):
+                glyph_set = True
+                # Extract the glyph id and the setup
+                parse_setup = dmode.split("_")
+                glyph_setup = parse_setup
+                if (len(parse_setup) == 2):
+                    try:
+                        glyph_setup = [parse_setup[1] + str(int(parse_setup[0][-1]))]
+                    except ValueError:
+                        glyph_setup = [parse_setup[1]]
+                elif (len(parse_setup) != 1):
+                    raise ValueError("Glyph specification '" + dmode + "' incorrect")
+                try:
+                    glyph_number = int(glyph_setup[0][-1])
+                    glyph_type = glyph_setup[0][:-1]
+                except ValueError:
+                    glyph_type = glyph_setup[0]
+                    glyph_number = 1
+                    while (glyph[glyph_type][glyph_number-1]):
+                        glyph_number += 1
+                
+                if (not glyph_number in range(1, MAX_GLYPHS+1)):
+                    raise ValueError("Glyph number must be in [1," + str(MAX_GLYPHS) + "]")
+                if (not glyph_type in GLYPH_TYPES):
+                    raise ValueError("Glyph type must be one of " + str(GLYPH_TYPES))
+                if (glyph[glyph_type][glyph_number-1]):
+                    raise ValueError(glyph_type + " for glyph " + str(glyph_number) + " has already been specified")
+                glyph[glyph_type][glyph_number-1] = True
+                if (not glyph_samples[glyph_number-1]):
+                    raise ValueError("Incorrect glyph number : " + str(glyph_number) + ", only " + str(len(samples)) + " have been given")
+
+                cmd="self.nv.glyphEditorSelect" + glyph_type.capitalize() + "Datatable(" + module +  ", " + str(glyph_number) + ", '" + data_name + "')"
+                print(cmd)
+                exec(cmd)
+            elif (re.match("map_?staining", dmode)):
+                if (not map_staining):
+                    self.nv.mapStainingEditorSelectDatatable(module, data_name)
+                    self.nv.mapStainingEditorSelectSample(module, one_sample)
+                    self.nv.mapStainingEditorApply(module)
+                    map_staining = True
+                else:
+                    raise ValueError("Map staining can only be applied once, use a separate call to the display function to change map staining")
+            elif (re.match("heatmap", dmode)):
+                if (barplot):
+                    raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the heatmap")
+                else:
+                    heatmap = True
+                # Select data
+                self.nv.heatmapEditorSelectDatatable(module, hdidx, data_name)
+                hdidx += 1
+                # Select samples
+                if (all_samples):
+                    self.nv.heatmapEditorAllSamples(module)
+                elif (all_groups):
+                    self.nv.heatmapEditorAllGroups(module)
+                elif (hsidx == 0):
+                    for spl in samples:
+                        self.nv.heatmapEditorSelectSample(module, hsidx, spl)
+                        hsidx += 1
+            elif (re.match("barplot", dmode)):
+                if (heatmap):
+                    raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the barplot")
+                else:
+                    # Check that it does not try to add new data, and simply adds samples
+                    if (barplot or (data_name != barplot_data and data_name != "all") ):
+                        raise ValueError("Barplot has already been set with different data, use a separate call to the display function to perform another barplot")
+                    else:
+                        barplot = True
+                        barplot_data = data_name
+                        self.nv.barplotEditorSelectDatatable(module, data_name)
+                    # Select samples
+                    if (all_samples):
+                        self.nv.barplotEditorAllSamples(module)
+                    elif (all_groups):
+                        self.nv.barplotEditorAllGroups(module)
+                    elif (bidx == 0):
+                        for spl in samples:
+                            self.nv.barplotEditorSelectSample(module, bidx, spl)
+                            bidx += 1
+            else:
+                raise ValueError(dmode + " drawing mode does not exist")
+
+        # Check that datatables are selected for all glyphs features (until default has been added)
+        # or complete, then apply the glyphs configuration
+        if (glyph_set):
+            for glyph_id in range(MAX_GLYPHS):
+                nsets = sum(1 for cs in GLYPH_TYPES if glyph[cs][glyph_id])
+                if (nsets > 0):
+                    if (not sample_for_glyph[glyph_id]):
+                        raise ValueError("No sample has been attributed to glyph " + str(glyph_id+1))
+                    else:
+                        self.nv.glyphEditorSelectSample(module, glyph_id+1, glyph_samples[glyph_id])
+                    if (not glyph["color"][glyph_id]):
+                        self.nv.glyphEditorSelectColorDatatable(module, glyph_id+1, "uniform")
+                    if (not glyph["shape"][glyph_id]):
+                       self.nv.glyphEditorSelectShapeDatatable(module, glyph_id+1, "uniform")
+                    if (not glyph["size"][glyph_id]):
+                        self.nv.glyphEditorSelectSizeDatatable(module, glyph_id+1, "uniform")
+                    self.nv.glyphEditorApply(module, glyph_id+1)
+        if (barplot):
+            self.nv.barplotEditorApply(module)
+        if (heatmap):
+            self.nv.heatmapEditorApply(module)
+
+    #def displayGroups(self, groups, combine=T, method): # method in ["barplot", "heatmap", "glyph_TYPE"]
+    
+    #def addDisplay(self, perform_list, samples="all", colors=""):
+
+    #def resetDisplay(self):
+
+    def resetAnnotations(self, module=''):
+        for annot in self.annotations.annotations:
+            self.nv.sampleAnnotationSelectAnnotation(module, annot, False)
+        self.nv.sampleAnnotationApply(module)
+
+    def selectAnnotations(self, annotations, module=''):
+        if (isinstance(annotations, str)):
+            self.nv.sampleAnnotationSelectAnnotation(module, annotations, True)
+        elif (isinstance(annotations, list)):
+            for annot in annotations:
+                self.nv.sampleAnnotationSelectAnnotation(module, annot, True)
+        else:
+            raise ValueError("'annotations' must be a string or a list")
+        self.nv.sampleAnnotationApply(module)
 
     def exportData(self, method, processing="raw", name=""):
         """
@@ -221,13 +455,13 @@ class NaviCom():
             method (str) : name of the method to export
             processing (str) : "" to export raw data, processing method to export processed data. See 'averageModule' and 'pcaComponent'
         """
-        self.checkBrowser()
+        self.checkBrowser() # TODO Perform processing if necessary
+        done_export = False
 
         if (processing in self.processings):
             if (method in self.data[processing] and method in self.methodBiotype):
                 if (not self.exported_data[processing][method]):
-                    if (name == ""):
-                        name = method + "_" + processing
+                    name = self.nameData(method, processing, name)
                     # Processing turn discrete data into continuous or color data
                     if (processing in self.methodBiotype):
                         biotype = self.methodBiotype[processing]
@@ -235,10 +469,23 @@ class NaviCom():
                         biotype = self.methodBiotype[method]
                     self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
                     self.exported_data[processing][method] = True
+                    done_export = True
+                elif (VERBOSE_NAVICOM):
+                    print(method + " data with " + processing + " processing has already been exported")
+            elif (method == "uniform"): # Uniform data for glyphs
+                self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
+                name = "uniform"
+                done_export = True
             else:
-                raise KeyError("Method " + method + " with processing " + processing + "does not exist")
+                raise KeyError("Method " + method + " with processing " + processing + " does not exist")
         else:
             raise KeyError("Processing " + processing + " does not exist")
+
+        # Sleep to avoid errors due to the fact that the loading by NaviCell is asynchronous
+        # TODO Remove it when the python API receives signal
+        if (done_export):
+            print("Exporting " + name + " to NaviCell...")
+            #sleep(10)
 
     def checkBrowser(self):
         """
@@ -259,6 +506,23 @@ class NaviCom():
         if (not self.exported_annotations):
             self.nv.sampleAnnotationImport(self.annotations.makeData())
             self.exported_annotations = True
+
+    def displayMethylome(self, background="mRNA", processing="raw", patient="all: 1.0"):
+        """
+            Display the methylation data as glyphs on the NaviCell map, with mRNA expression of gene CNV as map staining
+            Args:
+                background (str) : should genes, mRNA or no data be used for the map staining
+                processing (str) : should the processed data be used
+        """
+        mrna_alias = ["MRNA"] # TODO Define what to put here
+        gene_alias = ["CNV", "CNA", ""]
+        assert background.upper in mrna_alias + gene_alias + ["NO", ""], "Select either genes, mRNA or no data for the map staining"
+        # Display methylation as glyphs
+        for method in self.data[processing]:
+            if (re.match("methylation", method.lower())):
+                self.exportData(self, method, processing)
+        # Display mRNA or gene data as map staining
+        data = self.data[processing][background]
 
 
 
