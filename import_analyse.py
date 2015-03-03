@@ -9,6 +9,10 @@ from pprint import pprint
 DEBUG_NAVICOM = True
 VERBOSE_NAVICOM = True
 
+# Constants related to NaviCell
+MAX_GLYPHS = 5
+GLYPH_TYPES = ["color", "size", "shape"]
+
 def getLine(ll, split_char="\t"):
     ll = re.sub('\"', '', ll.strip())
     ll = re.sub('\tNA', '\tNaN', ll) # Python float can convert "NaN" -> nan but not "NA" -> nan
@@ -53,6 +57,10 @@ class NaviCom():
             self.defineModules(modules_dict)
         # Identify the category of cBioportal data
         self.MRNA = ["rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "mrna_median_Zscores", "mrna_merged_median_Zscores", "mrna_U133", "mrna_U133_Zscores","mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier"]
+        # Remember how many samples and datatables were selected in NaviCell in the heatmap and barplot editors
+        self.hsid = 0
+        self.hdid = 0
+        self.bid = 0
 
 
     def __repr__(self):
@@ -242,7 +250,7 @@ class NaviCom():
         assert isinstance(perform_list[0], tuple) and len(perform_list[0]) == 2, "perform list must be a list of 2-tuples"
         self.checkBrowser()
         self.exportAnnotations()
-        #self.resetDisplay() # Maybe not a good idea
+        self.resetDisplay()
 
         # Selection of samples
         all_samples = False
@@ -289,8 +297,6 @@ class NaviCom():
                     raise ValueError("Groups combinations are not compatible")
 
         # Control that the user does not try to display to many data or use several time the same display
-        MAX_GLYPHS = 5
-        GLYPH_TYPES = ["color", "size", "shape"]
         glyph = {gtype:[False] * MAX_GLYPHS for gtype in GLYPH_TYPES}
         if (len(samples) == 1):
             glyph_samples = samples * MAX_GLYPHS
@@ -303,11 +309,8 @@ class NaviCom():
                 sample_for_glyph.append(False)
         glyph_set = False
         heatmap = False
-        hsidx = 0
-        hdidx = 0
         barplot = False
         barplot_data = ""
-        bidx = 0
         map_staining = False
 
         # Preprocess the perform list to get valid data_name, and export data that have not been exported yet
@@ -375,17 +378,17 @@ class NaviCom():
                 else:
                     heatmap = True
                 # Select data
-                self.nv.heatmapEditorSelectDatatable(module, hdidx, data_name)
-                hdidx += 1
+                self.nv.heatmapEditorSelectDatatable(module, self.hdid, data_name)
+                self.hdid += 1
                 # Select samples
                 if (all_samples):
                     self.nv.heatmapEditorAllSamples(module)
                 elif (all_groups):
                     self.nv.heatmapEditorAllGroups(module)
-                elif (hsidx == 0):
+                elif (self.hsid == 0):
                     for spl in samples:
-                        self.nv.heatmapEditorSelectSample(module, hsidx, spl)
-                        hsidx += 1
+                        self.nv.heatmapEditorSelectSample(module, self.hsid, spl)
+                        self.hsid += 1
             elif (re.match("barplot", dmode)):
                 if (heatmap):
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the barplot")
@@ -402,10 +405,10 @@ class NaviCom():
                         self.nv.barplotEditorAllSamples(module)
                     elif (all_groups):
                         self.nv.barplotEditorAllGroups(module)
-                    elif (bidx == 0):
+                    elif (self.bid == 0):
                         for spl in samples:
-                            self.nv.barplotEditorSelectSample(module, bidx, spl)
-                            bidx += 1
+                            self.nv.barplotEditorSelectSample(module, self.bid, spl)
+                            self.bid += 1
             else:
                 raise ValueError(dmode + " drawing mode does not exist")
 
@@ -435,7 +438,34 @@ class NaviCom():
     
     #def addDisplay(self, perform_list, samples="all", colors=""):
 
-    #def resetDisplay(self):
+    def resetDisplay(self):
+        """
+        Reset the data and samples selections in NaviCell
+        """
+        for ii in range(self.bid):
+            self.nv.barplotEditorSelectSample('', ii, '')
+        self.nv.barplotEditorSelectDatatable('', '')
+        self.nv.drawingConfigSelectBarplot('', False)
+
+        for ii in range(self.hsid):
+            self.nv.heatmapEditorSelectSample('', ii, '')
+        for ii in range(self.hdid):
+            self.nv.heatmapEditorSelectDatatable('', ii, '')
+        self.nv.drawingConfigSelectHeatmap('', False)
+
+        for gid in range(1, MAX_GLYPHS):
+            for gt in GLYPH_TYPES:
+                exec("self.nv.glyphEditorSelect" + gt.capitalize() + "Datatable('', " + str(gid) + ", '')")
+            self.nv.glyphEditorSelectSample('', gid, '')
+            self.nv.drawingConfigSelectGlyph('', gid, False)
+        
+        self.nv.drawingConfigSelectMapStaining('', False)
+        self.nv.drawingConfigApply('')
+
+        # Reset the counters
+        self.bid = 0
+        self.hsid = 0
+        self.hdid = 0
 
     def resetAnnotations(self, module=''):
         for annot in self.annotations.annotations:
@@ -490,7 +520,6 @@ class NaviCom():
         # TODO Remove it when the python API receives signal
         if (done_export):
             print("Exporting " + name + " to NaviCell...")
-            #sleep(10)
 
     def checkBrowser(self):
         """
