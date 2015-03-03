@@ -2,6 +2,7 @@
 from curie.navicell import *
 import numpy as np
 import re
+from time import sleep
 from collections import OrderedDict as oDict
 from pprint import pprint
 
@@ -235,7 +236,7 @@ class NaviCom():
         Args :
             perform_list (list of 2-tuples): each tuple must contain the name of the data to display and the mode of display ("glyphN_(color|size|shape)", "barplot", "heatmap" or "map_staining"). Barplots and heatmaps cannot be displayed simultaneously. Several data types can be specified for heatmaps. Specifying "glyph" (without number) will automatically select a new glyph for each data using the same properties (shape, color or size) in glyphs (maximum of 5 glyphs).
             colors : range of colors to use (NOT IMPLEMENTED YET)
-            samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all samples are used for heatmaps and barplots
+            samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all samples from the list are used for heatmaps and barplots. Use 'all_samples' to use all samples or ['annot1:...:annotn', 'all_groups'] to use all groups corresponding to the combinations of annot1...annotn.
         """
         assert isinstance(perform_list, list), "perform list must be a list"
         assert isinstance(perform_list[0], tuple) and len(perform_list[0]) == 2, "perform list must be a list of 2-tuples"
@@ -247,20 +248,39 @@ class NaviCom():
         all_samples = False
         all_groups = False
         if (isinstance(samples, str)):
-            group = samples.split(":")[0]
-            if (samples == "all"):
-                self.resetAnnotations()
-                self.selectAnnotations("all")
-            elif (group in self.annotations.annotations):
-                self.resetAnnotations()
-                self.selectAnnotations(group)
             one_sample = samples
             samples = [samples]
         elif (isinstance(samples, list)):
             one_sample = samples[0]
+        # Select the groups that must be selected to produce the composite groups required and control that all groups are compatible (because lower order composition are not generated)
+        rGroups = 0 
+        groups_list = []
+        first_groups = True
+        self.resetAnnotations()
+        for sample in samples:
+            nGroups = 0
+            groups = sample.split(":")
+            if (len(groups) > 1): # Skip the loop for samples
+                if (first_groups):
+                    first_groups = False
+                    for group in groups:
+                        if (group in self.annotations.annotations):
+                            if (DEBUG_NAVICOM):
+                                print("Selecting " + group)
+                            #self.selectAnnotations(group) # Useless as long as annotations are removed on data import
+                            groups_list.append(group)
+                            nGroups += 1
+                            rGroups += 1
+                else:
+                    for group in groups:
+                        if (group in self.annotations.annotations):
+                            assert group in groups_list, "Groups combinations are not compatibles"
+                            nGroups += 1
+                if (nGroups != rGroups and rGroups != 0 and nGroups != 0):
+                    raise ValueError("Groups combinations are not compatible")
         if (samples[0] == "all" or samples[0] == "all_samples" or samples[0] == "samples"):
             all_samples = True
-        elif ():
+        elif (len(samples) > 1 and (samples[1] == "all_groups" or samples[1] == "groups")):
             all_groups = True
 
         # Control that the user does not try to display to many data or use several time the same display
@@ -285,10 +305,9 @@ class NaviCom():
         bidx = 0
         map_staining = False
 
-        # Parse the perform_list and perform the corresponding display
-        for data_name, dmode in perform_list:
-            # Preprocessing of the list
-            dmode = dmode.lower()
+        # Preprocess the perform list to get valid data_name, and export data that have not been exported yet
+        for perf_id in range(len(perform_list)):
+            data_name = perform_list[perf_id][0]
             if (isinstance(data_name, str)):
                 if (not re.match("_", data_name)):
                     data_name = data_name + "_raw"
@@ -297,9 +316,12 @@ class NaviCom():
             method = data_name[1]
             assert processing in self.processings, "Processing " + processing + " does not exist"
             self.exportData(method, processing)
-            data_name = self.data_names[processing][method]
+            perform_list[perf_id] = (self.data_names[processing][method], perform_list[perf_id][1])
 
-            # Perform the display depending of the selected mode
+        self.selectAnnotations(groups_list) # Write annotations AFTER the export
+        # Perform the display depending of the selected mode
+        for data_name, dmode in perform_list:
+            dmode = dmode.lower()
             if (re.match("^(glyph|color|size|shape)", dmode)):
                 glyph_set = True
                 # Extract the glyph id and the setup
@@ -348,7 +370,10 @@ class NaviCom():
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the heatmap")
                 else:
                     heatmap = True
-                    sefl.nv.heatmapEditor
+                    if (all_samples):
+                        self.nv.heatmapEditorAllSamples(module)
+                    elif (all_groups):
+                        self.nv.heatmapEditorAllGroups(module)
             elif (re.match("barplot", dmode)):
                 if (heatmap):
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the barplot")
@@ -363,10 +388,11 @@ class NaviCom():
                     # Export samples
                     if (all_samples):
                         self.nv.barplotEditorAllSamples(module)
-                    elif (samples[0] == "all_groups" or samples[0] == "groups"):
+                    elif (all_groups):
+                        self.nv.barplotEditorAllGroups(module)
                     elif (bidx == 0):
                         for spl in samples:
-                            self.nv.barplotEditorSelectSamples(module, bidx, spl)
+                            self.nv.barplotEditorSelectSample(module, bidx, spl)
                             bidx += 1
             else:
                 raise ValueError(dmode + " drawing mode does not exist")
@@ -423,6 +449,7 @@ class NaviCom():
             processing (str) : "" to export raw data, processing method to export processed data. See 'averageModule' and 'pcaComponent'
         """
         self.checkBrowser() # TODO Perform processing if necessary
+        done_export = False
 
         if (processing in self.processings):
             if (method in self.data[processing] and method in self.methodBiotype):
@@ -435,14 +462,23 @@ class NaviCom():
                         biotype = self.methodBiotype[method]
                     self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
                     self.exported_data[processing][method] = True
+                    done_export = True
                 elif (VERBOSE_NAVICOM):
                     print(method + " data with " + processing + " processing has already been exported")
             elif (method == "uniform"): # Uniform data for glyphs
                 self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
+                name = "uniform"
+                done_export = True
             else:
                 raise KeyError("Method " + method + " with processing " + processing + " does not exist")
         else:
             raise KeyError("Processing " + processing + " does not exist")
+
+        # Sleep to avoid errors due to the fact that the loading by NaviCell is asynchronous
+        # TODO Remove it when the python API receives signal
+        if (done_export):
+            print("Exporting " + name + " to NaviCell...")
+            #sleep(10)
 
     def checkBrowser(self):
         """
