@@ -253,13 +253,22 @@ class NaviCom():
         elif (isinstance(samples, list)):
             one_sample = samples[0]
         # Select the groups that must be selected to produce the composite groups required and control that all groups are compatible (because lower order composition are not generated)
+        if (samples[0] == "all" or samples[0] == "all_samples" or samples[0] == "samples"):
+            all_samples = True
+        elif (len(samples) > 1 and (samples[1] == "all_groups" or samples[1] == "groups")):
+            all_groups = True
         rGroups = 0 
         groups_list = []
         first_groups = True
         self.resetAnnotations()
         for sample in samples:
             nGroups = 0
-            groups = sample.split(":")
+            selections = sample.split(";")
+            groups = []
+            for select in selections:
+                groups.append(select.split(":")[0].strip())
+            # TODO Control that groups exist
+            # TODO Check how to use combined groups
             if (len(groups) > 1 or groups[0] in self.annotations.annotations): # Skip the loop for samples
                 if (first_groups):
                     first_groups = False
@@ -278,10 +287,6 @@ class NaviCom():
                             nGroups += 1
                 if (nGroups != rGroups and rGroups != 0 and nGroups != 0):
                     raise ValueError("Groups combinations are not compatible")
-        if (samples[0] == "all" or samples[0] == "all_samples" or samples[0] == "samples"):
-            all_samples = True
-        elif (len(samples) > 1 and (samples[1] == "all_groups" or samples[1] == "groups")):
-            all_groups = True
 
         # Control that the user does not try to display to many data or use several time the same display
         MAX_GLYPHS = 5
@@ -386,7 +391,7 @@ class NaviCom():
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the barplot")
                 else:
                     # Check that it does not try to add new data, and simply adds samples
-                    if (barplot or (data_name != barplot_data and data_name != "all") ):
+                    if (barplot and data_name != barplot_data and not re.search("all|groups|samples", data_name)):
                         raise ValueError("Barplot has already been set with different data, use a separate call to the display function to perform another barplot")
                     else:
                         barplot = True
