@@ -12,6 +12,24 @@ VERBOSE_NAVICOM = True
 # Constants related to NaviCell
 MAX_GLYPHS = 5
 GLYPH_TYPES = ["color", "size", "shape"]
+# Identify the categories of cBioportal data as (aliases, biotype)
+category_biotypes = dict()
+category_biotypes["mRNA"] = (["mrna", "zscores", "mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "mrna_U133", "mrna_U133_Zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier"], "mRNA expression data")
+category_biotypes["dCNA"] = (["gistic", "cna", "CNA", "cna_rae", "cna_consensus", "SNP-FASST2"], "Discrete Copy number data")
+category_biotypes["cCNA"] = (["log2CNA"], "Continuous copy number data")
+category_biotypes["METHYLATION"] = (["methylation", "methylation_hm27", "methylation_hm450"], "Methylation data")
+category_biotypes["PROT"] = (["RPPA_protein_level"], "protein level")
+category_biotypes["miRNA"] = (["mirna", "mirna_median_Zscores", "mrna_merged_median_Zscores"], "miRNA expression data")
+category_biotypes["mutations"] = (["mutations"], "Mutations")
+category = dict()
+biotypes = dict()
+for bt in category_biotypes:
+    biotypes[bt] = category_biotypes[bt][1]
+    for cat in category_biotypes[bt][0]:
+        category[cat] = bt
+
+PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth"]
+PROCESSINGS_BIOTYPES = {"moduleAverage"="Discrete->Continous", "pcaComp"="Color", "geoSmooth"="Discrete->Continuous"} # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something
 
 def getLine(ll, split_char="\t"):
     ll = re.sub('\"', '', ll.strip())
@@ -38,7 +56,7 @@ class NaviCom():
         self.exported_annotations = False
         self.browser_opened = False
         self.biotypes = dict()
-        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data", "moduleAverage":"Continuous copy number data"}
+        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data", "moduleAverage":"Continuous copy number data"} # TODO Delete and change to biotypes[category]
         # Data, indexed by processing then type of data
         self.processings = ["raw", "moduleAverage", "pcaComp", "geoSmooth"]
         self.data = dict() # All data
@@ -55,13 +73,16 @@ class NaviCom():
         if (fname != ""):
             self.loadData(fname)
             self.defineModules(modules_dict)
-        # Identify the category of cBioportal data
-        self.MRNA = ["rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "mrna_median_Zscores", "mrna_merged_median_Zscores", "mrna_U133", "mrna_U133_Zscores","mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier"]
         # Remember how many samples and datatables were selected in NaviCell in the heatmap and barplot editors
         self.hsid = 0
         self.hdid = 0
         self.bid = 0
 
+    def dataAvailable(self):
+        print("Data available :")
+        for processing in self.processings:
+            for dname in self.data[processing]:
+                print("\t" + processing + " " + dname + ": " + biotypes[category[dname]])
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
