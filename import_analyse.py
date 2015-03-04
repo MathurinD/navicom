@@ -83,7 +83,10 @@ class NaviCom():
         print("Data available :")
         for processing in self.processings:
             for dname in self.data[processing]:
-                print("\t" + processing + " " + dname + ": " + TYPES_BIOTYPE[METHODS_TYPE[dname]])
+                if (dname in METHODS_TYPE):
+                    print("\t" + processing + " " + dname + ": " + METHODS_TYPE[dname] + " (biotype:" + TYPES_BIOTYPE[METHODS_TYPE[dname]] + ")")
+                else:
+                    print("\t" + processing + " " + dname)
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"

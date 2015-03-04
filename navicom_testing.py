@@ -6,13 +6,13 @@ import time
 VERBOSE_NAVICOM = False
 
 nc = NaviCom("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
-nc.exportAnnotations() # TODO move annotations export check to data export function
 nc.dataAvailable()
+
+nc.exportAnnotations() # TODO move annotations export check to data export function
 
 nc.displayMethylome(['TCGA.04.1331.01'], "raw", "mRNA", "size")
 
 nc.display([('log2CNA', 'barplot')], ['OS_STATUS: NA; SEQUENCED: NA'])
-
 nc.resetDisplay()
 
 nc.display([('log2CNA', 'barplot')], 'OS_STATUS: NA')
