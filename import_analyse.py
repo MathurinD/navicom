@@ -13,23 +13,24 @@ VERBOSE_NAVICOM = True
 MAX_GLYPHS = 5
 GLYPH_TYPES = ["color", "size", "shape"]
 # Identify the categories of cBioportal data as (aliases, biotype)
-category_biotypes = dict()
-category_biotypes["mRNA"] = (["mrna", "zscores", "mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "mrna_U133", "mrna_U133_Zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier"], "mRNA expression data")
-category_biotypes["dCNA"] = (["gistic", "cna", "CNA", "cna_rae", "cna_consensus", "SNP-FASST2"], "Discrete Copy number data")
-category_biotypes["cCNA"] = (["log2CNA"], "Continuous copy number data")
-category_biotypes["METHYLATION"] = (["methylation", "methylation_hm27", "methylation_hm450"], "Methylation data")
-category_biotypes["PROT"] = (["RPPA_protein_level"], "protein level")
-category_biotypes["miRNA"] = (["mirna", "mirna_median_Zscores", "mrna_merged_median_Zscores"], "miRNA expression data")
-category_biotypes["mutations"] = (["mutations"], "Mutations")
-category = dict()
-biotypes = dict()
-for bt in category_biotypes:
-    biotypes[bt] = category_biotypes[bt][1]
-    for cat in category_biotypes[bt][0]:
-        category[cat] = bt
+TYPES_SPEC = dict()
+TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "mrna_U133", "mrna_U133_Zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier"], "mRNA expression data")
+TYPES_SPEC["dCNA"] = (["gistic", "cna", "CNA", "cna_rae", "cna_consensus", "SNP-FASST2"], "Discrete Copy number data")
+TYPES_SPEC["cCNA"] = (["log2CNA"], "Continuous copy number data")
+TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
+TYPES_SPEC["PROT"] = (["RPPA_protein_level"], "protein level")
+TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_Zscores", "mrna_merged_median_Zscores"], "miRNA expression data")
+TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
+METHODS_TYPE = dict()
+TYPES_BIOTYPE = dict()
+for bt in TYPES_SPEC:
+    TYPES_BIOTYPE[bt] = TYPES_SPEC[bt][1]
+    for cat in TYPES_SPEC[bt][0]:
+        METHODS_TYPE[cat] = bt
 
+# Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData
 PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth"]
-PROCESSINGS_BIOTYPES = {"moduleAverage"="Discrete->Continous", "pcaComp"="Color", "geoSmooth"="Discrete->Continuous"} # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous"} 
 
 def getLine(ll, split_char="\t"):
     ll = re.sub('\"', '', ll.strip())
@@ -82,7 +83,7 @@ class NaviCom():
         print("Data available :")
         for processing in self.processings:
             for dname in self.data[processing]:
-                print("\t" + processing + " " + dname + ": " + biotypes[category[dname]])
+                print("\t" + processing + " " + dname + ": " + TYPES_BIOTYPE[METHODS_TYPE[dname]])
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
@@ -338,7 +339,7 @@ class NaviCom():
         for perf_id in range(len(perform_list)):
             data_name = perform_list[perf_id][0]
             if (isinstance(data_name, str)):
-                if (not re.match("_", data_name)):
+                if (not data_name in self.associated_data):
                     data_name = data_name + "_raw"
                 data_name = self.associated_data[data_name]
             processing = data_name[0]
@@ -351,7 +352,7 @@ class NaviCom():
         # Perform the display depending of the selected mode
         for data_name, dmode in perform_list:
             dmode = dmode.lower()
-            if (re.match("^(glyph|color|size|shape)", dmode)):
+            if (re.search("^(glyph|color|size|shape)", dmode)):
                 glyph_set = True
                 # Extract the glyph id and the setup
                 parse_setup = dmode.split("_")
@@ -382,10 +383,10 @@ class NaviCom():
                 if (not glyph_samples[glyph_number-1]):
                     raise ValueError("Incorrect glyph number : " + str(glyph_number) + ", only " + str(len(samples)) + " have been given")
 
-                cmd="self.nv.glyphEditorSelect" + glyph_type.capitalize() + "Datatable(" + module +  ", " + str(glyph_number) + ", '" + data_name + "')"
+                cmd="self.nv.glyphEditorSelect" + glyph_type.capitalize() + "Datatable('" + module +  "', " + str(glyph_number) + ", '" + data_name + "')"
                 print(cmd)
                 exec(cmd)
-            elif (re.match("map_?staining", dmode)):
+            elif (re.search("map_?staining", dmode)):
                 if (not map_staining):
                     self.nv.mapStainingEditorSelectDatatable(module, data_name)
                     self.nv.mapStainingEditorSelectSample(module, one_sample)
@@ -393,7 +394,7 @@ class NaviCom():
                     map_staining = True
                 else:
                     raise ValueError("Map staining can only be applied once, use a separate call to the display function to change map staining")
-            elif (re.match("heatmap", dmode)):
+            elif (re.search("heatmap", dmode)):
                 if (barplot):
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the heatmap")
                 else:
@@ -410,11 +411,11 @@ class NaviCom():
                     for spl in samples:
                         self.nv.heatmapEditorSelectSample(module, self.hsid, spl)
                         self.hsid += 1
-            elif (re.match("barplot", dmode)):
+            elif (re.search("barplot", dmode)):
                 if (heatmap):
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the barplot")
                 else:
-                    # Check that it does not try to add new data, and simply adds samples
+                    # Check that it does not try to add new data, and simply adds samples # TODO Remove as samples cannot be added (resetDisplay at the beginning)
                     if (barplot and data_name != barplot_data and not re.search("all|groups|samples", data_name)):
                         raise ValueError("Barplot has already been set with different data, use a separate call to the display function to perform another barplot")
                     else:
@@ -515,25 +516,33 @@ class NaviCom():
         done_export = False
 
         if (processing in self.processings):
-            if (method in self.data[processing] and method in self.methodBiotype):
-                if (not self.exported_data[processing][method]):
-                    name = self.nameData(method, processing, name)
-                    # Processing turn discrete data into continuous or color data
-                    if (processing in self.methodBiotype):
-                        biotype = self.methodBiotype[processing]
-                    else:
-                        biotype = self.methodBiotype[method]
-                    self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
-                    self.exported_data[processing][method] = True
-                    done_export = True
-                elif (VERBOSE_NAVICOM):
-                    print(method + " data with " + processing + " processing has already been exported")
+            if (method in self.data[processing]):
+                if(method in METHODS_TYPE):
+                    if (not self.exported_data[processing][method]):
+                        name = self.nameData(method, processing, name)
+                        # Processing change the type of data, like discrete data into continuous, or anything to color data
+                        if (processing in PROCESSINGS_BIOTYPE):
+                            transform_biotype = PROCESSINGS_BIOTYPE[processing]
+                            if (re.search('->', transform_biotype)):
+                                modes = transform_biotype.split("->")
+                                biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[processing])
+                            else:
+                                biotype = PROCESSINGS_BIOTYPE[processing]
+                        else:
+                            biotype = TYPES_BIOTYPE[METHODS_TYPE[method]]
+                        self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
+                        self.exported_data[processing][method] = True
+                        done_export = True
+                    elif (VERBOSE_NAVICOM):
+                        print(method + " data with " + processing + " processing has already been exported")
+                else:
+                    raise ValueError("Biotype of '" + method + "' is unknown")
             elif (method == "uniform"): # Uniform data for glyphs
                 self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
                 name = "uniform"
                 done_export = True
             else:
-                raise KeyError("Method " + method + " with processing " + processing + " does not exist")
+                raise KeyError("Method '" + method + "' with processing '" + processing + "' does not exist")
         else:
             raise KeyError("Processing " + processing + " does not exist")
 
@@ -562,22 +571,42 @@ class NaviCom():
             self.nv.sampleAnnotationImport(self.annotations.makeData())
             self.exported_annotations = True
 
-    def displayMethylome(self, background="mRNA", processing="raw", patient="all: 1.0"):
+    def displayMethylome(self, samples="all: 1.0", processing="raw", background="mRNA", methylation="glyph"):
         """
-            Display the methylation data as glyphs on the NaviCell map, with mRNA expression of gene CNV as map staining
+            Display the methylation data as glyphs or heatmap on the NaviCell map, with mRNA expression of gene CNV as map staining
             Args:
                 background (str) : should genes, mRNA or no data be used for the map staining
                 processing (str) : should the processed data be used
         """
         mrna_alias = ["MRNA"] # TODO Define what to put here
-        gene_alias = ["CNV", "CNA", ""]
-        assert background.upper in mrna_alias + gene_alias + ["NO", ""], "Select either genes, mRNA or no data for the map staining"
-        # Display methylation as glyphs
+        gene_alias = ["CNV", "CNA", "CCNA", "CCNV", "DNA"]
+        background = background.upper()
+        assert background in mrna_alias + gene_alias + ["NO", ""], "Select either genes, mRNA or no data for the map staining"
+        assert methylation in ["glyph", "glyphs", "heatmap", "size", "glyph_size"], "Cannot use " + methylation + " to display methylation data"
+        if (methylation != "heatmap"): methylation="size"
+        assert processing in self.data, "Processing " + processing + " does not exist"
+
+        # Select all methylation data and display as heatmap
+        disp_selection = list()
         for method in self.data[processing]:
-            if (re.match("methylation", method.lower())):
-                self.exportData(self, method, processing)
+            included = method in METHODS_TYPE
+            if (re.search("methylation", method.lower()) or (included and METHODS_TYPE[method] == "methylation")):
+                disp_selection.append((self.data_names[processing][method], methylation)) # TODO Change to barplot when several datatables can be used
         # Display mRNA or gene data as map staining
-        data = self.data[processing][background]
+        if (background in mrna_alias):
+            for mrna in TYPES_SPEC["mRNA"][0]:
+                if (mrna in self.data[processing]):
+                    disp_selection.append((self.data_names[processing][mrna], "map_staining"))
+                    break
+        elif (background in gene_alias):
+            for gene in TYPES_SPEC["cCNA"]+TYPES_SPEC["dCNA"]:
+                if (gene in self.data[processing]):
+                    disp_selection.append((self.data_names[processing][mrna], "map_staining"))
+                    break
+        if (DEBUG_NAVICOM):
+            print(disp_selection)
+            print(samples)
+        self.display(disp_selection, samples)
 
 
 
