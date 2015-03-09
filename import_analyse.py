@@ -350,6 +350,7 @@ class NaviCom():
             assert processing in self.processings, "Processing " + processing + " does not exist"
             self.exportData(method, processing)
             perform_list[perf_id] = (self.data_names[processing][method], perform_list[perf_id][1])
+        self.exportData("uniform")
 
         self.selectAnnotations(groups_list) # Write annotations AFTER the export
         # Perform the display depending of the selected mode
