@@ -263,6 +263,12 @@ class NaviCom():
                     self.modules[module].remove(gene)
         """
 
+    def pcaComp(self, method, colors=["red", "green", "blue"]):
+        """
+        Run pca on the data and create a color matrix with the 3 principal components in the three main colors
+        """
+        print("Not implemented yet")
+
     def display(self, perform_list, samples="all: 1.0", colors="", module=''):
         """
         Display data on the NaviCell map
@@ -777,6 +783,21 @@ def buildLine(line, sep="\t"):
         ret += str(el) + sep
     return(re.sub("NaN|nan", "NA", ret[:-1]) + "\n")
 
+def pca_cov(data):
+    """
+    Runs Principal Component Analysis using the covariance matrix and returns the eigen-vectors sorted by decreasing eigenvalues
+    """
+    cov_mat = np.cov(data)
 
+    # Compute eigenvectors and eigenvalues, linalg returns eigenvectors of norm 1
+    eig_val, eig_vec = np.linalg.eig(cov_mat)
+    # Make a list of value-vector tuples to sort by eigenvalue
+    eig_pairs = [(np.abs(eig_val[ii]), eig_vec[:,ii]) for ii in range(len(eig_val))]
+    eig_pairs.sort()
+    eig_pairs.reverse()
+
+    # Create the ordered eigenvectors matrix
+    eigen_matrix = np.matrix([eig_pairs[1] for ii in range(len(eig_pairs))])
+    return (eigen_matrix)
 
 
