@@ -45,6 +45,7 @@ class NaviCom():
             self.data[processing] = dict()
             self.exported_data[processing] = dict()
             self.data_names[processing] = dict()
+        self.exported_data["uniform"] = False
         self.annotations = dict() # Annotations of the samples
         self.modules = dict() # Composition of each module
         self.associated_modules = dict() # Number of modules each gene belong to
@@ -478,9 +479,11 @@ class NaviCom():
                 elif (VERBOSE_NAVICOM):
                     print(method + " data with " + processing + " processing has already been exported")
             elif (method == "uniform"): # Uniform data for glyphs
-                self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
-                name = "uniform"
-                done_export = True
+                if (not self.exported_data["uniform"]):
+                    self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
+                    name = "uniform"
+                    done_export = True
+                    self.exported_data["uniform"] = True
             else:
                 raise KeyError("Method " + method + " with processing " + processing + " does not exist")
         else:
