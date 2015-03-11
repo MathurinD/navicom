@@ -270,7 +270,7 @@ class NaviCom():
         """
         print("Not implemented yet")
 
-    def display(self, perform_list, default_samples="all: 1.0", colors="", module=''):
+    def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
         """
         Display data on the NaviCell map
         Args :
@@ -282,7 +282,8 @@ class NaviCom():
         assert isinstance(perform_list[0], tuple) and (len(perform_list[0]) == 2 or len(perform_list[0]) == 3), "perform list must be a list of (2/3)-tuples"
         self.checkBrowser()
         self.exportAnnotations()
-        self.resetDisplay()
+        if (reset):
+            self.resetDisplay()
 
         # Preprocess the perform list to get valid data_name, and export data that have not been exported yet
         for perf_id in range(len(perform_list)):
@@ -655,6 +656,33 @@ class NaviCom():
             print(disp_selection)
             print(samples)
         self.display(disp_selection, samples)
+
+    def displayTranscriptome(self, dataName, group="all: 1.0", samplesDisplay="", samples=list()):
+        """
+        Display one transcriptome data as map staining, and optionnaly samples from the group as heatmap
+        Args:
+            - dataName (str or tuple): name or identifier of the data.
+            - group (str): Identifier of the group to display
+            - samplesDisplay (str): Channel where the individual samples should be displayed (heatmap or barplot)
+            - samples (list): list of samples to display
+        """
+        allowedDisplays = ["", "heatmap", "barplot"]
+        assert samplesDisplay in allowedDisplays, "samplesDisplay must one of " + str(allowedDisplays)
+        self.display([(dataName, "map_staining")], group)
+        if (samplesDisplay != ""):
+            if (isinstance(samples, list)):
+                self.display([(dataName, samplesDisplay)], samples, reset=False)
+            elif (isisntance(samples, str)):
+                if (samples == "quantiles"):
+                    pass
+                elif (samples == "random"):
+                    pass
+                else:
+                    self.display([(dataName, samplesDisplay)], [samples], reset=False)
+
+    def selectQuantiles(self, dataName, group, numberOfQuantiles):
+        pass
+
 
 
 
