@@ -10,6 +10,8 @@ nc.dataAvailable()
 
 nc.exportAnnotations() # TODO move annotations export check to data export function
 
+nc.display([('log2CNA', 'barplot'), ('gistic', 'shape2', 'TCGA.04.1331.01'), ('log2CNA', 'size2', 'TCGA.04.1331.01')], ['OS_STATUS: NA; SEQUENCED: NA'])
+
 nc.displayMethylome(['TCGA.04.1331.01'], "raw", "mRNA", "size")
 
 nc.display([('log2CNA', 'barplot')], ['OS_STATUS: NA; SEQUENCED: NA'])

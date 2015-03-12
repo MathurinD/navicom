@@ -270,84 +270,24 @@ class NaviCom():
         """
         print("Not implemented yet")
 
-    def display(self, perform_list, samples="all: 1.0", colors="", module=''):
+    def display(self, perform_list, default_samples="all: 1.0", colors="", module=''):
         """
         Display data on the NaviCell map
         Args :
             perform_list (list of 2-tuples): each tuple must contain the name of the data to display and the mode of display ("glyphN_(color|size|shape)", "barplot", "heatmap" or "map_staining"). Barplots and heatmaps cannot be displayed simultaneously. Several data types can be specified for heatmaps. Specifying "glyph" (without number) will automatically select a new glyph for each data using the same properties (shape, color or size) in glyphs (maximum of 5 glyphs).
             colors : range of colors to use (NOT IMPLEMENTED YET)
-            samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all samples from the list are used for heatmaps and barplots. Use 'all_samples' to use all samples or ['annot1:...:annotn', 'all_groups'] to use all groups corresponding to the combinations of annot1...annotn.
+            default_samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all default_samples from the list are used for heatmaps and barplots. Use 'all_samples' to use all default_samples or ['annot1:...:annotn', 'all_groups'] to use all groups corresponding to the combinations of annot1...annotn.
         """
         assert isinstance(perform_list, list), "perform list must be a list"
-        assert isinstance(perform_list[0], tuple) and len(perform_list[0]) == 2, "perform list must be a list of 2-tuples"
+        assert isinstance(perform_list[0], tuple) and (len(perform_list[0]) == 2 or len(perform_list[0]) == 3), "perform list must be a list of (2/3)-tuples"
         self.checkBrowser()
         self.exportAnnotations()
         self.resetDisplay()
 
-        # Selection of samples
-        all_samples = False
-        all_groups = False
-        if (isinstance(samples, str)):
-            one_sample = samples
-            samples = [samples]
-        elif (isinstance(samples, list)):
-            one_sample = samples[0]
-        # Select the groups that must be selected to produce the composite groups required and control that all groups are compatible (because lower order composition are not generated)
-        if (samples[0] == "all" or samples[0] == "all_samples" or samples[0] == "samples"):
-            all_samples = True
-        elif (len(samples) > 1 and (samples[1] == "all_groups" or samples[1] == "groups")):
-            all_groups = True
-        rGroups = 0 
-        groups_list = []
-        first_groups = True
-        self.resetAnnotations()
-        for sample in samples:
-            nGroups = 0
-            selections = sample.split(";")
-            groups = []
-            for select in selections:
-                groups.append(select.split(":")[0].strip())
-            # TODO Control that groups exist
-            # TODO Check how to use combined groups
-            if (len(groups) > 1 or groups[0] in self.annotations.annotations): # Skip the loop for samples
-                if (first_groups):
-                    first_groups = False
-                    for group in groups:
-                        if (group in self.annotations.annotations):
-                            if (DEBUG_NAVICOM):
-                                print("Selecting " + group)
-                            #self.selectAnnotations(group) # Useless as long as annotations are removed on data import
-                            groups_list.append(group)
-                            nGroups += 1
-                            rGroups += 1
-                else:
-                    for group in groups:
-                        if (group in self.annotations.annotations):
-                            assert group in groups_list, "Groups combinations are not compatibles"
-                            nGroups += 1
-                if (nGroups != rGroups and rGroups != 0 and nGroups != 0):
-                    raise ValueError("Groups combinations are not compatible")
-
-        # Control that the user does not try to display to many data or use several time the same display
-        glyph = {gtype:[False] * MAX_GLYPHS for gtype in GLYPH_TYPES}
-        if (len(samples) == 1):
-            glyph_samples = samples * MAX_GLYPHS
-            sample_for_glyph = [True] * MAX_GLYPHS
-        else:
-            glyph_samples = samples
-            sample_for_glyph = [True] * len(samples)
-            while (len(glyph_samples) < MAX_GLYPHS):
-                glyph_samples.append(None)
-                sample_for_glyph.append(False)
-        glyph_set = False
-        heatmap = False
-        barplot = False
-        barplot_data = ""
-        map_staining = False
-
         # Preprocess the perform list to get valid data_name, and export data that have not been exported yet
         for perf_id in range(len(perform_list)):
             data_name = perform_list[perf_id][0]
+            perform = perform_list[perf_id]
             if (isinstance(data_name, str)):
                 if (not data_name in self.associated_data):
                     data_name = data_name + "_raw"
@@ -356,13 +296,44 @@ class NaviCom():
             method = data_name[1]
             assert processing in self.processings, "Processing " + processing + " does not exist"
             self.exportData(method, processing)
-            perform_list[perf_id] = (self.data_names[processing][method], perform_list[perf_id][1])
+            if (len(perform) >= 3 and perform[2] != default_samples):
+                perform_list[perf_id] = (self.data_names[processing][method], perform[1], perform[2])
+            else:
+                perform_list[perf_id] = (self.data_names[processing][method], perform[1], '')
         self.exportData("uniform")
 
-        self.selectAnnotations(groups_list) # Write annotations AFTER the export
+        # Control that the user does not try to display to many data or use several times the same display
+        if (True):
+            glyph = {gtype:[False] * MAX_GLYPHS for gtype in GLYPH_TYPES}
+            sample_for_glyph = [False] * MAX_GLYPHS
+            glyph_samples = [""] * MAX_GLYPHS
+            glyph_set = False
+            heatmap = False
+            barplot = False
+            barplot_data = ""
+            map_staining = False
+            default_samples = self.processSamples(default_samples)
+            lastWasDefault = True
+            valid_default = (len(default_samples) == 1 and default_samples != "all_groups" and default_samples != "all_samples")
         # Perform the display depending of the selected mode
-        for data_name, dmode in perform_list:
+        for perform in perform_list:
+            all_samples = False
+            all_groups = False
+            data_name = perform[0]
+            dmode = perform[1]
             dmode = dmode.lower()
+            # Check groups in NaviCell and get a valid list of samples, reload default if not the last used
+            if (perform[2] == '' and not lastWasDefault):
+                samples = self.processSamples(default_samples)
+                lastWasDefault = True
+            else:
+                samples = self.processSamples(perform[2])
+                lastWasDefault = False
+            if (samples == "all_groups"):
+                all_groups = True
+            elif (samples == "all_samples"):
+                all_samples = True
+
             if (re.search("^(glyph|color|size|shape)", dmode)):
                 glyph_set = True
                 # Extract the glyph id and the setup
@@ -383,6 +354,7 @@ class NaviCom():
                     glyph_number = 1
                     while (glyph[glyph_type][glyph_number-1]):
                         glyph_number += 1
+                glyph_id = glyph_number - 1
                 
                 if (not glyph_number in range(1, MAX_GLYPHS+1)):
                     raise ValueError("Glyph number must be in [1," + str(MAX_GLYPHS) + "]")
@@ -391,16 +363,26 @@ class NaviCom():
                 if (glyph[glyph_type][glyph_number-1]):
                     raise ValueError(glyph_type + " for glyph " + str(glyph_number) + " has already been specified")
                 glyph[glyph_type][glyph_number-1] = True
-                if (not glyph_samples[glyph_number-1]):
-                    raise ValueError("Incorrect glyph number : " + str(glyph_number) + ", only " + str(len(samples)) + " have been given")
+                if (len(samples) != 1 or samples == "all_groups" or samples == "all_samples"):
+                    raise ValueError("Only one group or sample can be used for glyphs")
+
+                if (lastWasDefault):
+                    pass
+                elif (glyph_samples[glyph_id] == ""):
+                    glyph_samples[glyph_id] = samples[0]
+                    sample_for_glyph[glyph_id] = True
+                elif (glyph_samples[glyph_id] != samples[0]):
+                    raise ValueError("Only one sample can be specified per glyph")
 
                 cmd="self.nv.glyphEditorSelect" + glyph_type.capitalize() + "Datatable('" + module +  "', " + str(glyph_number) + ", '" + data_name + "')"
-                print(cmd)
+                if (DEBUG_NAVICOM):
+                    print(cmd)
                 exec(cmd)
             elif (re.search("map_?staining", dmode)):
+                assert valid_default, "Only one sample can be used for map staining"
                 if (not map_staining):
                     self.nv.mapStainingEditorSelectDatatable(module, data_name)
-                    self.nv.mapStainingEditorSelectSample(module, one_sample)
+                    self.nv.mapStainingEditorSelectSample(module, samples[0])
                     self.nv.mapStainingEditorApply(module)
                     map_staining = True
                 else:
@@ -408,8 +390,7 @@ class NaviCom():
             elif (re.search("heatmap", dmode)):
                 if (barplot):
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the heatmap")
-                else:
-                    heatmap = True
+                heatmap = True
                 # Select data
                 self.nv.heatmapEditorSelectDatatable(module, self.hdid, data_name)
                 self.hdid += 1
@@ -422,39 +403,43 @@ class NaviCom():
                     for spl in samples:
                         self.nv.heatmapEditorSelectSample(module, self.hsid, spl)
                         self.hsid += 1
+                    self.nv.heatmapEditorApply(module)
             elif (re.search("barplot", dmode)):
                 if (heatmap):
                     raise ValueError("Heatmaps and barplots cannot be applied simultaneously, use a separate call to the display function to perform the barplot")
-                else:
-                    # Check that it does not try to add new data, and simply adds samples # TODO Remove as samples cannot be added (resetDisplay at the beginning)
-                    if (barplot and data_name != barplot_data and not re.search("all|groups|samples", data_name)):
-                        raise ValueError("Barplot has already been set with different data, use a separate call to the display function to perform another barplot")
-                    else:
-                        barplot = True
-                        barplot_data = data_name
-                        self.nv.barplotEditorSelectDatatable(module, data_name)
-                    # Select samples
-                    if (all_samples):
-                        self.nv.barplotEditorAllSamples(module)
-                    elif (all_groups):
-                        self.nv.barplotEditorAllGroups(module)
-                    elif (self.bid == 0):
-                        for spl in samples:
-                            self.nv.barplotEditorSelectSample(module, self.bid, spl)
-                            self.bid += 1
+                # Check that it does not try to add new data, and simply adds samples # TODO Remove as samples cannot be added (resetDisplay at the beginning)
+                if (barplot and data_name != barplot_data and not re.search("all|groups|samples", data_name)):
+                    raise ValueError("Barplot has already been set with different data, use a separate call to the display function to perform another barplot")
+                barplot = True
+                barplot_data = data_name
+                self.nv.barplotEditorSelectDatatable(module, data_name)
+                # Select samples
+                if (all_samples):
+                    self.nv.barplotEditorAllSamples(module)
+                elif (all_groups):
+                    self.nv.barplotEditorAllGroups(module)
+                elif (self.bid == 0):
+                    for spl in samples:
+                        self.nv.barplotEditorSelectSample(module, self.bid, spl)
+                        self.bid += 1
+                    self.nv.barplotEditorApply(module)
             else:
-                raise ValueError(dmode + " drawing mode does not exist")
+                raise ValueError("'" + dmode + "' drawing mode does not exist")
 
         # Check that datatables are selected for all glyphs features (until default has been added)
         # or complete, then apply the glyphs configuration
+        default_samples = self.processSamples(default_samples)
         if (glyph_set):
             for glyph_id in range(MAX_GLYPHS):
                 nsets = sum(1 for cs in GLYPH_TYPES if glyph[cs][glyph_id])
                 if (nsets > 0):
-                    if (not sample_for_glyph[glyph_id]):
-                        raise ValueError("No sample has been attributed to glyph " + str(glyph_id+1))
+                    if (sample_for_glyph[glyph_id]):
+                        self.nv.glyphEditorSelectSample(module, glyph_id+1, self.processSamples(glyph_samples[glyph_id]))
+                    elif (valid_default):
+                        print("Using default sample for glyph " + str(glyph_id+1))
+                        self.nv.glyphEditorSelectSample(module, glyph_id+1, default_samples[0])
                     else:
-                        self.nv.glyphEditorSelectSample(module, glyph_id+1, glyph_samples[glyph_id])
+                        raise ValueError("No samples specified for glyph " + str(glyph_id+1) + " and default_samples is invalid")
                     if (not glyph["color"][glyph_id]):
                         self.nv.glyphEditorSelectColorDatatable(module, glyph_id+1, "uniform")
                     if (not glyph["shape"][glyph_id]):
@@ -462,10 +447,62 @@ class NaviCom():
                     if (not glyph["size"][glyph_id]):
                         self.nv.glyphEditorSelectSizeDatatable(module, glyph_id+1, "uniform")
                     self.nv.glyphEditorApply(module, glyph_id+1)
-        if (barplot):
-            self.nv.barplotEditorApply(module)
-        if (heatmap):
-            self.nv.heatmapEditorApply(module)
+
+    def processSamples(self, current_samples):
+        """
+        Process a list of samples or groups to a list of samples/groups names exportable to NaviCell or to "all_groups"/"all_samples" for heatmap and barplot, and select the correct groups in NaviCell
+        """
+
+        self.resetAnnotations()
+        # Make sure current_samples is a list
+        all_groups = False
+        if (isinstance(current_samples, str)):
+            current_samples = [current_samples]
+
+        # It is possible to select all samples or all groups on heatmap and barplot
+        if (current_samples[0] == "all_samples" or current_samples[0] == "samples"):
+            return "all_samples"
+        elif (current_samples[0] == "all" or current_samples[0] == "all: 1.0" or current_samples[0] == ""):
+            self.selectAnnotations("all")
+            return ["all: 1.0"]
+        elif (len(current_samples) > 1 and (current_samples[1] == "all_groups" or current_samples[1] == "groups")):
+            all_groups = True
+
+        rGroups = 0 # Number of annotations to select
+        groups_list = []
+        first_groups = True
+        # Select the groups that must be selected to produce the composite groups required
+        for sample in current_samples:
+            nGroups = 0
+            selections = sample.split(";")
+            groups = []
+            for select in selections:
+                groups.append(select.split(":")[0].strip())
+            # Check that all groups are compatible in the annotations selected (because lower order composition are not generated). No check for individual samples
+            if (len(groups) > 1 or groups[0] in self.annotations.annotations):
+                if (first_groups): # Select the set of annotations for the first group
+                    for group in groups:
+                        if (group in self.annotations.annotations):
+                            if (DEBUG_NAVICOM):
+                                print("Selecting " + group)
+                            self.selectAnnotations(group) 
+                            groups_list.append(group)
+                            nGroups += 1
+                            rGroups += 1
+                            first_groups = False
+                        else:
+                            raise ValueError("Annotation " + group + " does not exist")
+                else: # Control that all other groups are compatible
+                    for group in groups:
+                        if (group in self.annotations.annotations):
+                            assert group in groups_list, "Groups combinations are not compatibles as " + group + " is not in " + str(groups_list)
+                            nGroups += 1
+                if (nGroups != rGroups and rGroups != 0 and nGroups != 0):
+                    raise ValueError("Groups combinations are not compatible, different number of groups")
+
+        if (all_groups):
+            return "all_groups"
+        return current_samples
 
     #def displayGroups(self, groups, combine=T, method): # method in ["barplot", "heatmap", "glyph_TYPE"]
     
@@ -544,8 +581,6 @@ class NaviCom():
                         self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
                         self.exported_data[processing][method] = True
                         done_export = True
-                    elif (VERBOSE_NAVICOM):
-                        print(method + " data with " + processing + " processing has already been exported")
                 else:
                     raise ValueError("Biotype of '" + method + "' is unknown")
             elif (method == "uniform"): # Uniform data for glyphs
