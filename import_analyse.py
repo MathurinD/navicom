@@ -672,7 +672,7 @@ class NaviCom():
         if (samplesDisplay != ""):
             if (isinstance(samples, list)):
                 self.display([(dataName, samplesDisplay)], samples, reset=False)
-            elif (isisntance(samples, str)):
+            elif (isinstance(samples, str)):
                 if (samples == "quantiles"):
                     pass
                 elif (samples == "random"):
