@@ -110,7 +110,7 @@ class NaviCom():
         return (name)
 
     def getDataName(self, data_name):
-        if (isinstance(data_name, str))
+        if (isinstance(data_name, str)):
             if (data_name in self.associated_data):
                 return(data_name)
             elif (data_name + "_raw" in self.associated_data):
@@ -397,7 +397,7 @@ class NaviCom():
             barplot = False
             barplot_data = ""
             map_staining = False
-            default_samples = self.processSamples(default_samples)
+            default_samples = self.processSampleSelection(default_samples)
             lastWasDefault = True
             valid_default = (len(default_samples) == 1 and default_samples != "all_groups" and default_samples != "all_samples")
         # Perform the display depending of the selected mode
@@ -409,10 +409,10 @@ class NaviCom():
             dmode = dmode.lower()
             # Check groups in NaviCell and get a valid list of samples, reload default if not the last used
             if (perform[2] == '' and not lastWasDefault):
-                samples = self.processSamples(default_samples)
+                samples = self.processSampleSelection(default_samples)
                 lastWasDefault = True
             else:
-                samples = self.processSamples(perform[2])
+                samples = self.processSampleSelection(perform[2])
                 lastWasDefault = False
             if (samples == "all_groups"):
                 all_groups = True
@@ -513,13 +513,13 @@ class NaviCom():
 
         # Check that datatables are selected for all glyphs features (until default has been added)
         # or complete, then apply the glyphs configuration
-        default_samples = self.processSamples(default_samples)
+        default_samples = self.processSampleSelection(default_samples)
         if (glyph_set):
             for glyph_id in range(MAX_GLYPHS):
                 nsets = sum(1 for cs in GLYPH_TYPES if glyph[cs][glyph_id])
                 if (nsets > 0):
                     if (sample_for_glyph[glyph_id]):
-                        self.nv.glyphEditorSelectSample(module, glyph_id+1, self.processSamples(glyph_samples[glyph_id]))
+                        self.nv.glyphEditorSelectSample(module, glyph_id+1, self.processSampleSelection(glyph_samples[glyph_id]))
                     elif (valid_default):
                         print("Using default sample for glyph " + str(glyph_id+1))
                         self.nv.glyphEditorSelectSample(module, glyph_id+1, default_samples[0])
@@ -577,7 +577,7 @@ class NaviCom():
             raise ValueError("'annotations' must be a string or a list")
         self.nv.sampleAnnotationApply(module)
 
-    def processSamples(self, current_samples):
+    def processSampleSelection(self, current_samples):
         """
         Process a list of samples or groups to a list of samples/groups names exportable to NaviCell or to "all_groups"/"all_samples" for heatmap and barplot, and select the correct groups in NaviCell
         """
@@ -597,40 +597,30 @@ class NaviCom():
         elif (len(current_samples) > 1 and (current_samples[1] == "all_groups" or current_samples[1] == "groups")):
             all_groups = True
 
-        rGroups = 0 # Number of annotations to select
-        groups_list = []
+        refGroupsList = []
         first_groups = True
         # Select the groups that must be selected to produce the composite groups required
         for sample in current_samples:
-            nGroups = 0
-            groups = processGroups()[0]
+            groups = self.processGroupsName(sample)[0]
             # Check that all groups are compatible in the annotations selected (because lower order composition are not generated). No check for individual samples
-            if (len(groups) > 1 or groups[0] in self.annotations.annotations):
+            if (len(groups) >= 1):
                 if (first_groups): # Select the set of annotations for the first group
+                    if (DEBUG_NAVICOM):
+                        print("Selecting " + str(groups))
                     for group in groups:
-                        if (group in self.annotations.annotations):
-                            if (DEBUG_NAVICOM):
-                                print("Selecting " + group)
-                            self.selectAnnotations(group) 
-                            groups_list.append(group)
-                            nGroups += 1
-                            rGroups += 1
-                            first_groups = False
-                        else:
-                            raise ValueError("Annotation " + group + " does not exist")
+                        self.selectAnnotations(group) 
+                        refGroupsList.append(group)
+                        first_groups = False
                 else: # Control that all other groups are compatible
-                    for group in groups:
-                        if (group in self.annotations.annotations):
-                            assert group in groups_list, "Groups combinations are not compatibles as " + group + " is not in " + str(groups_list)
-                            nGroups += 1
-                if (nGroups != rGroups and rGroups != 0 and nGroups != 0):
-                    raise ValueError("Groups combinations are not compatible, different number of groups")
+                        assert len(group)==0 or len(refGroupsList)==0 or len(group)==len(refGroupsList), "Groups combinations are not compatible, different number of groups"
+                        for group in groups:
+                            assert group in refGroupsList, "Groups combinations are not compatibles as " + group + " is not in " + str(refGroupsList)
 
         if (all_groups):
             return "all_groups"
         return current_samples
 
-    def processGroups(self, groupName):
+    def processGroupsName(self, groupName):
         """
         Process a group selection string and return the names of the individual groups to select and the corresponding values selected.
         """
@@ -639,11 +629,19 @@ class NaviCom():
         values = list()
         for select in selections:
             subName = select.split(":")
-            groups.append(subName[0].split())
-            try:
-                values.append(float(subName[1].split()))
-            except ValueError:
-                values.append(subName[1].split())
+            group = subName[0].strip()
+            if (group in self.annotations.annotations):
+                value = subName[1].strip()
+                groups.append(group)
+                try:
+                    values.append(float(value))
+                except ValueError:
+                    values.append(value)
+            elif (not group in self.annotations.samples):
+                if (len(subName) > 1):
+                    raise ValueError("Annotation " + group + " does not exist")
+                else:
+                    raise ValueError("Sample " + group + " does not exist")
         return((groups, values))
 
     def displayMethylome(self, samples="all: 1.0", processing="raw", background="mRNA", methylation="glyph"):
@@ -695,7 +693,7 @@ class NaviCom():
         """
         allowedDisplays = ["", "heatmap", "barplot"]
         assert samplesDisplay in allowedDisplays, "samplesDisplay must one of " + str(allowedDisplays)
-        dataName = getDataName(dataName)
+        dataName = self.getDataName(dataName)
         self.display([(dataName, "map_staining")], group)
         if (samplesDisplay != ""):
             if (isinstance(samples, list)):
@@ -833,7 +831,7 @@ class NaviData():
 MAX_GROUPS = 7
 class NaviAnnotations(NaviData):
     """
-    Enhance NaviData to contain annotations and associate annotations values with samples
+    Enhance NaviData to contain annotations and associate annotations values with samples. Also reduce continuous data with to many levels to a limited number of interval levels.
     """
 
     def __init__(self, data, rows_list, columns_list, dType="annotations"):
@@ -862,16 +860,16 @@ class NaviAnnotations(NaviData):
                     modified_data.append(self[annot].data.copy())
                     modified_annot.append(annot)
                     for cat in new_categories:
-                        self.samplesPerCategory[cat] = list()
+                        self.samplesPerCategory[annot][cat] = list()
                     for sample in self.samples:
                         annot_value = float(self[annot][sample])
                         if (np.isnan(annot_value)):
-                            self.samplesPerCategory["NaN"].append(sample)
+                            self.samplesPerCategory[annot]["NaN"].append(sample)
                         else:
                             icat = 0
                             while (signif(annot_value) >= new_values[icat+1]):
                                 icat += 1
-                            self.samplesPerCategory[new_categories[icat]].append(sample)
+                            self.samplesPerCategory[annot][new_categories[icat]].append(sample)
                             self[annot][sample] = new_categories[icat]
                     reduced = True
                 except ValueError: 
