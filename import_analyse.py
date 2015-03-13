@@ -45,6 +45,9 @@ def getLine(ll, split_char="\t"):
     return(ll)
 
 class NaviCom():
+    """
+    NaviComm class to handle data and display them in a standardized way on NaviCell maps
+    """
 
     def __init__(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', modules_dict=""):
         # Build options for the navicell connexion
@@ -177,6 +180,49 @@ class NaviCom():
         self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
         self.exportData("uniform")
 
+    def newProcessedData(self, processing, method, data):
+        assert processing in self.processings, "Processing " + processing + " is not handled"
+        self.data[processing][method] = data
+        self.exported_data[processing][method] = False
+        self.nameData(method, processing)
+
+    def defineModules(self, modules_dict=""):
+        """
+        Defines the modules to use and which module each gene belongs to
+
+        Args:
+            modules_dict : Either a dict indexed by module name or a file name with the description of each module (.gmt file)
+        """
+        self.modules = dict()
+        if (isinstance(modules_dict, dict)):
+            self.modules = modules_dict # TODO add control that the genes are included
+        elif (isinstance(modules_dict, str)):
+            if (modules_dict != ""):
+                # TODO get the list of modules from the file
+                with open(modules_dict) as ff:
+                    for line in ff.readlines():
+                        ll = line.strip().split("\t")
+                        module_name = ll[0]
+                        self.modules[module_name] = list()
+                        if (ll[1] != "na"):
+                            self.modules[module_name] += ll[1:]
+                        else:
+                            self.modules[module_name] += ll[2:]
+                        # Count the number of modules each gene belong to
+                        for gene in self.modules[module_name]:
+                            try:
+                                self.associated_modules[gene].append(module_name)
+                            except KeyError:
+                                self.associated_modules[gene] = [module_name]
+        """
+        # Only keep genes with data
+        for module in self.modules:
+            keep = list()
+            for gene in self.modules[module]:
+                if (not gene in self.genes_list):
+                    self.modules[module].remove(gene)
+        """
+
     def averageModule(self, method):
         """
         Perform module averaging for every modules for one data type
@@ -222,54 +268,78 @@ class NaviCom():
         #self.data["moduleAverage"][method] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples) # Usefull if NaviCell allow modules values one day
         self.newProcessedData("moduleAverage", method, NaviData(gene_module_average, list(data.genes), samples))
 
-    def newProcessedData(self, processing, method, data):
-        assert processing in self.processings, "Processing " + processing + " is not handled"
-        self.data[processing][method] = data
-        self.exported_data[processing][method] = False
-        self.nameData(method, processing)
-
-    def defineModules(self, modules_dict=""):
-        """
-        Defines the modules to use and which module each gene belongs to
-
-        Args:
-            modules_dict : Either a dict indexed by module name or a file name with the description of each module (.gmt file)
-        """
-        self.modules = dict()
-        if (isinstance(modules_dict, dict)):
-            self.modules = modules_dict # TODO add control that the genes are included
-        elif (isinstance(modules_dict, str)):
-            if (modules_dict != ""):
-                # TODO get the list of modules from the file
-                with open(modules_dict) as ff:
-                    for line in ff.readlines():
-                        ll = line.strip().split("\t")
-                        module_name = ll[0]
-                        self.modules[module_name] = list()
-                        if (ll[1] != "na"):
-                            self.modules[module_name] += ll[1:]
-                        else:
-                            self.modules[module_name] += ll[2:]
-                        # Count the number of modules each gene belong to
-                        for gene in self.modules[module_name]:
-                            try:
-                                self.associated_modules[gene].append(module_name)
-                            except KeyError:
-                                self.associated_modules[gene] = [module_name]
-        """
-        # Only keep genes with data
-        for module in self.modules:
-            keep = list()
-            for gene in self.modules[module]:
-                if (not gene in self.genes_list):
-                    self.modules[module].remove(gene)
-        """
-
     def pcaComp(self, method, colors=["red", "green", "blue"]):
         """
         Run pca on the data and create a color matrix with the 3 principal components in the three main colors
         """
         print("Not implemented yet")
+
+    def exportData(self, method, processing="raw", name=""):
+        """
+        Export data to NaviCell, can be processed data
+
+        Args:
+            method (str) : name of the method to export
+            processing (str) : "" to export raw data, processing method to export processed data. See 'averageModule' and 'pcaComponent'
+        """
+        self.checkBrowser() # TODO Perform processing if necessary
+        done_export = False
+
+        if (processing in self.processings):
+            if (method in self.data[processing]):
+                if(method in METHODS_TYPE):
+                    if (not self.exported_data[processing][method]):
+                        name = self.nameData(method, processing, name)
+                        # Processing change the type of data, like discrete data into continuous, or anything to color data
+                        if (processing in PROCESSINGS_BIOTYPE):
+                            transform_biotype = PROCESSINGS_BIOTYPE[processing]
+                            if (re.search('->', transform_biotype)):
+                                modes = transform_biotype.split("->")
+                                biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[processing])
+                            else:
+                                biotype = PROCESSINGS_BIOTYPE[processing]
+                        else:
+                            biotype = TYPES_BIOTYPE[METHODS_TYPE[method]]
+                        self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
+                        self.exported_data[processing][method] = True
+                        done_export = True
+                else:
+                    raise ValueError("Biotype of '" + method + "' is unknown")
+            elif (method == "uniform"): # Uniform data for glyphs
+                if (not self.exported_data["uniform"]):
+                    self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
+                    name = "uniform"
+                    done_export = True
+                    self.exported_data["uniform"] = True
+            else:
+                raise KeyError("Method '" + method + "' with processing '" + processing + "' does not exist")
+        else:
+            raise KeyError("Processing " + processing + " does not exist")
+
+        # Sleep to avoid errors due to the fact that the loading by NaviCell is asynchronous
+        # TODO Remove it when the python API receives signal
+        if (done_export):
+            print("Exporting " + name + " to NaviCell...")
+
+    def checkBrowser(self):
+        """
+        Check if the browser is opened, and open it if it is not
+        """
+        if (not self.browser_opened):
+            print("Launching browser...")
+            self.nv.launchBrowser()
+            self.browser_opened = True
+        return(self.browser_opened)
+
+    def exportAnnotations(self):
+        """
+        Export samples annotations to NaviCell
+        """
+        self.checkBrowser()
+
+        if (not self.exported_annotations):
+            self.nv.sampleAnnotationImport(self.annotations.makeData())
+            self.exported_annotations = True
 
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
         """
@@ -450,6 +520,50 @@ class NaviCom():
                         self.nv.glyphEditorSelectSizeDatatable(module, glyph_id+1, "uniform")
                     self.nv.glyphEditorApply(module, glyph_id+1)
 
+    def resetDisplay(self):
+        """
+        Reset the data and samples selections in NaviCell
+        """
+        for ii in range(self.bid):
+            self.nv.barplotEditorSelectSample('', ii, '')
+        self.nv.barplotEditorSelectDatatable('', '')
+        self.nv.drawingConfigSelectBarplot('', False)
+
+        for ii in range(self.hsid):
+            self.nv.heatmapEditorSelectSample('', ii, '')
+        for ii in range(self.hdid):
+            self.nv.heatmapEditorSelectDatatable('', ii, '')
+        self.nv.drawingConfigSelectHeatmap('', False)
+
+        for gid in range(1, MAX_GLYPHS):
+            for gt in GLYPH_TYPES:
+                exec("self.nv.glyphEditorSelect" + gt.capitalize() + "Datatable('', " + str(gid) + ", '')")
+            self.nv.glyphEditorSelectSample('', gid, '')
+            self.nv.drawingConfigSelectGlyph('', gid, False)
+        
+        self.nv.drawingConfigSelectMapStaining('', False)
+        self.nv.drawingConfigApply('')
+
+        # Reset the counters
+        self.bid = 0
+        self.hsid = 0
+        self.hdid = 0
+
+    def resetAnnotations(self, module=''):
+        for annot in self.annotations.annotations:
+            self.nv.sampleAnnotationSelectAnnotation(module, annot, False)
+        self.nv.sampleAnnotationApply(module)
+
+    def selectAnnotations(self, annotations, module=''):
+        if (isinstance(annotations, str)):
+            self.nv.sampleAnnotationSelectAnnotation(module, annotations, True)
+        elif (isinstance(annotations, list)):
+            for annot in annotations:
+                self.nv.sampleAnnotationSelectAnnotation(module, annot, True)
+        else:
+            raise ValueError("'annotations' must be a string or a list")
+        self.nv.sampleAnnotationApply(module)
+
     def processSamples(self, current_samples):
         """
         Process a list of samples or groups to a list of samples/groups names exportable to NaviCell or to "all_groups"/"all_samples" for heatmap and barplot, and select the correct groups in NaviCell
@@ -505,121 +619,6 @@ class NaviCom():
         if (all_groups):
             return "all_groups"
         return current_samples
-
-    #def displayGroups(self, groups, combine=T, method): # method in ["barplot", "heatmap", "glyph_TYPE"]
-    
-    #def addDisplay(self, perform_list, samples="all", colors=""):
-
-    def resetDisplay(self):
-        """
-        Reset the data and samples selections in NaviCell
-        """
-        for ii in range(self.bid):
-            self.nv.barplotEditorSelectSample('', ii, '')
-        self.nv.barplotEditorSelectDatatable('', '')
-        self.nv.drawingConfigSelectBarplot('', False)
-
-        for ii in range(self.hsid):
-            self.nv.heatmapEditorSelectSample('', ii, '')
-        for ii in range(self.hdid):
-            self.nv.heatmapEditorSelectDatatable('', ii, '')
-        self.nv.drawingConfigSelectHeatmap('', False)
-
-        for gid in range(1, MAX_GLYPHS):
-            for gt in GLYPH_TYPES:
-                exec("self.nv.glyphEditorSelect" + gt.capitalize() + "Datatable('', " + str(gid) + ", '')")
-            self.nv.glyphEditorSelectSample('', gid, '')
-            self.nv.drawingConfigSelectGlyph('', gid, False)
-        
-        self.nv.drawingConfigSelectMapStaining('', False)
-        self.nv.drawingConfigApply('')
-
-        # Reset the counters
-        self.bid = 0
-        self.hsid = 0
-        self.hdid = 0
-
-    def resetAnnotations(self, module=''):
-        for annot in self.annotations.annotations:
-            self.nv.sampleAnnotationSelectAnnotation(module, annot, False)
-        self.nv.sampleAnnotationApply(module)
-
-    def selectAnnotations(self, annotations, module=''):
-        if (isinstance(annotations, str)):
-            self.nv.sampleAnnotationSelectAnnotation(module, annotations, True)
-        elif (isinstance(annotations, list)):
-            for annot in annotations:
-                self.nv.sampleAnnotationSelectAnnotation(module, annot, True)
-        else:
-            raise ValueError("'annotations' must be a string or a list")
-        self.nv.sampleAnnotationApply(module)
-
-    def exportData(self, method, processing="raw", name=""):
-        """
-        Export data to NaviCell, can be processed data
-
-        Args:
-            method (str) : name of the method to export
-            processing (str) : "" to export raw data, processing method to export processed data. See 'averageModule' and 'pcaComponent'
-        """
-        self.checkBrowser() # TODO Perform processing if necessary
-        done_export = False
-
-        if (processing in self.processings):
-            if (method in self.data[processing]):
-                if(method in METHODS_TYPE):
-                    if (not self.exported_data[processing][method]):
-                        name = self.nameData(method, processing, name)
-                        # Processing change the type of data, like discrete data into continuous, or anything to color data
-                        if (processing in PROCESSINGS_BIOTYPE):
-                            transform_biotype = PROCESSINGS_BIOTYPE[processing]
-                            if (re.search('->', transform_biotype)):
-                                modes = transform_biotype.split("->")
-                                biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[processing])
-                            else:
-                                biotype = PROCESSINGS_BIOTYPE[processing]
-                        else:
-                            biotype = TYPES_BIOTYPE[METHODS_TYPE[method]]
-                        self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
-                        self.exported_data[processing][method] = True
-                        done_export = True
-                else:
-                    raise ValueError("Biotype of '" + method + "' is unknown")
-            elif (method == "uniform"): # Uniform data for glyphs
-                if (not self.exported_data["uniform"]):
-                    self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
-                    name = "uniform"
-                    done_export = True
-                    self.exported_data["uniform"] = True
-            else:
-                raise KeyError("Method '" + method + "' with processing '" + processing + "' does not exist")
-        else:
-            raise KeyError("Processing " + processing + " does not exist")
-
-        # Sleep to avoid errors due to the fact that the loading by NaviCell is asynchronous
-        # TODO Remove it when the python API receives signal
-        if (done_export):
-            print("Exporting " + name + " to NaviCell...")
-
-    def checkBrowser(self):
-        """
-        Check if the browser is opened, and open it if it is not
-        """
-        if (not self.browser_opened):
-            print("Launching browser...")
-            self.nv.launchBrowser()
-            self.browser_opened = True
-        return(self.browser_opened)
-
-    def exportAnnotations(self):
-        """
-        Export samples annotations to NaviCell
-        """
-        self.checkBrowser()
-
-        if (not self.exported_annotations):
-            self.nv.sampleAnnotationImport(self.annotations.makeData())
-            self.exported_annotations = True
 
     def displayMethylome(self, samples="all: 1.0", processing="raw", background="mRNA", methylation="glyph"):
         """
