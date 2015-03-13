@@ -7,10 +7,12 @@ VERBOSE_NAVICOM = False
 
 nc = NaviCom("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
 nc.dataAvailable()
+nc.exportAnnotations()
 
 nc.displayTranscriptome('log2CNA', 'OS_STATUS: NA', "barplot", 'TCGA.04.1331.01')
 
-nc.exportAnnotations() # TODO move annotations export check to data export function
+nc.defineModules("data/cellcycle_v1.0.gmt")
+nc.averageModule("gistic") # TODO Warning might be to fix
 
 nc.display([('log2CNA', 'barplot'), ('gistic', 'shape2', 'TCGA.04.1331.01'), ('log2CNA', 'size2', 'TCGA.04.1331.01')], ['OS_STATUS: NA; SEQUENCED: NA'])
 

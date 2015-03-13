@@ -5,6 +5,7 @@ import re
 from time import sleep
 from collections import OrderedDict as oDict
 from pprint import pprint
+import math
 
 DEBUG_NAVICOM = True
 VERBOSE_NAVICOM = True
@@ -170,7 +171,7 @@ class NaviCom():
                     annot["samples"].append(al[0])
 
                     ll = ll+1
-                self.annotations = NaviData(annot["annot"], annot["samples"], annot["names"], dType="annotations")
+                self.annotations = NaviAnnotations(annot["annot"], annot["samples"], annot["names"], dType="annotations")
 
     def defineUniformData(self, samples, genes):
         self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
@@ -683,31 +684,40 @@ class NaviCom():
     def selectQuantiles(self, dataName, group, numberOfQuantiles):
         pass
 
-
-
-
 class NaviData():
     """
     Custom class to store the data and be able to access rows and columns by name
     """
 
-    def __init__(self, data, genes_list, samples_list, dType="data"):
-        assert(len(data) == len(genes_list))
+    def __init__(self, data, rows_list, columns_list, dType="data"):
+        assert(len(data) == len(rows_list))
         for line in data:
-            assert len(line) == len(samples_list), "Incorrect length of line : " + line + ", length = " + str(len(line))
+            assert len(line) == len(columns_list), "Incorrect length of line : " + str(line) + ", length = " + str(len(line))
         # Initialise data and indexes
         self.data = np.array(data)
-        self.rows = "genes"
-        self.genes = listToDictKeys(genes_list)
-        self.genes_names = list(self.genes.keys())
-        self.cols = "samples"
-        self.samples = listToDictKeys(samples_list)
-        self.samples_names = list(self.samples.keys())
+        self.rows = listToDictKeys(rows_list)
+        self.rows_names = list(self.rows.keys())
+        self.columns = listToDictKeys(columns_list)
+        self.columns_names = list(self.columns.keys())
         if (dType == "annotations"):
-            self.cols = "annotations"
-            self.annotations = self.samples
-            self.annotations_names = self.samples_names
-            self.rows = "samples"
+            self.inColumns = "annotations"
+            self.annotations = self.columns
+            self.annotations_names = self.columns_names
+            self.inRows = "samples"
+            self.samples = self.rows
+            self.samples_names = self.rows_names
+        elif (dType == "data"):
+            self.inRows = "genes"
+            self.genes = self.rows
+            self.genes_names = self.rows_names
+            self.inColumns = "samples"
+            self.samples = self.columns
+            self.samples_names = self.columns_names
+        elif (dType == "old_annotations"):
+            self.inRows = "annotations"
+            self.inColumns = "samples"
+        else:
+            raise ValueError("dType '" + dType + "' is not valid")
         self.dType = dType
         # For the iterator
         self.itermode = ""
@@ -717,10 +727,10 @@ class NaviData():
         if (isinstance(index, int)):
             return(self.data[index])
         elif (isinstance(index, str)):
-            if (index in self.genes):
-                return( NaviSlice(self.data[self.genes[index],:], self.samples) )
-            elif (index in self.samples):
-                return( NaviSlice(self.data[:,self.samples[index]], self.genes) )
+            if (index in self.rows):
+                return( NaviSlice(self.data[self.rows[index],:], self.columns) )
+            elif (index in self.columns):
+                return( NaviSlice(self.data[:,self.columns[index]], self.rows) )
             else:
                 raise IndexError("'" + index + "' is neither a gene or sample name")
         elif (isinstance(index, list) or isinstance(index, tuple)):
@@ -728,20 +738,20 @@ class NaviData():
             for ii in index:
                 result.append(self[ii].data)
             result = np.array(result)
-            if (index[0] in self.genes):
-                assert np.all([idx in self.genes for idx in index]), "Not all index are gene names"
-                genes = self.genes.copy()
-                for gene in self.genes:
+            if (index[0] in self.rows):
+                assert np.all([idx in self.rows for idx in index]), "Not all index are gene names"
+                genes = self.rows.copy()
+                for gene in self.rows:
                     if (not gene in index):
                         genes.pop(gene)
-                return( NaviData(result, genes, self.samples) )
-            elif (index[0] in self.samples):
-                assert np.all([idx in self.samples for idx in index]), "Not all index are sample names"
-                samples = self.samples.copy()
-                for sample in self.samples:
+                return( NaviData(result, genes, self.columns) )
+            elif (index[0] in self.columns):
+                assert np.all([idx in self.columns for idx in index]), "Not all index are sample names"
+                samples = self.columns.copy()
+                for sample in self.columns:
                     if(not sample in index):
                         samples.pop(sample)
-                return( NaviData(result.transpose(), self.genes, samples) )
+                return( NaviData(result.transpose(), self.rows, samples) )
 
     def __iter__(self, by="genes"):
         if (not by in ["genes", "samples"]):
@@ -753,10 +763,10 @@ class NaviData():
     def __next__(self):
         try:
             if (self.iter_mode == "genes"):
-                key = list(self.genes.keys())[self.index]
+                key = list(self.rows.keys())[self.index]
                 result = [key] + list(self.data[self.index,:])
             elif (self.iter_mode == "samples"):
-                key = list(self.samples.keys())[self.index]
+                key = list(self.columns.keys())[self.index]
                 result = [key] + list(self.data[:,self.index])
         except IndexError:
             raise StopIteration
@@ -764,8 +774,8 @@ class NaviData():
         return(result)
 
     def __repr__(self):
-        rpr = "NaviData array with " + str(len(self.genes)) + " " + self.rows + " and "
-        rpr += str(len(self.samples)) + " " + self.cols
+        rpr = "NaviData array with " + str(len(self.rows)) + " " + self.inRows + " and "
+        rpr += str(len(self.columns)) + " " + self.inColumns
         return(rpr)
 
     def makeData(self, hugo_map=""):
@@ -784,7 +794,7 @@ class NaviData():
             for line in self:
                 ret += buildLine(line)
         elif (self.dType == "data"):
-            ret = "GENE\t" + '\t'.join(self.samples_names) + "\n"
+            ret = "GENE\t" + '\t'.join(self.columns_names) + "\n"
             for line in self:
                 if (line[0] in hugo_map or hugo_map == ""):
                     ret += buildLine(line)
@@ -793,6 +803,72 @@ class NaviData():
 
         return("@DATA\n" + ret)
             
+MAX_GROUPS = 7
+class NaviAnnotations(NaviData):
+    """
+    Enhance NaviData to contain annotations and associate annotations values with samples
+    """
+
+    def __init__(self, data, rows_list, columns_list, dType="annotations"):
+        NaviData.__init__(self, data, rows_list, columns_list, dType)
+        # Get the values for each annotations and which samples are associated to a value
+        self.categoriesPerAnnotation = dict()
+        self.samplesPerCategory = dict()
+        modified_data = list()
+        modified_annot = list()
+        for annot in self.annotations:
+            self.categoriesPerAnnotation[annot] = list()
+            self.samplesPerCategory[annot] = dict()
+            reduced = False
+            # Reduce the annotations set if they are continuous integers with too many values
+            if (len(np.unique(self[annot].data)) > MAX_GROUPS):
+                try:
+                    values = [float(value) for value in np.unique(self[annot].data)]
+                    print("Modifying " + annot)
+                    # Define the new annotations
+                    min_value = min(values)
+                    max_value = max(values)
+                    step = (max_value-min_value)/MAX_GROUPS
+                    new_values = [signif(cat) for cat in np.arange(min_value, max_value+step/2, 1.01*step)]
+                    new_categories = [str(new_values[icat])+"<X<"+str(new_values[icat+1]) for icat in range(len(new_values)-1)] + ["NaN"]
+                    print(min_value)
+                    print(max_value)
+                    print(new_values)
+                    print(new_categories)
+                    self.categoriesPerAnnotation[annot] = new_categories
+                    # Attribute the new annotations to samples
+                    modified_data.append(self[annot].data.copy())
+                    modified_annot.append(annot)
+                    for cat in new_categories:
+                        self.samplesPerCategory[cat] = list()
+                    for sample in self.samples:
+                        annot_value = float(self[annot][sample])
+                        if (np.isnan(annot_value)):
+                            self.samplesPerCategory["NaN"].append(sample)
+                        else:
+                            icat = 0
+                            while (signif(annot_value) >= new_values[icat+1]):
+                                icat += 1
+                            self.samplesPerCategory[new_categories[icat]].append(sample)
+                            self[annot][sample] = new_categories[icat]
+                    reduced = True
+                except ValueError: 
+                    reduced = False
+            # Non numeric values or with few enough levels are not modified and simply indexed
+            if (not reduced):
+                for sample in self.samples:
+                    annot_value = self[annot][sample]
+                    if (not annot_value in self.categoriesPerAnnotation[annot]):
+                        self.categoriesPerAnnotation[annot].append(annot_value)
+                        self.samplesPerCategory[annot][annot_value] = [sample]
+                    else:
+                        self.samplesPerCategory[annot][annot_value].append(sample)
+
+        print(modified_annot)
+        if (len(modified_annot) > 0):
+            self.old_annots = NaviData(modified_data, modified_annot, self.rows, "old_annotations")
+        else:
+            self.old_annots = list()
 
 class NaviSlice():
     """
@@ -819,7 +895,19 @@ class NaviSlice():
             return(self.data[self.ids[index]])
         elif (isinstance(index, list)):
             for ii in index:
-                return(self[ii])
+                return(self[ii]) # TODO BUGGY to change
+
+    def __setitem__(self, index, value):
+        if (isinstance(index, int)):
+            self.data[index] = value
+        elif (isinstance(index, str)):
+            self.data[self.ids[index]] = value
+        elif (isinstance(index, list)):
+            if (isinstance(value, list) and len(value) == len(index)):
+                for ii in range(len(index)):
+                    self.data[index[ii]] = value[ii]
+            else:
+                raise ValueError("Length of indexes to change and new values differ")
 
     def __iter__(self):
         return(self.data.__iter__())
@@ -865,5 +953,11 @@ def pca_cov(data):
     # Create the ordered eigenvectors matrix
     eigen_matrix = np.matrix([eig_pairs[1] for ii in range(len(eig_pairs))])
     return (eigen_matrix)
+
+def signif(x, n=3):
+    """
+    Keep n significant numbers
+    """
+    return(round(x, -int(math.log10(x))+(n-1) ))
 
 
