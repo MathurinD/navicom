@@ -603,10 +603,7 @@ class NaviCom():
         # Select the groups that must be selected to produce the composite groups required
         for sample in current_samples:
             nGroups = 0
-            selections = sample.split(";")
-            groups = []
-            for select in selections:
-                groups.append(select.split(":")[0].strip())
+            groups = processGroups()[0]
             # Check that all groups are compatible in the annotations selected (because lower order composition are not generated). No check for individual samples
             if (len(groups) > 1 or groups[0] in self.annotations.annotations):
                 if (first_groups): # Select the set of annotations for the first group
@@ -632,6 +629,22 @@ class NaviCom():
         if (all_groups):
             return "all_groups"
         return current_samples
+
+    def processGroups(self, groupName):
+        """
+        Process a group selection string and return the names of the individual groups to select and the corresponding values selected.
+        """
+        selections = groupName.split(";")
+        groups = list()
+        values = list()
+        for select in selections:
+            subName = select.split(":")
+            groups.append(subName[0].split())
+            try:
+                values.append(float(subName[1].split()))
+            except ValueError:
+                values.append(subName[1].split())
+        return((groups, values))
 
     def displayMethylome(self, samples="all: 1.0", processing="raw", background="mRNA", methylation="glyph"):
         """
