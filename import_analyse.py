@@ -824,17 +824,12 @@ class NaviAnnotations(NaviData):
             if (len(np.unique(self[annot].data)) > MAX_GROUPS):
                 try:
                     values = [float(value) for value in np.unique(self[annot].data)]
-                    print("Modifying " + annot)
                     # Define the new annotations
                     min_value = min(values)
                     max_value = max(values)
                     step = (max_value-min_value)/MAX_GROUPS
                     new_values = [signif(cat) for cat in np.arange(min_value, max_value+step/2, 1.01*step)]
                     new_categories = [str(new_values[icat])+"<X<"+str(new_values[icat+1]) for icat in range(len(new_values)-1)] + ["NaN"]
-                    print(min_value)
-                    print(max_value)
-                    print(new_values)
-                    print(new_categories)
                     self.categoriesPerAnnotation[annot] = new_categories
                     # Attribute the new annotations to samples
                     modified_data.append(self[annot].data.copy())
@@ -864,7 +859,8 @@ class NaviAnnotations(NaviData):
                     else:
                         self.samplesPerCategory[annot][annot_value].append(sample)
 
-        print(modified_annot)
+        if (DEBUG_NAVICOM):
+            print("Modified annotations:" + str(modified_annot))
         if (len(modified_annot) > 0):
             self.old_annots = NaviData(modified_data, modified_annot, self.rows, "old_annotations")
         else:
@@ -894,8 +890,15 @@ class NaviSlice():
         elif (isinstance(index, str)):
             return(self.data[self.ids[index]])
         elif (isinstance(index, list)):
+            ret_value = list()
+            ret_name = list()
             for ii in index:
-                return(self[ii]) # TODO BUGGY to change
+                if (ii in self.ids):
+                    ret_name.append(ii)
+                else:
+                    ret_name.append(self.ids[ii])
+                ret_value.append(self[ii])
+            return(NaviSlice(ret_value, ret_name))
 
     def __setitem__(self, index, value):
         if (isinstance(index, int)):
@@ -939,7 +942,7 @@ def buildLine(line, sep="\t"):
 
 def pca_cov(data):
     """
-    Runs Principal Component Analysis using the covariance matrix and returns the eigen-vectors sorted by decreasing eigenvalues
+    Run Principal Component Analysis using the covariance matrix and returns the eigen-vectors sorted by decreasing eigenvalues
     """
     cov_mat = np.cov(data)
 
