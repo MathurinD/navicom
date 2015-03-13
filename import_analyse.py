@@ -109,6 +109,19 @@ class NaviCom():
         self.associated_data[name] = (processing, method)
         return (name)
 
+    def getDataName(self, data_name):
+        if (isinstance(data_name, str))
+            if (data_name in self.associated_data):
+                return(data_name)
+            elif (data_name + "_raw" in self.associated_data):
+                return(data_name + "_raw")
+        elif (isinstance(data_name, tuple) and len(data_name == 2)):
+            if (data_name[0] in self.processings):
+                return(self.data_name[data_name[0]][data_name[1]])
+            elif (data_name[1] in self.processings):
+                return(self.data_name[data_name[1]][data_name[0]])
+        raise ValueError("Invalid name for data: " + str(data_name))
+
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt"):
         with open(fname) as file_conn:
             ff = file_conn.readlines()
@@ -657,17 +670,19 @@ class NaviCom():
             print(samples)
         self.display(disp_selection, samples)
 
-    def displayTranscriptome(self, dataName, group="all: 1.0", samplesDisplay="", samples=list()):
+    def displayTranscriptome(self, dataName, group="all: 1.0", samplesDisplay="", samples=list(), nbOfSamples=10):
         """
         Display one transcriptome data as map staining, and optionnaly samples from the group as heatmap
         Args:
             - dataName (str or tuple): name or identifier of the data.
             - group (str): Identifier of the group to display
             - samplesDisplay (str): Channel where the individual samples should be displayed (heatmap or barplot)
-            - samples (list): list of samples to display
+            - samples (list or str): list of samples to display, or a string specifying how such a list should be built ('quantiles' or 'random')
+            - nbOfSamples (int): number of individual samples to display, ignored it samples is a list
         """
         allowedDisplays = ["", "heatmap", "barplot"]
         assert samplesDisplay in allowedDisplays, "samplesDisplay must one of " + str(allowedDisplays)
+        dataName = getDataName(dataName)
         self.display([(dataName, "map_staining")], group)
         if (samplesDisplay != ""):
             if (isinstance(samples, list)):
