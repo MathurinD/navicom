@@ -110,17 +110,31 @@ class NaviCom():
         return (name)
 
     def getDataName(self, data_name):
+        dTuple = self.getDataTuple(data_name)
+        return(self.data_name[dTuple[0]][dTuple[1]])
+
+    def getDataTuple(self, data_name):
+        """
+        Return tuple corresponding to the data name or tuple
+        """
         if (isinstance(data_name, str)):
             if (data_name in self.associated_data):
-                return(data_name)
+                return(self.associated_data[data_name])
             elif (data_name + "_raw" in self.associated_data):
-                return(data_name + "_raw")
+                return(self.associated_data[data_name + "_raw"])
         elif (isinstance(data_name, tuple) and len(data_name == 2)):
             if (data_name[0] in self.processings):
-                return(self.data_name[data_name[0]][data_name[1]])
+                return(data_name)
             elif (data_name[1] in self.processings):
-                return(self.data_name[data_name[1]][data_name[0]])
-        raise ValueError("Invalid name for data: " + str(data_name))
+                return((data_name[1],data_name[0]))
+        raise ValueError("Invalid name or tuple for data: " + str(data_name))
+
+    def getData(self, data_name):
+        """
+        Return the NaviData entity corresponding to the data name or tuple
+        """
+        dTuple = self.getDataTuple(data_name)
+        return(self.data[dTuple[0]][dTuple[1]])
 
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt"):
         with open(fname) as file_conn:
@@ -700,14 +714,28 @@ class NaviCom():
                 self.display([(dataName, samplesDisplay)], samples, reset=False)
             elif (isinstance(samples, str)):
                 if (samples == "quantiles"):
-                    pass
-                elif (samples == "random"):
-                    pass
+                    samples = self.selectQuantilesSamples(dataName, group, nbOfSamples)
                 else:
                     self.display([(dataName, samplesDisplay)], [samples], reset=False)
 
-    def selectQuantiles(self, dataName, group, numberOfQuantiles):
-        pass
+    def selectQuantilesSamples(self, dataName, group, numberOfQuantiles):
+        """
+        Compute samples regularly spaced in the sample distribution with both extremes to assess the range
+        """
+        raise ValueError("Not implemented yet")
+        groups, values = self.processGroupsName(group)
+        if (len(groups) < 1):
+            raise ValueError("Cannot select quantiles without a valid group")
+        # Identify the samples selected by the group definition
+        samples = self.samplesPerCategory[group[0]][value[0]]
+        for idx in range(len(groups)-1):
+            to_drop = list()
+            for spl in samples:
+                if (not spl in self.samplesPerCategory[group[idx]][value[idx]]):
+                    to_drop.append(spl)
+            for spl in to_drop:
+                samples.remove(spl)
+        data = self.getData(dataName)
 
 class NaviData():
     """

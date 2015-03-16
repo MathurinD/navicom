@@ -9,6 +9,8 @@ nc = NaviCom("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
 nc.dataAvailable()
 nc.exportAnnotations()
 
+#nc.displayTranscriptome('log2CNA', 'OS_STATUS: NA', "barplot", 'quantiles') # Not yet
+
 nc.displayTranscriptome('log2CNA', 'OS_STATUS: NA', "barplot", 'TCGA.04.1331.01')
 
 nc.defineModules("data/cellcycle_v1.0.gmt")
