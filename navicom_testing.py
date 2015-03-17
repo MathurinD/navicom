@@ -3,13 +3,16 @@
 
 from import_analyse import *
 import time
-VERBOSE_NAVICOM = False
 
 nc = NaviCom("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
+nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
+
+dd=nc.generateDistributionData(nc.getDataName('log2CNA'), 'OS_STATUS: LIVING')
+nc.distData[dd[0]].exportToNaviCell(nc.nv, TYPES_BIOTYPE['mRNA'], dd[0])
+
 nc.dataAvailable()
 nc.exportAnnotations()
 
-#nc.displayTranscriptome('log2CNA', 'OS_STATUS: NA', "barplot", 'quantiles') # Not yet
 
 nc.displayTranscriptome('log2CNA', 'OS_STATUS: NA', "barplot", 'TCGA.04.1331.01')
 

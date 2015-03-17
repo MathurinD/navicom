@@ -30,7 +30,7 @@ for bt in TYPES_SPEC:
         METHODS_TYPE[cat] = bt
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData
-PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth"]
+PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution"]
 PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous"} 
 
 def getLine(ll, split_char="\t"):
@@ -63,7 +63,7 @@ class NaviCom():
         self.biotypes = dict()
         self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data", "moduleAverage":"Continuous copy number data"} # TODO Delete and change to biotypes[category]
         # Data, indexed by processing then type of data
-        self.processings = ["raw", "moduleAverage", "pcaComp", "geoSmooth"]
+        self.processings = PROCESSINGS
         self.data = dict() # All data
         self.exported_data = dict() # Whether data have been exported yet
         self.data_names = dict() # Name of the exported data
@@ -111,7 +111,7 @@ class NaviCom():
 
     def getDataName(self, data_name):
         dTuple = self.getDataTuple(data_name)
-        return(self.data_name[dTuple[0]][dTuple[1]])
+        return(self.data_names[dTuple[0]][dTuple[1]])
 
     def getDataTuple(self, data_name):
         """
@@ -330,6 +330,8 @@ class NaviCom():
                         self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
                         self.exported_data[processing][method] = True
                         done_export = True
+                elif (method in self.data['distribution']):
+                    pass # Avoid bug
                 else:
                     raise ValueError("Biotype of '" + method + "' is unknown")
             elif (method == "uniform"): # Uniform data for glyphs
@@ -338,6 +340,8 @@ class NaviCom():
                     name = "uniform"
                     done_export = True
                     self.exported_data["uniform"] = True
+            elif (method in self.data["distribution"]):
+                pass # Exported on creation, to change for multiple NaviCell
             else:
                 raise KeyError("Method '" + method + "' with processing '" + processing + "' does not exist")
         else:
@@ -412,6 +416,7 @@ class NaviCom():
             barplot_data = ""
             map_staining = False
             default_samples = self.processSampleSelection(default_samples)
+            samples = default_samples
             lastWasDefault = True
             valid_default = (len(default_samples) == 1 and default_samples != "all_groups" and default_samples != "all_samples")
         # Perform the display depending of the selected mode
@@ -422,9 +427,10 @@ class NaviCom():
             dmode = perform[1]
             dmode = dmode.lower()
             # Check groups in NaviCell and get a valid list of samples, reload default if not the last used
-            if (perform[2] == '' and not lastWasDefault):
-                samples = self.processSampleSelection(default_samples)
-                lastWasDefault = True
+            if (perform[2] == ''):
+                if (not lastWasDefault):
+                    samples = self.processSampleSelection(default_samples)
+                    lastWasDefault = True
             else:
                 samples = self.processSampleSelection(perform[2])
                 lastWasDefault = False
@@ -605,7 +611,7 @@ class NaviCom():
         # It is possible to select all samples or all groups on heatmap and barplot
         if (current_samples[0] == "all_samples" or current_samples[0] == "samples"):
             return "all_samples"
-        elif (current_samples[0] == "all" or current_samples[0] == "all: 1.0" or current_samples[0] == ""):
+        elif (current_samples[0] == "all" or current_samples[0] == "all: 1.0"):
             self.selectAnnotations("all")
             return ["all: 1.0"]
         elif (len(current_samples) > 1 and (current_samples[1] == "all_groups" or current_samples[1] == "groups")):
@@ -651,7 +657,7 @@ class NaviCom():
                     values.append(float(value))
                 except ValueError:
                     values.append(value)
-            elif (not group in self.annotations.samples):
+            elif (not (group in self.annotations.samples or re.match("sub", group) or group == "NaN")):
                 if (len(subName) > 1):
                     raise ValueError("Annotation " + group + " does not exist")
                 else:
@@ -695,7 +701,7 @@ class NaviCom():
             print(samples)
         self.display(disp_selection, samples)
 
-    def displayTranscriptome(self, dataName, group="all: 1.0", samplesDisplay="", samples=list(), nbOfSamples=10):
+    def displayTranscriptome(self, dataName, group="all: 1.0", samplesDisplay="", samples=list(), binsNb=10):
         """
         Display one transcriptome data as map staining, and optionnaly samples from the group as heatmap
         Args:
@@ -714,28 +720,59 @@ class NaviCom():
                 self.display([(dataName, samplesDisplay)], samples, reset=False)
             elif (isinstance(samples, str)):
                 if (samples == "quantiles"):
-                    samples = self.selectQuantilesSamples(dataName, group, nbOfSamples)
+                    distName, distSamples = self.generateDistributionData(dataName, group, binsNb)
+                    self.data["distribution"][distName].exportToNaviCell(self.nv, TYPES_BIOTYPE['mRNA'], distName)
+                    self.display([(distName, samplesDisplay)], distSamples, reset=False)
                 else:
                     self.display([(dataName, samplesDisplay)], [samples], reset=False)
 
-    def selectQuantilesSamples(self, dataName, group, numberOfQuantiles):
+    def generateDistributionData(self, dataName, group, binsNb=10):
         """
-        Compute samples regularly spaced in the sample distribution with both extremes to assess the range
+        Compute distribution of values for all genes for one type of data. Use the same scale for all genes.
         """
-        raise ValueError("Not implemented yet")
         groups, values = self.processGroupsName(group)
         if (len(groups) < 1):
-            raise ValueError("Cannot select quantiles without a valid group")
+            raise ValueError("Cannot generate a distribution without a valid group")
+        # Each distribution 
+        distName = dataName + "_" + re.sub(" ", "_", group) + "_" + str(binsNb)
+        distSamples = ["sub" + str(ii) for ii in range(binsNb)] + ["NaN"]
+        if (distName in self.data["distribution"]):
+            return(distName)
+
         # Identify the samples selected by the group definition
-        samples = self.samplesPerCategory[group[0]][value[0]]
-        for idx in range(len(groups)-1):
+        samples = self.annotations.samplesPerCategory[groups[0]][values[0]]
+        for idx in range(1, len(groups)):
             to_drop = list()
             for spl in samples:
-                if (not spl in self.samplesPerCategory[group[idx]][value[idx]]):
+                if (not spl in self.annotations.samplesPerCategory[groups[idx]][values[idx]]):
                     to_drop.append(spl)
             for spl in to_drop:
                 samples.remove(spl)
-        data = self.getData(dataName)
+
+        # Build the distribution dataset
+        data = self.getData(dataName)[samples]
+        minq = np.nanmin(data.data)
+        maxq = np.nanmax(data.data)
+        step = (maxq-minq)/binsNb
+        qseq = np.arange(minq, maxq + step * 1.01, step)
+        newData = list()
+        for gene in data.genes:
+            newData.append([0 for ii in range(binsNb+1)])
+            for value in data[gene]:
+                if (np.isnan(value)):
+                    newData[-1][binsNb] += 1
+                else:
+                    idx = 0
+                    while (value > qseq[idx+1]):
+                        idx += 1
+                    newData[-1][idx] += 1
+        self.data["distribution"][distName] = NaviData(newData, data.genes, distSamples)
+        # Fill the dictionnaries to avoid display bugs
+        self.data_names['distribution'][distName] = distName
+        self.associated_data[distName] = ('distribution', distName)
+
+        return(distName, distSamples)
+
 
 class NaviData():
     """
@@ -855,6 +892,12 @@ class NaviData():
             raise ValueError("Data type must be 'data' or 'annotations'")
 
         return("@DATA\n" + ret)
+
+    def exportToNaviCell(self, nv, biotype, dataName):
+        """
+        Export data to a NaviCell map
+        """
+        nv.importDatatables(self.makeData(nv.getHugoList()), dataName, biotype) # Remove name once in self
             
 MAX_GROUPS = 7
 class NaviAnnotations(NaviData):
