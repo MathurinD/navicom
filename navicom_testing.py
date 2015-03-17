@@ -3,12 +3,28 @@
 
 from import_analyse import *
 import time
-VERBOSE_NAVICOM = False
 
-nc = NaviCom("Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
-nc.exportAnnotations() # TODO move annotations export check to data export function
+nc = NaviCom("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
+nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
+
+dd=nc.generateDistributionData(nc.getDataName('log2CNA'), 'OS_STATUS: LIVING')
+nc.distData[dd[0]].exportToNaviCell(nc.nv, TYPES_BIOTYPE['mRNA'], dd[0])
+
+nc.dataAvailable()
+nc.exportAnnotations()
+
+
+nc.displayTranscriptome('log2CNA', 'OS_STATUS: NA', "barplot", 'TCGA.04.1331.01')
+
+nc.defineModules("data/cellcycle_v1.0.gmt")
+nc.averageModule("gistic") # TODO Warning might be to fix
+
+nc.display([('log2CNA', 'barplot'), ('gistic', 'shape2', 'TCGA.04.1331.01'), ('log2CNA', 'size2', 'TCGA.04.1331.01')], ['OS_STATUS: NA; SEQUENCED: NA'])
+
+nc.displayMethylome(['TCGA.04.1331.01'], "raw", "mRNA", "size")
 
 nc.display([('log2CNA', 'barplot')], ['OS_STATUS: NA; SEQUENCED: NA'])
+nc.resetDisplay()
 
 nc.display([('log2CNA', 'barplot')], 'OS_STATUS: NA')
 nc.display([('log2CNA', 'barplot')], ['OS_STATUS; SEQUENCED', 'all_groups'])
