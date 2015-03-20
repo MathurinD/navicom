@@ -140,17 +140,38 @@ class NaviCom():
         with open(fname) as file_conn:
             ff = file_conn.readlines()
             ll = 0
-        # TODO Being able to import NaviCell valid files (one data type or only annotations)
-        # Look for NAME or GENE in the first line and do not skip it
 
+        dataRegex = "^M |^GENE"
+        annotRegex = "^ANNOTATIONS|^NAME"
+        completeRegex = dataRegex + "|" + annotRegex
+        methodFromFile = False
         while (ll < len(ff)):
-            if (re.search("^M ", ff[ll])):
+            if (re.search(dataRegex, ff[ll])):
                 # Import data
-                method = re.sub("^M ", "", ff[ll].strip())
+                # Use the method name if it is provided, otherwise use the filename 
+                if (re.search("^M ", ff[ll])):
+                    line = re.sub("^M", "", ff[ll].strip()).split("\t")
+                    method = line[0]
+                    if (len(line) > 1 and line[1] in self.processings):
+                        processing = line[1]
+                    else:
+                        processing = "raw"
+                    samples = getLine(ff[ll+1])
+                    if (samples[0] == "GENE"):
+                        samples = samples[1:]
+                    ll += 2
+                elif (re.search("^GENE", ff[ll])):
+                    method = os.path.split(fname)[1]
+                    method = re.sub("\..*", "", method) # TODO? add a processing to remove useless terms
+                    processing = "raw"
+                    if (methodFromFile):
+                        # del self.data[method]["raw"]
+                        raise ValueError("A type of data must be provided when importing several data in one file")
+                    else:
+                        methodFromFile = True
+                    samples = getLine(ff[ll])[1:]
+                    ll += 1
                 print("Importing " + method + " data")
-                samples = getLine(ff[ll+1])
-                if (samples[0] == "GENE"):
-                    samples = samples[1:]
                 profile_data = dict()
                 profile_data["samples"] = oDict()
                 profile_data["genes"] = dict()
@@ -160,26 +181,30 @@ class NaviCom():
                     profile_data["samples"][el] = ii
                     ii += 1
 
-                ll += 2
                 gid = 0
-                while(ll < len(ff) and not re.search("^M ", ff[ll]) and not re.search("^ANNOTATIONS", ff[ll])):
+                while(ll < len(ff) and not re.search(completeRegex, ff[ll])):
                     dl = getLine(ff[ll])
                     profile_data["data"].append(dl[1:]) # Data in a list at index gene_name
                     profile_data["genes"][dl[0]] = gid
                     gid += 1
 
                     ll += 1
-                self.data["raw"][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"])
-                self.exported_data["raw"][method] = False
-                self.nameData(method, "raw")
+                self.data[processing][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"])
+                self.exported_data[processing][method] = False
+                self.nameData(method, processing)
                 if (not "uniform" in self.data):
                     self.defineUniformData(profile_data["samples"], profile_data["genes"])
-            elif (re.search("^ANNOTATIONS", ff[ll])):
+            elif (re.search(annotRegex, ff[ll])):
                 # Import annotations
                 print("Importing Annotations")
-                annotations_names = getLine(ff[ll+1])
-                if (annotations_names[0] == "NAME"):
-                    annotations_names = annotations_names[1:]
+                if (re.search("^NAME", ff[ll])):
+                    annotations_names = getLine(ff[ll][1:])
+                    ll += 1
+                else:
+                    annotations_names = getLine(ff[ll+1])
+                    if (annotations_names[0] == "NAME"):
+                        annotations_names = annotations_names[1:]
+                    ll += 2
                 annot = dict()
                 annot["names"] = list()
                 annot["samples"] = list()
@@ -190,8 +215,7 @@ class NaviCom():
                     annot["annot"].append([1 for ii in range(nb_samples)])
                 for name in annotations_names:
                     annot["names"].append(name)
-                ll += 2
-                while(ll < len(ff) and not re.search("^M ", ff[ll]) and not re.search("^ANNOTATIONS", ff[ll])):
+                while(ll < len(ff) and not re.search(completeRegex, ff[ll])):
                     al = getLine(ff[ll])
                     # Gather each annotation for this sample and add all as the first column if necessary
                     if (not_all):
@@ -202,6 +226,8 @@ class NaviCom():
 
                     ll = ll+1
                 self.annotations = NaviAnnotations(annot["annot"], annot["samples"], annot["names"], dType="annotations")
+            else:
+                raise ValueError("Incorrect format, file must be a valid file for NaviCell or an aggregation of such files with headers to indicate the type of data")
 
     def defineUniformData(self, samples, genes):
         self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
@@ -782,7 +808,7 @@ class NaviData():
     def __init__(self, data, rows_list, columns_list, dType="data"):
         assert(len(data) == len(rows_list))
         for line in data:
-            assert len(line) == len(columns_list), "Incorrect length of line : " + str(line) + ", length = " + str(len(line))
+            assert len(line) == len(columns_list), "Incorrect length of line : " + str(line) + ", length = " + str(len(line)) + ", expected " + str(len(columns_list))
         # Initialise data and indexes
         self.data = np.array(data)
         self.rows = listToDictKeys(rows_list)
