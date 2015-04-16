@@ -151,9 +151,9 @@ class NaviCom():
                 # Use the method name if it is provided, otherwise use the filename 
                 if (re.search("^M ", ff[ll])):
                     line = re.sub("^M", "", ff[ll].strip()).split("\t")
-                    method = line[0]
+                    method = line[0].strip()
                     if (len(line) > 1 and line[1] in self.processings):
-                        processing = line[1]
+                        processing = line[1].strip()
                     else:
                         processing = "raw"
                     samples = getLine(ff[ll+1])
@@ -234,6 +234,9 @@ class NaviCom():
         self.exportData("uniform")
 
     def newProcessedData(self, processing, method, data):
+        """
+        Update adequate arrays when processed data are generated
+        """
         assert processing in self.processings, "Processing " + processing + " is not handled"
         self.data[processing][method] = data
         self.exported_data[processing][method] = False
@@ -754,13 +757,13 @@ class NaviCom():
 
     def generateDistributionData(self, dataName, group, binsNb=10):
         """
-        Compute distribution of values for all genes for one type of data. Use the same scale for all genes.
+        Compute distribution of values for all genes for one type of data. Use the same scale for all genes. The distribution is centered on 0 if it is included, so that it is easy to see if a gene is over- or under-expressed.
         """
         groups, values = self.processGroupsName(group)
         if (len(groups) < 1):
             raise ValueError("Cannot generate a distribution without a valid group")
         # Each distribution 
-        distName = dataName + "_" + re.sub(" ", "_", group) + "_" + str(binsNb)
+        distName = "distribution_" + dataName + "_" + re.sub(" ", "_", group) + "_" + str(binsNb)
         distSamples = ["sub" + str(ii) for ii in range(binsNb)] + ["NaN"]
         if (distName in self.data["distribution"]):
             return(distName)
@@ -780,6 +783,8 @@ class NaviCom():
         minq = np.nanmin(data.data)
         maxq = np.nanmax(data.data)
         step = (maxq-minq)/binsNb
+        if (minq * maxq < 0):
+            step = max(-minq/(binsNb/2), maxq/(binsNb/2))
         qseq = np.arange(minq, maxq + step * 1.01, step)
         newData = list()
         for gene in data.genes:
