@@ -93,6 +93,11 @@ class NaviCom():
                 else:
                     print("\t" + processing + " " + dname)
 
+    def annotationsAvailable(self):
+        print("Annotations available (values) :")
+        for annot in self.annotations.annotations:
+            print("\t" + annot + " : " + str(set(self.annotations[annot])))
+
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
         for method in self.data:
