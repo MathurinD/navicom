@@ -15,13 +15,14 @@ MAX_GLYPHS = 5
 GLYPH_TYPES = ["color", "size", "shape"]
 # Identify the categories of cBioportal data as (aliases, biotype)
 TYPES_SPEC = dict()
-TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "mrna_U133", "mrna_U133_Zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier", "mrna_merged_median_Zscores"], "mRNA expression data")
-TYPES_SPEC["dCNA"] = (["gistic", "cna", "CNA", "cna_rae", "cna_consensus", "SNP-FASST2"], "Discrete Copy number data")
-TYPES_SPEC["cCNA"] = (["log2CNA"], "Continuous copy number data")
+TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data")
+TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
+TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
 TYPES_SPEC["PROT"] = (["RPPA_protein_level"], "protein level")
-TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_Zscores"], "miRNA expression data")
+TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "miRNA expression data")
 TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
+TYPES_SPEC["unknown"] = (["unknown"], "mRNA expression data") # If the type of data cannot be identified, consider continuous data by default
 METHODS_TYPE = dict()
 TYPES_BIOTYPE = dict()
 for bt in TYPES_SPEC:
@@ -88,8 +89,8 @@ class NaviCom():
         print("Data available :")
         for processing in self.processings:
             for dname in self.data[processing]:
-                if (dname in METHODS_TYPE):
-                    print("\t" + processing + " " + dname + ": " + METHODS_TYPE[dname] + " (biotype: " + TYPES_BIOTYPE[METHODS_TYPE[dname]] + ")")
+                if (dname.lower() in METHODS_TYPE):
+                    print("\t" + processing + " " + dname + ": " + METHODS_TYPE[dname.lower()] + " (biotype: " + TYPES_BIOTYPE[METHODS_TYPE[dname.lower()]] + ")")
                 else:
                     print("\t" + processing + " " + dname)
 
@@ -249,32 +250,24 @@ class NaviCom():
 
     def defineModules(self, modules_dict=""):
         """
-        Defines the modules to use and which module each gene belongs to
+        Defines the modules to use and which module each gene belongs to.
 
         Args:
-            modules_dict : Either a dict indexed by module name or a file name with the description of each module (.gmt file)
+            modules_dict : Either a dict indexed by module name or a file name with the description of each module (.gmt file: tab delimited, first column module name, second column description, then list of entities in the module)
         """
+        # Gather the composition of each module
         self.modules = dict()
         if (isinstance(modules_dict, dict)):
-            self.modules = modules_dict # TODO add control that the genes are included
+            self.modules = modules_dict 
         elif (isinstance(modules_dict, str)):
             if (modules_dict != ""):
-                # TODO get the list of modules from the file
                 with open(modules_dict) as ff:
                     for line in ff.readlines():
                         ll = line.strip().split("\t")
                         module_name = ll[0]
-                        self.modules[module_name] = list()
-                        if (ll[1] != "na"):
-                            self.modules[module_name] += ll[1:]
-                        else:
-                            self.modules[module_name] += ll[2:]
-                        # Count the number of modules each gene belong to
-                        for gene in self.modules[module_name]:
-                            try:
-                                self.associated_modules[gene].append(module_name)
-                            except KeyError:
-                                self.associated_modules[gene] = [module_name]
+                        self.modules[module_name] = ll[2:]
+
+        # TODO add control that the genes in the modules have data
         """
         # Only keep genes with data
         for module in self.modules:
@@ -283,6 +276,14 @@ class NaviCom():
                 if (not gene in self.genes_list):
                     self.modules[module].remove(gene)
         """
+        # Count the number of modules each gene belong to
+        self.associated_modules = dict()
+        for module_name in self.modules.keys():
+            for gene in self.modules[module_name]:
+                try:
+                    self.associated_modules[gene].append(module_name)
+                except KeyError:
+                    self.associated_modules[gene] = [module_name]
 
     def averageModule(self, method):
         """
@@ -348,7 +349,7 @@ class NaviCom():
 
         if (processing in self.processings):
             if (method in self.data[processing]):
-                if(method in METHODS_TYPE):
+                if(method.lower() in METHODS_TYPE):
                     if (not self.exported_data[processing][method]):
                         name = self.nameData(method, processing, name)
                         # Processing change the type of data, like discrete data into continuous, or anything to color data
@@ -360,7 +361,7 @@ class NaviCom():
                             else:
                                 biotype = PROCESSINGS_BIOTYPE[processing]
                         else:
-                            biotype = TYPES_BIOTYPE[METHODS_TYPE[method]]
+                            biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
                         self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
                         self.exported_data[processing][method] = True
                         done_export = True
@@ -716,8 +717,8 @@ class NaviCom():
         # Select all methylation data and display as heatmap
         disp_selection = list()
         for method in self.data[processing]:
-            included = method in METHODS_TYPE
-            if (re.search("methylation", method.lower()) or (included and METHODS_TYPE[method] == "methylation")):
+            included = method.lower() in METHODS_TYPE
+            if (re.search("methylation", method.lower()) or (included and METHODS_TYPE[method.lower()] == "methylation")):
                 disp_selection.append((self.data_names[processing][method], methylation)) # TODO Change to barplot when several datatables can be used
         # Display mRNA or gene data as map staining
         if (background in mrna_alias):
@@ -737,13 +738,13 @@ class NaviCom():
 
     def displayTranscriptome(self, dataName, group="all: 1.0", samplesDisplay="", samples=list(), binsNb=10):
         """
-        Display one transcriptome data as map staining, and optionnaly samples from the group as heatmap
+        Display one transcriptome data as map staining, with optionnaly some extra displays (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes)
         Args:
             - dataName (str or tuple): name or identifier of the data.
             - group (str): Identifier of the group to display
             - samplesDisplay (str): Channel where the individual samples should be displayed (heatmap or barplot)
-            - samples (list or str): list of samples to display, or a string specifying how such a list should be built ('quantiles' or 'random')
-            - nbOfSamples (int): number of individual samples to display, ignored it samples is a list
+            - samples (list or str): list of samples to display, or a string specifying how such a list should be built ('quantiles' to get the distribution of values)
+            - nbOfSamples (int): number of individual samples to display, ignored if samples is a list
         """
         allowedDisplays = ["", "heatmap", "barplot"]
         assert samplesDisplay in allowedDisplays, "samplesDisplay must one of " + str(allowedDisplays)
