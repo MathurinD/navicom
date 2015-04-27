@@ -6,14 +6,14 @@ import time
 
 nc = NaviCom("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
 nc.loadData("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011_gistic.tsv")
-nc.annotationsAvailable()
+nc.listAnnotations()
 
 nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
 
 dd=nc.generateDistributionData(nc.getDataName('log2CNA'), 'OS_STATUS: LIVING')
 nc.distData[dd[0]].exportToNaviCell(nc.nv, TYPES_BIOTYPE['mRNA'], dd[0])
 
-nc.dataAvailable()
+nc.listData()
 nc.exportAnnotations()
 
 

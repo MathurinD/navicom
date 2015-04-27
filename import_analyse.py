@@ -15,12 +15,12 @@ MAX_GLYPHS = 5
 GLYPH_TYPES = ["color", "size", "shape"]
 # Identify the categories of cBioportal data as (aliases, biotype)
 TYPES_SPEC = dict()
-TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "mrna_U133", "mrna_U133_Zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier"], "mRNA expression data")
+TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "mrna_U133", "mrna_U133_Zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier", "mrna_merged_median_Zscores"], "mRNA expression data")
 TYPES_SPEC["dCNA"] = (["gistic", "cna", "CNA", "cna_rae", "cna_consensus", "SNP-FASST2"], "Discrete Copy number data")
 TYPES_SPEC["cCNA"] = (["log2CNA"], "Continuous copy number data")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
 TYPES_SPEC["PROT"] = (["RPPA_protein_level"], "protein level")
-TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_Zscores", "mrna_merged_median_Zscores"], "miRNA expression data")
+TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_Zscores"], "miRNA expression data")
 TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
 METHODS_TYPE = dict()
 TYPES_BIOTYPE = dict()
@@ -84,16 +84,16 @@ class NaviCom():
         self.hdid = 0
         self.bid = 0
 
-    def dataAvailable(self):
+    def listData(self):
         print("Data available :")
         for processing in self.processings:
             for dname in self.data[processing]:
                 if (dname in METHODS_TYPE):
-                    print("\t" + processing + " " + dname + ": " + METHODS_TYPE[dname] + " (biotype:" + TYPES_BIOTYPE[METHODS_TYPE[dname]] + ")")
+                    print("\t" + processing + " " + dname + ": " + METHODS_TYPE[dname] + " (biotype: " + TYPES_BIOTYPE[METHODS_TYPE[dname]] + ")")
                 else:
                     print("\t" + processing + " " + dname)
 
-    def annotationsAvailable(self):
+    def listAnnotations(self):
         print("Annotations available (values) :")
         for annot in self.annotations.annotations:
             print("\t" + annot + " : " + str(set(self.annotations[annot])))
