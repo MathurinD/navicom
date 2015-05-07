@@ -2,12 +2,14 @@
 #-*-coding:utf-8-*-
 
 from import_analyse import *
-import time
 
-nc = NaviCom("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php')
+nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
 nc.loadData("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011_gistic.tsv")
 nc.listData()
 nc.listAnnotations()
+
+nc.saveAllData()
+nc.loadData("Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.ncc")
 
 nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
 
