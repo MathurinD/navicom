@@ -364,15 +364,7 @@ class NaviCom():
                     if (not self.exported_data[processing][method]):
                         name = self.nameData(method, processing, name)
                         # Processing change the type of data, like discrete data into continuous, or anything to color data
-                        if (processing in PROCESSINGS_BIOTYPE):
-                            transform_biotype = PROCESSINGS_BIOTYPE[processing]
-                            if (re.search('->', transform_biotype)):
-                                modes = transform_biotype.split("->")
-                                biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[processing])
-                            else:
-                                biotype = PROCESSINGS_BIOTYPE[processing]
-                        else:
-                            biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
+                        biotype = getBiotype(method, processing)
                         self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
                         self.exported_data[processing][method] = True
                         done_export = True
@@ -872,7 +864,7 @@ class NaviData():
         # Informations on the data TODO
         self.processing = processing
         self.method = method
-        self.biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
+        self.biotype = getBiotype(method, processing)
         # Initialise data and indexes
         self.data = np.array(data)
         self.rows = listToDictKeys(rows_list)
@@ -1198,4 +1190,19 @@ def signif(x, n=3):
     Keep n significant numbers
     """
     return(round(x, -int(math.log10(x))+(n-1) ))
+
+def getBiotype(method, processing="raw"):
+    """
+    Get the biotype from the method and the processing
+    """
+    if (processing in PROCESSINGS_BIOTYPE):
+        transform_biotype = PROCESSINGS_BIOTYPE[processing]
+        if (re.search('->', transform_biotype)):
+            modes = transform_biotype.split("->")
+            biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[METHODS_TYPE[method.lower()]])
+        else:
+            biotype = PROCESSINGS_BIOTYPE[processing]
+    else:
+        biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
+
 
