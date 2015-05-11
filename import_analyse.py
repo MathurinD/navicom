@@ -130,7 +130,7 @@ class NaviCom():
                 return(self.associated_data[data_name])
             elif (data_name + "_raw" in self.associated_data):
                 return(self.associated_data[data_name + "_raw"])
-        elif (isinstance(data_name, tuple) and len(data_name == 2)):
+        elif (isinstance(data_name, tuple) and len(data_name) == 2):
             if (data_name[0] in self.processings):
                 return(data_name)
             elif (data_name[1] in self.processings):
