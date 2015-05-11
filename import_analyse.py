@@ -6,6 +6,7 @@ from time import sleep
 from collections import OrderedDict as oDict
 from pprint import pprint
 import math
+from warnings import warn
 
 DEBUG_NAVICOM = True
 VERBOSE_NAVICOM = True
@@ -15,13 +16,14 @@ MAX_GLYPHS = 5
 GLYPH_TYPES = ["color", "size", "shape"]
 # Identify the categories of cBioportal data as (aliases, biotype)
 TYPES_SPEC = dict()
-TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_Zscores", "rna_seq_mrna_median_Zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_Zscores", "mrna_U133", "mrna_U133_Zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier"], "mRNA expression data")
-TYPES_SPEC["dCNA"] = (["gistic", "cna", "CNA", "cna_rae", "cna_consensus", "SNP-FASST2"], "Discrete Copy number data")
-TYPES_SPEC["cCNA"] = (["log2CNA"], "Continuous copy number data")
+TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data")
+TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
+TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
-TYPES_SPEC["PROT"] = (["RPPA_protein_level"], "protein level")
-TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_Zscores", "mrna_merged_median_Zscores"], "miRNA expression data")
+TYPES_SPEC["protein"] = (["RPPA_protein_level"], "protein level")
+TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "miRNA expression data")
 TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
+TYPES_SPEC["unknown"] = (["unknown"], "mRNA expression data") # If the type of data cannot be identified, consider continuous data by default
 METHODS_TYPE = dict()
 TYPES_BIOTYPE = dict()
 for bt in TYPES_SPEC:
@@ -49,7 +51,7 @@ class NaviCom():
     NaviComm class to handle data and display them in a standardized way on NaviCell maps
     """
 
-    def __init__(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', modules_dict=""):
+    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict=""):
         # Build options for the navicell connexion
         options = Options()
         options.map_url = map_url
@@ -57,11 +59,12 @@ class NaviCom():
         options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
         options.browser_command = "firefox %s" # TODO Add user control
         self.nv = NaviCell(options)
+        # Name of the dataset
+        self.name = "no_name"
         # NaviCell export control
         self.exported_annotations = False
         self.browser_opened = False
         self.biotypes = dict()
-        self.methodBiotype = {"gistic":"Discrete Copy number data", "log2CNA":"Continuous copy number data", "rna_seq_mrna":"mRNA expression data", "moduleAverage":"Continuous copy number data"} # TODO Delete and change to biotypes[category]
         # Data, indexed by processing then type of data
         self.processings = PROCESSINGS
         self.data = dict() # All data
@@ -84,14 +87,19 @@ class NaviCom():
         self.hdid = 0
         self.bid = 0
 
-    def dataAvailable(self):
+    def listData(self):
         print("Data available :")
         for processing in self.processings:
             for dname in self.data[processing]:
-                if (dname in METHODS_TYPE):
-                    print("\t" + processing + " " + dname + ": " + METHODS_TYPE[dname] + " (biotype:" + TYPES_BIOTYPE[METHODS_TYPE[dname]] + ")")
+                if (dname.lower() in METHODS_TYPE):
+                    print("\t" + processing + " " + dname + ": " + METHODS_TYPE[dname.lower()] + " (biotype: " + TYPES_BIOTYPE[METHODS_TYPE[dname.lower()]] + ")")
                 else:
                     print("\t" + processing + " " + dname)
+
+    def listAnnotations(self):
+        print("Annotations available (values) :")
+        for annot in self.annotations.annotations:
+            print("\t" + annot + " : " + str(set(self.annotations[annot])))
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self.data)) + " types of data:\n"
@@ -137,20 +145,48 @@ class NaviCom():
         return(self.data[dTuple[0]][dTuple[1]])
 
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt"):
+        """
+        Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method
+        """
         with open(fname) as file_conn:
             ff = file_conn.readlines()
             ll = 0
-        # TODO Being able to import NaviCell valid files (one data type or only annotations)
-        # Look for NAME or GENE in the first line and do not skip it
+        # Name the dataset according to the filename, and issue a warning if the name changes
+        dname = parseFilename(fname)[0]
+        if (dname != self.name and self.name != "no_name"):
+            warn("Name of the dataset " + self.name + " has been changed to " + dname)
+        self.name = dname
 
+        dataRegex = "^M |^GENE"
+        annotRegex = "^ANNOTATIONS|^NAME"
+        completeRegex = dataRegex + "|" + annotRegex
+        methodFromFile = False
         while (ll < len(ff)):
-            if (re.search("^M ", ff[ll])):
+            if (re.search(dataRegex, ff[ll])):
                 # Import data
-                method = re.sub("^M ", "", ff[ll].strip())
+                # Use the method and processing names if they are provided, otherwise deduce them from the filename 
+                if (re.search("^M ", ff[ll])):
+                    line = re.sub("^M", "", ff[ll].strip()).split("\t")
+                    method = line[0].strip()
+                    if (len(line) > 1 and line[1] in self.processings):
+                        processing = line[1].strip()
+                    else:
+                        processing = "raw"
+                    samples = getLine(ff[ll+1])
+                    if (samples[0] == "GENE"):
+                        samples = samples[1:]
+                    ll += 2
+                elif (re.search("^GENE", ff[ll])):
+                    fname = os.path.split(fname)[1]
+                    dname, processing, method = parseFilename(fname)
+                    # Deduction cannot be performed
+                    if (methodFromFile):
+                        raise ValueError("A type of data must be provided when importing several data in one file")
+                    else:
+                        methodFromFile = True
+                    samples = getLine(ff[ll])[1:]
+                    ll += 1
                 print("Importing " + method + " data")
-                samples = getLine(ff[ll+1])
-                if (samples[0] == "GENE"):
-                    samples = samples[1:]
                 profile_data = dict()
                 profile_data["samples"] = oDict()
                 profile_data["genes"] = dict()
@@ -160,26 +196,32 @@ class NaviCom():
                     profile_data["samples"][el] = ii
                     ii += 1
 
-                ll += 2
                 gid = 0
-                while(ll < len(ff) and not re.search("^M ", ff[ll]) and not re.search("^ANNOTATIONS", ff[ll])):
+                while(ll < len(ff) and not re.search(completeRegex, ff[ll])):
                     dl = getLine(ff[ll])
                     profile_data["data"].append(dl[1:]) # Data in a list at index gene_name
                     profile_data["genes"][dl[0]] = gid
                     gid += 1
 
                     ll += 1
-                self.data["raw"][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"])
-                self.exported_data["raw"][method] = False
-                self.nameData(method, "raw")
+                if (processing in self.data and method in self.data[processing]):
+                    warn("Overwriting data for method " + method + " with processing " + processing)
+                self.data[processing][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"], processing, method)
+                self.exported_data[processing][method] = False
+                self.nameData(method, processing)
                 if (not "uniform" in self.data):
                     self.defineUniformData(profile_data["samples"], profile_data["genes"])
-            elif (re.search("^ANNOTATIONS", ff[ll])):
+            elif (re.search(annotRegex, ff[ll])):
                 # Import annotations
                 print("Importing Annotations")
-                annotations_names = getLine(ff[ll+1])
-                if (annotations_names[0] == "NAME"):
-                    annotations_names = annotations_names[1:]
+                if (re.search("^ANNOTATIONS", ff[ll])):
+                    annotations_names = getLine(ff[ll+1])
+                    if (annotations_names[0] == "NAME"):
+                        annotations_names = annotations_names[1:]
+                    ll += 2
+                elif (re.search("^NAME", ff[ll])):
+                    annotations_names = getLine(ff[ll][1:])
+                    ll += 1
                 annot = dict()
                 annot["names"] = list()
                 annot["samples"] = list()
@@ -190,8 +232,7 @@ class NaviCom():
                     annot["annot"].append([1 for ii in range(nb_samples)])
                 for name in annotations_names:
                     annot["names"].append(name)
-                ll += 2
-                while(ll < len(ff) and not re.search("^M ", ff[ll]) and not re.search("^ANNOTATIONS", ff[ll])):
+                while(ll < len(ff) and not re.search(completeRegex, ff[ll])):
                     al = getLine(ff[ll])
                     # Gather each annotation for this sample and add all as the first column if necessary
                     if (not_all):
@@ -202,12 +243,17 @@ class NaviCom():
 
                     ll = ll+1
                 self.annotations = NaviAnnotations(annot["annot"], annot["samples"], annot["names"], dType="annotations")
+            else:
+                raise ValueError("Incorrect format, file must be a valid file for NaviCell or an aggregation of such files with headers to indicate the type of data")
 
     def defineUniformData(self, samples, genes):
         self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
         self.exportData("uniform")
 
     def newProcessedData(self, processing, method, data):
+        """
+        Update adequate arrays when processed data are generated
+        """
         assert processing in self.processings, "Processing " + processing + " is not handled"
         self.data[processing][method] = data
         self.exported_data[processing][method] = False
@@ -215,32 +261,24 @@ class NaviCom():
 
     def defineModules(self, modules_dict=""):
         """
-        Defines the modules to use and which module each gene belongs to
+        Defines the modules to use and which module each gene belongs to.
 
         Args:
-            modules_dict : Either a dict indexed by module name or a file name with the description of each module (.gmt file)
+            modules_dict : Either a dict indexed by module name or a file name with the description of each module (.gmt file: tab delimited, first column module name, second column description, then list of entities in the module)
         """
+        # Gather the composition of each module
         self.modules = dict()
         if (isinstance(modules_dict, dict)):
-            self.modules = modules_dict # TODO add control that the genes are included
+            self.modules = modules_dict 
         elif (isinstance(modules_dict, str)):
             if (modules_dict != ""):
-                # TODO get the list of modules from the file
                 with open(modules_dict) as ff:
                     for line in ff.readlines():
                         ll = line.strip().split("\t")
                         module_name = ll[0]
-                        self.modules[module_name] = list()
-                        if (ll[1] != "na"):
-                            self.modules[module_name] += ll[1:]
-                        else:
-                            self.modules[module_name] += ll[2:]
-                        # Count the number of modules each gene belong to
-                        for gene in self.modules[module_name]:
-                            try:
-                                self.associated_modules[gene].append(module_name)
-                            except KeyError:
-                                self.associated_modules[gene] = [module_name]
+                        self.modules[module_name] = ll[2:]
+
+        # TODO add control that the genes in the modules have data
         """
         # Only keep genes with data
         for module in self.modules:
@@ -249,6 +287,14 @@ class NaviCom():
                 if (not gene in self.genes_list):
                     self.modules[module].remove(gene)
         """
+        # Count the number of modules each gene belong to
+        self.associated_modules = dict()
+        for module_name in self.modules.keys():
+            for gene in self.modules[module_name]:
+                try:
+                    self.associated_modules[gene].append(module_name)
+                except KeyError:
+                    self.associated_modules[gene] = [module_name]
 
     def averageModule(self, method):
         """
@@ -314,7 +360,7 @@ class NaviCom():
 
         if (processing in self.processings):
             if (method in self.data[processing]):
-                if(method in METHODS_TYPE):
+                if(method.lower() in METHODS_TYPE):
                     if (not self.exported_data[processing][method]):
                         name = self.nameData(method, processing, name)
                         # Processing change the type of data, like discrete data into continuous, or anything to color data
@@ -326,7 +372,7 @@ class NaviCom():
                             else:
                                 biotype = PROCESSINGS_BIOTYPE[processing]
                         else:
-                            biotype = TYPES_BIOTYPE[METHODS_TYPE[method]]
+                            biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
                         self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
                         self.exported_data[processing][method] = True
                         done_export = True
@@ -682,8 +728,8 @@ class NaviCom():
         # Select all methylation data and display as heatmap
         disp_selection = list()
         for method in self.data[processing]:
-            included = method in METHODS_TYPE
-            if (re.search("methylation", method.lower()) or (included and METHODS_TYPE[method] == "methylation")):
+            included = method.lower() in METHODS_TYPE
+            if (re.search("methylation", method.lower()) or (included and METHODS_TYPE[method.lower()] == "methylation")):
                 disp_selection.append((self.data_names[processing][method], methylation)) # TODO Change to barplot when several datatables can be used
         # Display mRNA or gene data as map staining
         if (background in mrna_alias):
@@ -703,13 +749,13 @@ class NaviCom():
 
     def displayTranscriptome(self, dataName, group="all: 1.0", samplesDisplay="", samples=list(), binsNb=10):
         """
-        Display one transcriptome data as map staining, and optionnaly samples from the group as heatmap
+        Display one transcriptome data as map staining, with optionnaly some extra displays (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes)
         Args:
             - dataName (str or tuple): name or identifier of the data.
             - group (str): Identifier of the group to display
             - samplesDisplay (str): Channel where the individual samples should be displayed (heatmap or barplot)
-            - samples (list or str): list of samples to display, or a string specifying how such a list should be built ('quantiles' or 'random')
-            - nbOfSamples (int): number of individual samples to display, ignored it samples is a list
+            - samples (list or str): list of samples to display, or a string specifying how such a list should be built ('quantiles' to get the distribution of values)
+            - nbOfSamples (int): number of individual samples to display, ignored if samples is a list
         """
         allowedDisplays = ["", "heatmap", "barplot"]
         assert samplesDisplay in allowedDisplays, "samplesDisplay must one of " + str(allowedDisplays)
@@ -728,13 +774,13 @@ class NaviCom():
 
     def generateDistributionData(self, dataName, group, binsNb=10):
         """
-        Compute distribution of values for all genes for one type of data. Use the same scale for all genes.
+        Compute distribution of values for all genes for one type of data. Use the same scale for all genes. The distribution is centered on 0 if it is included, so that it is easy to see if a gene is over- or under-expressed.
         """
         groups, values = self.processGroupsName(group)
         if (len(groups) < 1):
             raise ValueError("Cannot generate a distribution without a valid group")
         # Each distribution 
-        distName = dataName + "_" + re.sub(" ", "_", group) + "_" + str(binsNb)
+        distName = "distribution_" + dataName + "_" + re.sub(" ", "_", group) + "_" + str(binsNb)
         distSamples = ["sub" + str(ii) for ii in range(binsNb)] + ["NaN"]
         if (distName in self.data["distribution"]):
             return(distName)
@@ -754,6 +800,8 @@ class NaviCom():
         minq = np.nanmin(data.data)
         maxq = np.nanmax(data.data)
         step = (maxq-minq)/binsNb
+        if (minq * maxq < 0):
+            step = max(-minq/(binsNb/2), maxq/(binsNb/2))
         qseq = np.arange(minq, maxq + step * 1.01, step)
         newData = list()
         for gene in data.genes:
@@ -773,16 +821,58 @@ class NaviCom():
 
         return(distName, distSamples)
 
+    def saveAllData(self, folder=""):
+        if (folder != ""):
+            folder = re.sub("/?$", "/", folder)
+        fname = folder + self.name + ".ncc"
+        print("Saving as " + fname)
+        ff = open(fname, "w")
+        ff.close()
+        allProcessings = list(self.data)
+        allProcessings.remove("uniform")
+        for processing in allProcessings:
+            for method in self.data[processing]:
+                print("Saving " + processing + ", " + method)# + ", " + str(self.data[processing][method]))
+                self.data[processing][method].saveData(fname, "a")
+        print("Saving Annotations")
+        self.annotations.saveData(fname, "a")
+
+    def saveData(self, method, processing="raw", folder="./"):
+        """
+        Save the data in a file that can be exported to NaviCell or imported in NaviCom
+        """
+        # TODO authorize to provide a list to save a custom dataset
+        if (folder != ""):
+            folder = re.sub("/?$", "/", folder)
+        if (processing in self.data):
+            if (method in self.data[processing]):
+                self.data[processing][method].saveData(baseName=folder+self.name)
+            else:
+                raise ValueError("Method " + method + " does not exist with processing " + processing)
+        else:
+            raise ValueError("Processing " + processing + " does not exist")
+
+    def bindNaviData(self, navidata, method, processing):
+        """
+        Bind NaviData to the NaviCom object in order to use it 
+        """
+        assert isinstance(navidata, NaviData), "navidata is not a NaviData object"
+        self.data[processing][method] = navidata
+
 
 class NaviData():
     """
     Custom class to store the data and be able to access rows and columns by name
     """
 
-    def __init__(self, data, rows_list, columns_list, dType="data"):
+    def __init__(self, data, rows_list, columns_list, processing="raw", method="unknown", dType="data"):
         assert(len(data) == len(rows_list))
         for line in data:
-            assert len(line) == len(columns_list), "Incorrect length of line : " + str(line) + ", length = " + str(len(line))
+            assert len(line) == len(columns_list), "Incorrect length of line : " + str(line) + ", length = " + str(len(line)) + ", expected " + str(len(columns_list))
+        # Informations on the data TODO
+        self.processing = processing
+        self.method = method
+        self.biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
         # Initialise data and indexes
         self.data = np.array(data)
         self.rows = listToDictKeys(rows_list)
@@ -898,6 +988,33 @@ class NaviData():
         Export data to a NaviCell map
         """
         nv.importDatatables(self.makeData(nv.getHugoList()), dataName, biotype) # Remove name once in self
+        #nv.importDatatables(self.makeData(nv.getHugoList()), dataName, self.biotype)
+
+    def saveData(self, baseName="", mode="w"):
+        """
+        Save the NaviData datas in a file that can be used in NaviCell, but can also be loaded as NaviData
+        """
+        fname = baseName + "[" + self.processing + "]" + "[" + self.method + "].ncd"
+        if (mode == "a"):
+            fname = baseName
+        with open(fname, mode) as ff:
+            # First line, and first word in the 
+            if (self.dType == "data"):
+                if (mode == "a"):
+                    ff.write("M "+self.method+"\t"+self.processing+"\n")
+                ff.write("GENE")
+            elif (self.dType == "annotations" or self.dType == "old_annots"):
+                if (mode == "a"):
+                    ff.write("ANNOTATIONS "+self.method+"\t"+self.processing+"\n")
+                ff.write("NAME")
+            for nn in self.columns_names:
+                ff.write("\t" + nn)
+            ff.write("\n")
+            for ii in range(len(self.rows_names)):
+                ff.write(self.rows_names[ii])
+                for sv in self.data[ii]:
+                    ff.write("\t" + str(sv))
+                ff.write("\n")
             
 MAX_GROUPS = 7
 class NaviAnnotations(NaviData):
@@ -906,7 +1023,7 @@ class NaviAnnotations(NaviData):
     """
 
     def __init__(self, data, rows_list, columns_list, dType="annotations"):
-        NaviData.__init__(self, data, rows_list, columns_list, dType)
+        NaviData.__init__(self, data, rows_list, columns_list, dType=dType)
         # Get the values for each annotations and which samples are associated to a value
         self.categoriesPerAnnotation = dict()
         self.samplesPerCategory = dict()
@@ -1036,6 +1153,29 @@ def buildLine(line, sep="\t"):
         ret += str(el) + sep
     return(re.sub("NaN|nan", "NA", ret[:-1]) + "\n")
 
+def parseFilename(fname):
+    """
+    Extract data name, method and processing from the name of the file
+    """
+    fname = re.sub(".*/([^/]+)", "\\1", fname)
+    if (re.search("\.ncd$|\.nca$", fname)):
+        names = re.split("\[", re.sub(".ncd$|.nca$", "", fname))
+        dname = re.sub("_$", "", names[0])
+        processing = re.sub("\]|_$|^_", "", names[1])
+        method = re.sub("\[|_$|^_", "", names[2])
+    elif (re.search("\.tsv$", fname)):
+        processing = "raw" # No processing is done by the R extractor
+        names = re.split("_", re.sub("\.tsv", "", fname))
+        ll = len(names)
+        while (not "_".join(names[-ll:]) in METHODS_TYPE and ll >= 1):
+            ll-=1
+        if (ll >= 1):
+            method = "_".join(names[-ll:])
+            dname = "_".join(names[:-ll])
+    else:
+        return (re.sub("\.[^.]*$", "", fname), "raw", "unknown")
+    return (dname, processing, method)
+
 def pca_cov(data):
     """
     Run Principal Component Analysis using the covariance matrix and returns the eigen-vectors sorted by decreasing eigenvalues
@@ -1058,5 +1198,4 @@ def signif(x, n=3):
     Keep n significant numbers
     """
     return(round(x, -int(math.log10(x))+(n-1) ))
-
 
