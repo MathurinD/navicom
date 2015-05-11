@@ -4,11 +4,15 @@
 from import_analyse import *
 
 nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
-nc.loadData("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011_gistic.tsv")
 nc.listData()
 nc.listAnnotations()
 
+nc.colorsOverlay("mrna_median", "log2CNA", processing="raw")
+nc.listData()
+nc.saveData( "mrna_median_log2CNA", "colors")
+
 nc.saveAllData()
+nc.loadData("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011_gistic.tsv")
 nc.loadData("Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.ncc")
 
 nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
