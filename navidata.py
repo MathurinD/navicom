@@ -4,6 +4,41 @@
 # Classes to store data an annotations in a convenient format for NaviCell export
 ################################################################################
 
+import numpy as np
+import re
+from time import sleep
+from collections import OrderedDict as oDict
+from pprint import pprint
+import math
+from warnings import warn
+
+DEBUG_NAVIDATA = True
+
+# Constants related to NaviCell
+MAX_GLYPHS = 5
+GLYPH_TYPES = ["color", "size", "shape"]
+# Identify the categories of cBioportal data as (aliases, biotype)
+TYPES_SPEC = dict()
+TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data")
+TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
+TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
+TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
+TYPES_SPEC["protein"] = (["RPPA_protein_level"], "protein level")
+TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "miRNA expression data")
+TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
+TYPES_SPEC["unknown"] = (["unknown"], "mRNA expression data") # If the type of data cannot be identified, consider continuous data by default
+METHODS_TYPE = dict()
+TYPES_BIOTYPE = dict()
+for bt in TYPES_SPEC:
+    TYPES_BIOTYPE[bt] = TYPES_SPEC[bt][1]
+    for cat in TYPES_SPEC[bt][0]:
+        METHODS_TYPE[cat] = bt
+
+# Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData
+PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors"]
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous"} 
+
+
 class NaviData():
     """
     Custom class to store the data and be able to access rows and columns by name
@@ -215,7 +250,7 @@ class NaviAnnotations(NaviData):
                     else:
                         self.samplesPerCategory[annot][annot_value].append(sample)
 
-        if (DEBUG_NAVICOM):
+        if (DEBUG_NAVIDATA):
             print("Modified annotations:" + str(modified_annot))
         if (len(modified_annot) > 0):
             self.old_annots = NaviData(modified_data, modified_annot, self.rows, "old_annotations")
