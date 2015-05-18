@@ -26,13 +26,21 @@ class NaviCom():
     NaviComm class to handle data and display them in a standardized way on NaviCell maps
     """
 
-    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict=""):
+    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict="", browser_command="firefox %s"):
+        """
+        Initialize a Navicell communication object.
+        Args:
+            map_url (str): URL of the NaviCell map
+            fname (str): name of the data file to load
+            modules_dict (str): name of the module definition file (.gmt) to load
+            browser_command (str): command to open the browser
+        """
         # Build options for the navicell connexion
         options = Options()
         options.map_url = map_url
         idx = options.map_url.find('/navicell/')
         options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
-        options.browser_command = "firefox %s" # TODO Add user control
+        options.browser_command = browser_command # TODO Add user control
         self.nv = NaviCell(options)
         # Name of the dataset
         self.name = "no_name"
@@ -119,9 +127,13 @@ class NaviCom():
         dTuple = self.getDataTuple(data_name)
         return(self.data[dTuple[0]][dTuple[1]])
 
-    def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt"):
+    def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", keep_mutations_nan=False):
         """
-        Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method
+        Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method.
+
+        Args:
+            fname (str): name of the file from which the data should be loaded
+            keep_mutations_nan(str): whether nan in mutations data should be considered as no mutation (False) or missing value (True)
         """
         with open(fname) as file_conn:
             ff = file_conn.readlines()
@@ -183,6 +195,7 @@ class NaviCom():
                     warn("Overwriting data for method " + method + " with processing " + processing)
                 self.data[processing][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"], processing, method)
                 self.exported_data[processing][method] = False
+                self.quantifyMutations(method)
                 self.nameData(method, processing)
                 if (not "uniform" in self.data):
                     self.defineUniformData(profile_data["samples"], profile_data["genes"])
@@ -232,6 +245,28 @@ class NaviCom():
         self.data[processing][method] = data
         self.exported_data[processing][method] = False
         self.nameData(method, processing)
+
+    def quantifyMutations(self, method, keep_nan=False):
+        """
+        Transform the qualitative mutation datas into a quantitative one, where 1 means a mutation and 0 no mutation.
+        Args:
+            keep_nan : Should nan values be converted to O (no mutations) or kept as missing data
+        """
+        if (method in self.data["raw"] and METHODS_TYPE[method] == "mutations"):
+            mutations = NaviData(np.zeros(self.data["raw"][method].data.shape), self.data["raw"][method].rows_names, self.data["raw"][method].columns_names, method)
+            for rr in self.data["raw"][method].rows_names:
+                for cc in self.data["raw"][method].columns_names:
+                    value = self.data["raw"][method][rr][cc]
+                    if (re.match("nan|na", value.lower()) ):
+                        if (keep_nan)
+                            mutations.data[rr][cc] = np.nan
+                        else:
+                            mutations.data[rr][cc] = 0
+                    elif (re.match("", value)):
+                        mutations.data[rr][cc] = 0
+                    else:
+                        mutations.data[rr][cc] = 1
+            self.newProcessedData("mutationQuantification", method, mutations)
 
     def defineModules(self, modules_dict=""):
         """

@@ -34,14 +34,21 @@ for bt in TYPES_SPEC:
     for cat in TYPES_SPEC[bt][0]:
         METHODS_TYPE[cat] = bt
 
-# Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData
-PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors"]
-PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous"} 
+# Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
+PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "mutationQuantification"]
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "mutationQuantification":"Continuous copy number data"}
 
 
 class NaviData():
     """
-    Custom class to store the data and be able to access rows and columns by name
+    Custom class to store the data and be able to access rows and columns by name.
+    Args :
+        data (list or array) : Values of the data to insert in the NaviData object. Must be convertible into a numpy array.
+        rows_list (list) : names of the rows (samples names)
+        columns_list (list) : names of the columns (genes names)
+        processing (str) : name of the computer processing applied to the data
+        method (str) : name of the experimental method used to get the original ("raw") data
+        dType (str) : "data" or "annotations", whether the NaviData object contains datas or annotations (Note : this should be left to default, this is used by NaviAnnotations to change some internal variables)
     """
     def __init__(self, data, rows_list, columns_list, processing="raw", method="unknown", dType="data"):
         assert(len(data) == len(rows_list))
@@ -143,7 +150,7 @@ class NaviData():
         - first line is: GENE word followed by a tab separated list of sample names,
         - each line begins with an gene name and must be followed by a tab separated list of gene/sample values.
 
-        Eliminates genes not present in the NaviCell map.
+        Remove genes not present in hugo_map if provided.
         """
 
         # Change header whether we have annotations or real self
@@ -316,6 +323,9 @@ class NaviSlice():
         return(NaviSlice(self.data + nvslice.data, self.ids))
 
 def listToDictKeys(ilist):
+    """
+    Convert a list to an ordered dict where each item is a key and gives the id of the item in the list
+    """
     if (isinstance(ilist, dict)):
         return(oDict(ilist))
     res = oDict()
