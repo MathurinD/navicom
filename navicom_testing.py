@@ -7,6 +7,8 @@ nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/i
 nc.listData()
 nc.listAnnotations()
 
+nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", '')
+
 nc.colorsOverlay("mrna_median", "log2CNA", processing="raw")
 nc.listData()
 nc.saveData( "mrna_median_log2CNA", "colors")
@@ -15,12 +17,11 @@ nc.saveAllData()
 nc.loadData("data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011_gistic.tsv")
 nc.loadData("Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.ncc")
 
-nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
-
 dd=nc.generateDistributionData(nc.getDataName('log2CNA'), 'OS_STATUS: LIVING')
 nc.distData[dd[0]].exportToNaviCell(nc.nv, TYPES_BIOTYPE['mRNA'], dd[0])
 
 nc.exportAnnotations()
+nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
 
 nc.displayTranscriptome('log2CNA', 'OS_STATUS: NA', "barplot", 'TCGA.04.1331.01')
 

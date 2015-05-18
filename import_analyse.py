@@ -248,7 +248,6 @@ class NaviCom():
 
     def defineUniformData(self, samples, genes):
         self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
-        self.exportData("uniform")
 
     def newProcessedData(self, processing, method, data):
         """
@@ -385,14 +384,17 @@ class NaviCom():
         else:
             raise KeyError("Processing " + processing + " does not exist")
 
-        # Sleep to avoid errors due to the fact that the loading by NaviCell is asynchronous
+        # Uniform data have been defined when other datas have, but do not recquire explicit export
+        if (not self.exported_data["uniform"]):
+            self.exportData("uniform")
+
         # TODO Remove it when the python API receives signal
         if (done_export):
             print("Exporting " + name + " to NaviCell...")
 
     def checkBrowser(self):
         """
-        Check if the browser is opened, and open it if it is not
+        Check if the browser is opened or open it
         """
         if (not self.browser_opened):
             print("Launching browser...")
@@ -418,6 +420,9 @@ class NaviCom():
             colors : range of colors to use (NOT IMPLEMENTED YET)
             default_samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all default_samples from the list are used for heatmaps and barplots. Use 'all_samples' to use all default_samples or ['annot1:...:annotn', 'all_groups'] to use all groups corresponding to the combinations of annot1...annotn.
         """
+        # Correct if the user give a single tuple
+        if (isinstance(perform_list, tuple)):
+            perform_list = [perform_list]
         assert isinstance(perform_list, list), "perform list must be a list"
         assert isinstance(perform_list[0], tuple) and (len(perform_list[0]) == 2 or len(perform_list[0]) == 3), "perform list must be a list of (2/3)-tuples"
         self.checkBrowser()
@@ -426,6 +431,8 @@ class NaviCom():
             self.resetDisplay()
 
         # Preprocess the perform list to get valid data_name, and export data that have not been exported yet
+        if (DEBUG_NAVICOM):
+            print(perform_list)
         for perf_id in range(len(perform_list)):
             data_name = perform_list[perf_id][0]
             perform = perform_list[perf_id]
@@ -1266,5 +1273,5 @@ def getBiotype(method, processing="raw"):
             biotype = PROCESSINGS_BIOTYPE[processing]
     else:
         biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
-
+    return biotype
 
