@@ -32,7 +32,7 @@ for bt in TYPES_SPEC:
         METHODS_TYPE[cat] = bt
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData
-PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution"]
+PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors"]
 PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous"} 
 
 def getLine(ll, split_char="\t"):
@@ -248,7 +248,6 @@ class NaviCom():
 
     def defineUniformData(self, samples, genes):
         self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
-        self.exportData("uniform")
 
     def newProcessedData(self, processing, method, data):
         """
@@ -364,15 +363,7 @@ class NaviCom():
                     if (not self.exported_data[processing][method]):
                         name = self.nameData(method, processing, name)
                         # Processing change the type of data, like discrete data into continuous, or anything to color data
-                        if (processing in PROCESSINGS_BIOTYPE):
-                            transform_biotype = PROCESSINGS_BIOTYPE[processing]
-                            if (re.search('->', transform_biotype)):
-                                modes = transform_biotype.split("->")
-                                biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[processing])
-                            else:
-                                biotype = PROCESSINGS_BIOTYPE[processing]
-                        else:
-                            biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
+                        biotype = getBiotype(method, processing)
                         self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
                         self.exported_data[processing][method] = True
                         done_export = True
@@ -393,14 +384,17 @@ class NaviCom():
         else:
             raise KeyError("Processing " + processing + " does not exist")
 
-        # Sleep to avoid errors due to the fact that the loading by NaviCell is asynchronous
+        # Uniform data have been defined when other datas have, but do not recquire explicit export
+        if (not self.exported_data["uniform"]):
+            self.exportData("uniform")
+
         # TODO Remove it when the python API receives signal
         if (done_export):
             print("Exporting " + name + " to NaviCell...")
 
     def checkBrowser(self):
         """
-        Check if the browser is opened, and open it if it is not
+        Check if the browser is opened or open it
         """
         if (not self.browser_opened):
             print("Launching browser...")
@@ -426,6 +420,9 @@ class NaviCom():
             colors : range of colors to use (NOT IMPLEMENTED YET)
             default_samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all default_samples from the list are used for heatmaps and barplots. Use 'all_samples' to use all default_samples or ['annot1:...:annotn', 'all_groups'] to use all groups corresponding to the combinations of annot1...annotn.
         """
+        # Correct if the user give a single tuple
+        if (isinstance(perform_list, tuple)):
+            perform_list = [perform_list]
         assert isinstance(perform_list, list), "perform list must be a list"
         assert isinstance(perform_list[0], tuple) and (len(perform_list[0]) == 2 or len(perform_list[0]) == 3), "perform list must be a list of (2/3)-tuples"
         self.checkBrowser()
@@ -434,6 +431,8 @@ class NaviCom():
             self.resetDisplay()
 
         # Preprocess the perform list to get valid data_name, and export data that have not been exported yet
+        if (DEBUG_NAVICOM):
+            print(perform_list)
         for perf_id in range(len(perform_list)):
             data_name = perform_list[perf_id][0]
             perform = perform_list[perf_id]
@@ -821,7 +820,68 @@ class NaviCom():
 
         return(distName, distSamples)
 
+    def colorsOverlay(self, red="uniform", green="uniform", blue="uniform", processing=""):
+        """
+        Create a dataset where values are colors. The color is calculated according to three datasets.
+
+        Args:
+            red : data name or tuple (processing, method)
+            green : data name or tuple (processing, method)
+            blue : data name or tuple (processing, method)
+        """
+        assert red != "uniform" or green != "uniform" or blue != "uniform", "You must choose a datatable"
+        # TODO export to NaviCell and display
+        colors = [red, green, blue]
+        mset = ""
+        # Empty string table
+        dims = self.data["uniform"].data.shape
+        dataset = np.zeros(dims, '<U7')
+        for rr in range(dims[0]):
+            for cc in range(dims[1]):
+                dataset[rr,cc] = "#"
+        for col in colors:
+            if (col == "uniform"):
+                for rr in range(dims[0]):
+                    for cc in range(dims[1]):
+                        dataset[rr,cc] += "00" # Default to black
+            else:
+                # Pick the datatable
+                if (processing == ""):
+                    processing, method = getDataTuple(col)
+                elif (not processing in self.data):
+                    raise ValueError("Processing " + processing + " does not exist")
+                elif (not col in self.data[processing]):
+                    raise ValueError("Method \"" + col + "\" does not exist with processing \"" + processing + "\"")
+                else:
+                    method = col
+                if (processing != "raw"):
+                    mset += processing + "_"
+                mset += method + "_"
+                # Input the value in the new dataset
+                minval = np.nanmin(self.data[processing][method].data)
+                maxval = np.nanmax(self.data[processing][method].data)
+                if (np.isnan(minval) or np.isnan(maxval)):
+                    warn("Datatable (" + processing + ", " + method + ") does not contain any value.")
+                    for rr in range(dims[0]):
+                        for cc in range(dims[1]):
+                            dataset[rr,cc] = "00"
+                else:
+                    for rr in range(dims[0]):
+                        for cc in range(dims[1]):
+                            value = self.data[processing][method].data[rr,cc]
+                            if (np.isnan(value)):
+                                value = minval
+                            intensity = re.sub("0x", "", hex(int( 16 * (value - minval) / (maxval-minval) )) )
+                            if (len(intensity) == 0):
+                                intensity = "0" + intensity
+                            dataset[rr,cc] += intensity
+        mset = re.sub("_$", "", mset)
+        self.data["colors"][mset] = NaviData(dataset, self.data[processing][method].rows, self.data[processing][method].columns, processing="colors", method="unknown")
+
     def saveAllData(self, folder=""):
+        """
+        Save all data in an .ncc file. Does not save the distribution nor color data.
+        """
         if (folder != ""):
             folder = re.sub("/?$", "/", folder)
         fname = folder + self.name + ".ncc"
@@ -830,6 +890,8 @@ class NaviCom():
         ff.close()
         allProcessings = list(self.data)
         allProcessings.remove("uniform")
+        allProcessings.remove("distribution")
+        allProcessings.remove("color")
         for processing in allProcessings:
             for method in self.data[processing]:
                 print("Saving " + processing + ", " + method)# + ", " + str(self.data[processing][method]))
@@ -859,7 +921,6 @@ class NaviCom():
         assert isinstance(navidata, NaviData), "navidata is not a NaviData object"
         self.data[processing][method] = navidata
 
-
 class NaviData():
     """
     Custom class to store the data and be able to access rows and columns by name
@@ -872,7 +933,7 @@ class NaviData():
         # Informations on the data TODO
         self.processing = processing
         self.method = method
-        self.biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
+        self.biotype = getBiotype(method, processing)
         # Initialise data and indexes
         self.data = np.array(data)
         self.rows = listToDictKeys(rows_list)
@@ -1198,4 +1259,19 @@ def signif(x, n=3):
     Keep n significant numbers
     """
     return(round(x, -int(math.log10(x))+(n-1) ))
+
+def getBiotype(method, processing="raw"):
+    """
+    Get the biotype from the method and the processing
+    """
+    if (processing in PROCESSINGS_BIOTYPE):
+        transform_biotype = PROCESSINGS_BIOTYPE[processing]
+        if (re.search('->', transform_biotype)):
+            modes = transform_biotype.split("->")
+            biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[METHODS_TYPE[method.lower()]])
+        else:
+            biotype = PROCESSINGS_BIOTYPE[processing]
+    else:
+        biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
+    return biotype
 
