@@ -127,6 +127,7 @@ class NaviCom():
         dTuple = self.getDataTuple(data_name)
         return(self.data[dTuple[0]][dTuple[1]])
 
+    # Load new data
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", keep_mutations_nan=False):
         """
         Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method.
@@ -234,6 +235,13 @@ class NaviCom():
             else:
                 raise ValueError("Incorrect format, file must be a valid file for NaviCell or an aggregation of such files with headers to indicate the type of data")
 
+    def bindNaviData(self, navidata, method, processing):
+        """
+        Bind NaviData to the NaviCom object in order to use it 
+        """
+        assert isinstance(navidata, NaviData), "navidata is not a NaviData object"
+        self.newProcessedData(processing, method, navidata)
+
     def defineUniformData(self, samples, genes):
         self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
 
@@ -246,6 +254,7 @@ class NaviCom():
         self.exported_data[processing][method] = False
         self.nameData(method, processing)
 
+    # Process data
     def quantifyMutations(self, method, keep_nan=False):
         """
         Transform the qualitative mutation datas into a quantitative one, where 1 means a mutation and 0 no mutation.
@@ -356,6 +365,7 @@ class NaviCom():
         """
         print("Not implemented yet")
 
+    # Export data and annotations
     def exportData(self, method, processing="raw", name=""):
         """
         Export data to NaviCell, can be processed data
@@ -422,6 +432,7 @@ class NaviCom():
             self.nv.sampleAnnotationImport(self.annotations.makeData())
             self.exported_annotations = True
 
+    # Display data
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
         """
         Display data on the NaviCell map
@@ -889,6 +900,7 @@ class NaviCom():
         mset = re.sub("_$", "", mset)
         self.data["colors"][mset] = NaviData(dataset, self.data[processing][method].rows, self.data[processing][method].columns, processing="colors", method="unknown")
 
+    # Saving data
     def saveAllData(self, folder=""):
         """
         Save all data in an .ncc file. Does not save the distribution nor color data.
@@ -924,11 +936,4 @@ class NaviCom():
                 raise ValueError("Method " + method + " does not exist with processing " + processing)
         else:
             raise ValueError("Processing " + processing + " does not exist")
-
-    def bindNaviData(self, navidata, method, processing):
-        """
-        Bind NaviData to the NaviCom object in order to use it 
-        """
-        assert isinstance(navidata, NaviData), "navidata is not a NaviData object"
-        self.data[processing][method] = navidata
 
