@@ -252,17 +252,17 @@ class NaviCom():
         Args:
             keep_nan : Should nan values be converted to O (no mutations) or kept as missing data
         """
-        if (method in self.data["raw"] and METHODS_TYPE[method] == "mutations"):
+        if (method in self.data["raw"] and METHODS_TYPE[method.lower()] == "mutations"):
             mutations = NaviData(np.zeros(self.data["raw"][method].data.shape), self.data["raw"][method].rows_names, self.data["raw"][method].columns_names, method)
-            for rr in self.data["raw"][method].rows_names:
-                for cc in self.data["raw"][method].columns_names:
+            for rr in range(len(self.data["raw"][method].rows_names)):
+                for cc in range(len(self.data["raw"][method].columns_names)):
                     value = self.data["raw"][method][rr][cc]
-                    if (re.match("nan|na", value.lower()) ):
-                        if (keep_nan)
+                    if ( re.match("nan|na", value.lower()) ):
+                        if (keep_nan):
                             mutations.data[rr][cc] = np.nan
                         else:
                             mutations.data[rr][cc] = 0
-                    elif (re.match("", value)):
+                    elif ( value == "" ):
                         mutations.data[rr][cc] = 0
                     else:
                         mutations.data[rr][cc] = 1
@@ -392,7 +392,7 @@ class NaviCom():
             else:
                 raise KeyError("Method '" + method + "' with processing '" + processing + "' does not exist")
         else:
-            raise KeyError("Processing " + processing + " does not exist")
+            raise KeyError("Processing '" + processing + "' does not exist")
 
         # Uniform data have been defined when other datas have, but do not recquire explicit export
         if (not self.exported_data["uniform"]):
@@ -726,6 +726,7 @@ class NaviCom():
                 background (str) : should genes, mRNA or no data be used for the map staining
                 processing (str) : should the processed data be used
         """
+        # Groups cannot be used for now because of limitations in NaviCell unless the median is taken as grouping operation
         mrna_alias = ["MRNA"] # TODO Define what to put here
         gene_alias = ["CNV", "CNA", "CCNA", "CCNV", "DNA"]
         background = background.upper()

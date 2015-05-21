@@ -32,11 +32,13 @@ TYPES_BIOTYPE = dict()
 for bt in TYPES_SPEC:
     TYPES_BIOTYPE[bt] = TYPES_SPEC[bt][1]
     for cat in TYPES_SPEC[bt][0]:
-        METHODS_TYPE[cat] = bt
+        METHODS_TYPE[cat.lower()] = bt
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
 PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "mutationQuantification"]
 PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "mutationQuantification":"Continuous copy number data"}
+DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
+CONTINOUS_BIOTYPES = ["mRNA expression data", "miRNA expression data", "protein level", "Continuous Copy number data"]
 
 
 class NaviData():
