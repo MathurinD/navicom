@@ -6,6 +6,7 @@
 
 from curie.navicell import *
 from navidata import *
+from displayConfig import *
 
 DEBUG_NAVICOM = True
 VERBOSE_NAVICOM = True
@@ -26,7 +27,7 @@ class NaviCom():
     NaviComm class to handle data and display them in a standardized way on NaviCell maps
     """
 
-    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict="", browser_command="firefox %s"):
+    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict="", browser_command="firefox %s", display_config=DisplayConfig()):
         """
         Initialize a Navicell communication object.
         Args:
@@ -48,6 +49,8 @@ class NaviCom():
         self.exported_annotations = False
         self.browser_opened = False
         self.biotypes = dict()
+        # Representation of the data
+        self.display_config = display_config
         # Data, indexed by processing then type of data
         self.processings = PROCESSINGS
         self.data = dict() # All data
@@ -244,6 +247,7 @@ class NaviCom():
 
     def defineUniformData(self, samples, genes):
         self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
+        # TODO change to 1.0 when < is changed to <= for continuous data
 
     def newProcessedData(self, processing, method, data):
         """
@@ -382,9 +386,11 @@ class NaviCom():
                 if(method.lower() in METHODS_TYPE):
                     if (not self.exported_data[processing][method]):
                         name = self.nameData(method, processing, name)
+                        print("Exporting " + name + " to NaviCell...")
                         # Processing change the type of data, like discrete data into continuous, or anything to color data
                         biotype = getBiotype(method, processing)
                         self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
+                        self.configureDisplay(method, processing)
                         self.exported_data[processing][method] = True
                         done_export = True
                 elif (method in self.data['distribution']):
@@ -395,6 +401,7 @@ class NaviCom():
                 if (not self.exported_data["uniform"]):
                     self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
                     name = "uniform"
+                    print("Exporting " + name + " to NaviCell...")
                     done_export = True
                     self.exported_data["uniform"] = True
             elif (method in self.data["distribution"]):
@@ -407,10 +414,6 @@ class NaviCom():
         # Uniform data have been defined when other datas have, but do not recquire explicit export
         if (not self.exported_data["uniform"]):
             self.exportData("uniform")
-
-        # TODO Remove it when the python API receives signal
-        if (done_export):
-            print("Exporting " + name + " to NaviCell...")
 
     def checkBrowser(self):
         """
@@ -432,6 +435,93 @@ class NaviCom():
             self.nv.sampleAnnotationImport(self.annotations.makeData())
             self.exported_annotations = True
 
+    def configureDisplay(self, method, processing="raw"):
+        """
+        Changes the Color Configuration for the datatable to the one precised by the user.
+        """
+        if (getBiotype(method, processing) in CONTINOUS_BIOTYPES):
+            dname = self.getDataName((method, processing))
+            print("Configuring display for " + dname)
+            step_count = self.display_config.step_count
+            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                self.nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step
+
+            dtable = self.data[processing][method].data
+            maxval = np.nanmax(dtable)
+            minval = np.nanmin(dtable)
+            # Use the same scales for positive and negative values, choose the smallest to enhance contrast
+            if (minval * maxval < 0):
+                if (-minval > maxval):
+                    minval = -maxval
+                elif (maxval > -minval):
+                    maxval = -minval
+            ftable = dtable.flatten()
+            ftable.sort()
+
+            if (len(ftable[np.isnan(ftable)]) > 0):
+                navicell_offset = 1 # First value is nan
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, 0, self.display_config.na_color)
+            else:
+                navicell_offset = 0
+
+            if (self.display_config.zero_color != ""):
+                half_count = step_count//2
+                if (half_count != 1):
+                    # Negative values
+                    if (minval > 0): maxval = -1
+                    step = -minval/half_count
+                    values_list = [signif(val) for val in np.arange(minval, step/2, step)][:-1]
+                    for ii in range(half_count):
+                       value = values_list[ii]
+                       color = self.display_config.colors[ii]
+                       for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                           self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
+                           self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+                    # Zero if present
+                    offset = half_count
+                    if (step_count%2 == 1):
+                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                            self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, 0)
+                            self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, self.display_config.colors[half_count])
+                        offset += 1
+                    # Positive values
+                    if (maxval < 0): maxval = 1
+                    step = maxval/half_count
+                    values_list = [signif(val) for val in np.arange(0., maxval+step/2, step)][1:]
+                    for ii in range(half_count):
+                        value = values_list[ii]
+                        color = self.display_config.colors[offset + ii]
+                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                            self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, value)
+                            self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, color)
+                else:
+                    if (step_count == 2):
+                        values_list = [minval, maxval]
+                    else:
+                        values_list = [minval, 0, maxval]
+                    for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                        for ii in range(len(values_list)):
+                            self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, values_list[ii])
+                            self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, self.display_config.colors[ii])
+            else:
+                for ii in range(step_count):
+                    value = np.percentile(dtable, ii*100/(step_count-1))
+                    if (ii==0): value = minval
+                    elif (ii==(step_count-1)): value = maxval
+                    color = self.display_config.colors[ii]
+                    for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                        self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
+                        self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+
+            self.nv.datatableConfigSetSampleMethod('', dname, NaviCell.CONFIG_COLOR, NaviCell.METHOD_CONTINUOUS_MEDIAN) # TODO change to MEAN when group mean is corrected to <= instead of <
+            if self.display_config.use_absolute_values:
+                self.nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, True)
+            else:
+                self.nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, False)
+
+            self.nv.datatableConfigApply('', dname, NaviCell.CONFIG_COLOR)
+        
     # Display data
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
         """

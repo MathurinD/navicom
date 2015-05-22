@@ -38,7 +38,7 @@ for bt in TYPES_SPEC:
 PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "mutationQuantification"]
 PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "mutationQuantification":"Continuous copy number data"}
 DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
-CONTINOUS_BIOTYPES = ["mRNA expression data", "miRNA expression data", "protein level", "Continuous Copy number data"]
+CONTINOUS_BIOTYPES = ["mRNA expression data", "miRNA expression data", "protein level", "Continuous copy number data"]
 
 
 class NaviData():
@@ -260,7 +260,7 @@ class NaviAnnotations(NaviData):
                         self.samplesPerCategory[annot][annot_value].append(sample)
 
         if (DEBUG_NAVIDATA):
-            print("Modified annotations:" + str(modified_annot))
+            print("Discretised annotations:" + str(modified_annot))
         if (len(modified_annot) > 0):
             self.old_annots = NaviData(modified_data, modified_annot, self.rows, "old_annotations")
         else:
@@ -387,7 +387,10 @@ def signif(x, n=3):
     """
     Keep n significant numbers
     """
-    return(round(x, -int(math.log10(x))+(n-1) ))
+    if (x==0):
+        return 0.
+    return(round(x, -int(math.log10(np.abs(x)))+(n-1) ))
+
 
 def getBiotype(method, processing="raw"):
     """
