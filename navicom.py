@@ -437,9 +437,10 @@ class NaviCom():
 
     def configureDisplay(self, method, processing="raw"):
         """
-        Changes the Color Configuration for the datatable to the one precised by the user.
+        Changes the Color and Size Configuration for the datatable to the one precised by the user.
         """
         if (getBiotype(method, processing) in CONTINOUS_BIOTYPES):
+            ## Color configuration
             dname = self.getDataName((method, processing))
             print("Configuring display for " + dname)
             step_count = self.display_config.step_count
@@ -519,6 +520,11 @@ class NaviCom():
                 self.nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, True)
             else:
                 self.nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, False)
+
+            ## Size configuration TODO add zero if present
+            for glyph_id in range(1, MAX_GLYPHS):
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    self.nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self.display_config.na_size)
 
             self.nv.datatableConfigApply('', dname, NaviCell.CONFIG_COLOR)
         

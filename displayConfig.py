@@ -50,7 +50,7 @@ class DisplayConfig():
     DisplayConfig class to set the color gradients configuration in NaviCell
     """
 
-    def __init__(self, step_count=3, color_gradient=["00FF00", "FF0000"], zero_color="ffffff", na_color="ffffff", use_absolute_values = False):
+    def __init__(self, step_count=3, color_gradient=["00FF00", "FF0000"], zero_color="ffffff", na_color="ffffff", zero_size=0, na_size=0, use_absolute_values = False):
         """
         Initialise a color gradient configuration
         Args:
@@ -67,6 +67,8 @@ class DisplayConfig():
         assert isinstance(na_color, str) and len(na_color) > 3, ValueError("'na_color' must be a string of at least 3 characters representing a RGB color")
         self.na_color = rgbValid(na_color)
         self.zero_color = zero_color
+        self.na_size = na_size
+        self.zero_size = zero_size
 
         self.use_absolute_values = use_absolute_values
 
@@ -82,6 +84,11 @@ class DisplayConfig():
                 if (self.step_count%2 == 1):
                     self.colors += [zero_color]
                 self.colors += getGradient(zero_color, color_gradient[1], self.step_count//2+1)[1:]
+        elif (len(color_gradient) == step_count-1 and zero_color != ""):
+            self.colors = color_gradient[:step_count//2+1]
+            if (step_count%2 == 1):
+                self.colors += [zero_color]
+            self.colors += color_gradient[step_count//2+1:]
         else:
             raise ValueError("The length of 'color_gradient' must be 2 or equal to step_count")
 
