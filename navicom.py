@@ -5,42 +5,11 @@
 ################################################################################
 
 from curie.navicell import *
-import numpy as np
-import re
-from time import sleep
-from collections import OrderedDict as oDict
-from pprint import pprint
-import math
-from warnings import warn
 from navidata import *
+from displayConfig import *
 
 DEBUG_NAVICOM = True
 VERBOSE_NAVICOM = True
-
-# Constants related to NaviCell
-MAX_GLYPHS = 5
-GLYPH_TYPES = ["color", "size", "shape"]
-# Identify the categories of cBioportal data as (aliases, biotype)
-TYPES_SPEC = dict()
-TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data")
-TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
-TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
-TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
-TYPES_SPEC["protein"] = (["RPPA_protein_level"], "protein level")
-TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "miRNA expression data")
-TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
-TYPES_SPEC["unknown"] = (["unknown"], "mRNA expression data") # If the type of data cannot be identified, consider continuous data by default
-METHODS_TYPE = dict()
-TYPES_BIOTYPE = dict()
-for bt in TYPES_SPEC:
-    TYPES_BIOTYPE[bt] = TYPES_SPEC[bt][1]
-    for cat in TYPES_SPEC[bt][0]:
-        METHODS_TYPE[cat] = bt
-
-# Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData
-PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors"]
-PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous"} 
-
 
 def getLine(ll, split_char="\t"):
     ll = re.sub('\"', '', ll.strip())
@@ -58,13 +27,21 @@ class NaviCom():
     NaviComm class to handle data and display them in a standardized way on NaviCell maps
     """
 
-    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict=""):
+    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict="", browser_command="firefox %s", display_config=DisplayConfig()):
+        """
+        Initialize a Navicell communication object.
+        Args:
+            map_url (str): URL of the NaviCell map
+            fname (str): name of the data file to load
+            modules_dict (str): name of the module definition file (.gmt) to load
+            browser_command (str): command to open the browser
+        """
         # Build options for the navicell connexion
         options = Options()
         options.map_url = map_url
         idx = options.map_url.find('/navicell/')
         options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
-        options.browser_command = "firefox %s" # TODO Add user control
+        options.browser_command = browser_command # TODO Add user control
         self.nv = NaviCell(options)
         # Name of the dataset
         self.name = "no_name"
@@ -72,6 +49,8 @@ class NaviCom():
         self.exported_annotations = False
         self.browser_opened = False
         self.biotypes = dict()
+        # Representation of the data
+        self.display_config = display_config
         # Data, indexed by processing then type of data
         self.processings = PROCESSINGS
         self.data = dict() # All data
@@ -151,9 +130,14 @@ class NaviCom():
         dTuple = self.getDataTuple(data_name)
         return(self.data[dTuple[0]][dTuple[1]])
 
-    def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt"):
+    # Load new data
+    def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", keep_mutations_nan=False):
         """
-        Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method
+        Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method.
+
+        Args:
+            fname (str): name of the file from which the data should be loaded
+            keep_mutations_nan(str): whether nan in mutations data should be considered as no mutation (False) or missing value (True)
         """
         with open(fname) as file_conn:
             ff = file_conn.readlines()
@@ -215,6 +199,7 @@ class NaviCom():
                     warn("Overwriting data for method " + method + " with processing " + processing)
                 self.data[processing][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"], processing, method)
                 self.exported_data[processing][method] = False
+                self.quantifyMutations(method)
                 self.nameData(method, processing)
                 if (not "uniform" in self.data):
                     self.defineUniformData(profile_data["samples"], profile_data["genes"])
@@ -253,8 +238,16 @@ class NaviCom():
             else:
                 raise ValueError("Incorrect format, file must be a valid file for NaviCell or an aggregation of such files with headers to indicate the type of data")
 
+    def bindNaviData(self, navidata, method, processing):
+        """
+        Bind NaviData to the NaviCom object in order to use it 
+        """
+        assert isinstance(navidata, NaviData), "navidata is not a NaviData object"
+        self.newProcessedData(processing, method, navidata)
+
     def defineUniformData(self, samples, genes):
         self.data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
+        # TODO change to 1.0 when < is changed to <= for continuous data
 
     def newProcessedData(self, processing, method, data):
         """
@@ -264,6 +257,29 @@ class NaviCom():
         self.data[processing][method] = data
         self.exported_data[processing][method] = False
         self.nameData(method, processing)
+
+    # Process data
+    def quantifyMutations(self, method, keep_nan=False):
+        """
+        Transform the qualitative mutation datas into a quantitative one, where 1 means a mutation and 0 no mutation.
+        Args:
+            keep_nan : Should nan values be converted to O (no mutations) or kept as missing data
+        """
+        if (method in self.data["raw"] and METHODS_TYPE[method.lower()] == "mutations"):
+            mutations = NaviData(np.zeros(self.data["raw"][method].data.shape), self.data["raw"][method].rows_names, self.data["raw"][method].columns_names, method)
+            for rr in range(len(self.data["raw"][method].rows_names)):
+                for cc in range(len(self.data["raw"][method].columns_names)):
+                    value = self.data["raw"][method][rr][cc]
+                    if ( re.match("nan|na", value.lower()) ):
+                        if (keep_nan):
+                            mutations.data[rr][cc] = np.nan
+                        else:
+                            mutations.data[rr][cc] = 0
+                    elif ( value == "" ):
+                        mutations.data[rr][cc] = 0
+                    else:
+                        mutations.data[rr][cc] = 1
+            self.newProcessedData("mutationQuantification", method, mutations)
 
     def defineModules(self, modules_dict=""):
         """
@@ -353,6 +369,7 @@ class NaviCom():
         """
         print("Not implemented yet")
 
+    # Export data and annotations
     def exportData(self, method, processing="raw", name=""):
         """
         Export data to NaviCell, can be processed data
@@ -369,9 +386,11 @@ class NaviCom():
                 if(method.lower() in METHODS_TYPE):
                     if (not self.exported_data[processing][method]):
                         name = self.nameData(method, processing, name)
+                        print("Exporting " + name + " to NaviCell...")
                         # Processing change the type of data, like discrete data into continuous, or anything to color data
                         biotype = getBiotype(method, processing)
                         self.nv.importDatatables(self.data[processing][method].makeData(self.nv.getHugoList()), name, biotype)
+                        self.configureDisplay(method, processing)
                         self.exported_data[processing][method] = True
                         done_export = True
                 elif (method in self.data['distribution']):
@@ -382,6 +401,7 @@ class NaviCom():
                 if (not self.exported_data["uniform"]):
                     self.nv.importDatatables(self.data["uniform"].makeData(self.nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
                     name = "uniform"
+                    print("Exporting " + name + " to NaviCell...")
                     done_export = True
                     self.exported_data["uniform"] = True
             elif (method in self.data["distribution"]):
@@ -389,15 +409,11 @@ class NaviCom():
             else:
                 raise KeyError("Method '" + method + "' with processing '" + processing + "' does not exist")
         else:
-            raise KeyError("Processing " + processing + " does not exist")
+            raise KeyError("Processing '" + processing + "' does not exist")
 
         # Uniform data have been defined when other datas have, but do not recquire explicit export
         if (not self.exported_data["uniform"]):
             self.exportData("uniform")
-
-        # TODO Remove it when the python API receives signal
-        if (done_export):
-            print("Exporting " + name + " to NaviCell...")
 
     def checkBrowser(self):
         """
@@ -419,6 +435,100 @@ class NaviCom():
             self.nv.sampleAnnotationImport(self.annotations.makeData())
             self.exported_annotations = True
 
+    def configureDisplay(self, method, processing="raw"):
+        """
+        Changes the Color and Size Configuration for the datatable to the one precised by the user.
+        """
+        if (getBiotype(method, processing) in CONTINOUS_BIOTYPES):
+            ## Color configuration
+            dname = self.getDataName((method, processing))
+            print("Configuring display for " + dname)
+            step_count = self.display_config.step_count
+            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                self.nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step
+
+            dtable = self.data[processing][method].data
+            maxval = np.nanmax(dtable)
+            minval = np.nanmin(dtable)
+            # Use the same scales for positive and negative values, choose the smallest to enhance contrast
+            if (minval * maxval < 0):
+                if (-minval > maxval):
+                    minval = -maxval
+                elif (maxval > -minval):
+                    maxval = -minval
+            ftable = dtable.flatten()
+            ftable.sort()
+
+            if (len(ftable[np.isnan(ftable)]) > 0):
+                navicell_offset = 1 # First value is nan
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, 0, self.display_config.na_color)
+            else:
+                navicell_offset = 0
+
+            if (self.display_config.zero_color != ""):
+                half_count = step_count//2
+                if (half_count != 1):
+                    # Negative values
+                    if (minval > 0): maxval = -1
+                    step = -minval/half_count
+                    values_list = [signif(val) for val in np.arange(minval, step/2, step)][:-1]
+                    for ii in range(half_count):
+                       value = values_list[ii]
+                       color = self.display_config.colors[ii]
+                       for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                           self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
+                           self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+                    # Zero if present
+                    offset = half_count
+                    if (step_count%2 == 1):
+                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                            self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, 0)
+                            self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, self.display_config.colors[half_count])
+                        offset += 1
+                    # Positive values
+                    if (maxval < 0): maxval = 1
+                    step = maxval/half_count
+                    values_list = [signif(val) for val in np.arange(0., maxval+step/2, step)][1:]
+                    for ii in range(half_count):
+                        value = values_list[ii]
+                        color = self.display_config.colors[offset + ii]
+                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                            self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, value)
+                            self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, color)
+                else:
+                    if (step_count == 2):
+                        values_list = [minval, maxval]
+                    else:
+                        values_list = [minval, 0, maxval]
+                    for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                        for ii in range(len(values_list)):
+                            self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, values_list[ii])
+                            self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, self.display_config.colors[ii])
+            else:
+                for ii in range(step_count):
+                    value = np.percentile(dtable, ii*100/(step_count-1))
+                    if (ii==0): value = minval
+                    elif (ii==(step_count-1)): value = maxval
+                    color = self.display_config.colors[ii]
+                    for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                        self.nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
+                        self.nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+
+            self.nv.datatableConfigSetSampleMethod('', dname, NaviCell.CONFIG_COLOR, NaviCell.METHOD_CONTINUOUS_MEDIAN) # TODO change to MEAN when group mean is corrected to <= instead of <
+            if self.display_config.use_absolute_values:
+                self.nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, True)
+            else:
+                self.nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, False)
+
+            ## Size configuration TODO add zero if present
+            for glyph_id in range(1, MAX_GLYPHS):
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    self.nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self.display_config.na_size)
+
+            self.nv.datatableConfigApply('', dname, NaviCell.CONFIG_COLOR)
+        
+    # Display data
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
         """
         Display data on the NaviCell map
@@ -723,6 +833,7 @@ class NaviCom():
                 background (str) : should genes, mRNA or no data be used for the map staining
                 processing (str) : should the processed data be used
         """
+        # Groups cannot be used for now because of limitations in NaviCell unless the median is taken as grouping operation
         mrna_alias = ["MRNA"] # TODO Define what to put here
         gene_alias = ["CNV", "CNA", "CCNA", "CCNV", "DNA"]
         background = background.upper()
@@ -885,6 +996,7 @@ class NaviCom():
         mset = re.sub("_$", "", mset)
         self.data["colors"][mset] = NaviData(dataset, self.data[processing][method].rows, self.data[processing][method].columns, processing="colors", method="unknown")
 
+    # Saving data
     def saveAllData(self, folder=""):
         """
         Save all data in an .ncc file. Does not save the distribution nor color data.
@@ -920,11 +1032,4 @@ class NaviCom():
                 raise ValueError("Method " + method + " does not exist with processing " + processing)
         else:
             raise ValueError("Processing " + processing + " does not exist")
-
-    def bindNaviData(self, navidata, method, processing):
-        """
-        Bind NaviData to the NaviCom object in order to use it 
-        """
-        assert isinstance(navidata, NaviData), "navidata is not a NaviData object"
-        self.data[processing][method] = navidata
 

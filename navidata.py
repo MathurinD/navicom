@@ -4,9 +4,53 @@
 # Classes to store data an annotations in a convenient format for NaviCell export
 ################################################################################
 
+import numpy as np
+import re
+from time import sleep
+from collections import OrderedDict as oDict
+from pprint import pprint
+import math
+from warnings import warn
+
+DEBUG_NAVIDATA = True
+
+# Constants related to NaviCell
+MAX_GLYPHS = 5
+GLYPH_TYPES = ["color", "size", "shape"]
+# Identify the categories of cBioportal data as (aliases, biotype)
+TYPES_SPEC = dict()
+TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data")
+TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
+TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
+TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
+TYPES_SPEC["protein"] = (["RPPA_protein_level"], "protein level")
+TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "miRNA expression data")
+TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
+TYPES_SPEC["unknown"] = (["unknown"], "mRNA expression data") # If the type of data cannot be identified, consider continuous data by default
+METHODS_TYPE = dict()
+TYPES_BIOTYPE = dict()
+for bt in TYPES_SPEC:
+    TYPES_BIOTYPE[bt] = TYPES_SPEC[bt][1]
+    for cat in TYPES_SPEC[bt][0]:
+        METHODS_TYPE[cat.lower()] = bt
+
+# Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
+PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "mutationQuantification"]
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "mutationQuantification":"Continuous copy number data"}
+DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
+CONTINOUS_BIOTYPES = ["mRNA expression data", "miRNA expression data", "protein level", "Continuous copy number data"]
+
+
 class NaviData():
     """
-    Custom class to store the data and be able to access rows and columns by name
+    Custom class to store the data and be able to access rows and columns by name.
+    Args :
+        data (list or array) : Values of the data to insert in the NaviData object. Must be convertible into a numpy array.
+        rows_list (list) : names of the rows (samples names)
+        columns_list (list) : names of the columns (genes names)
+        processing (str) : name of the computer processing applied to the data
+        method (str) : name of the experimental method used to get the original ("raw") data
+        dType (str) : "data" or "annotations", whether the NaviData object contains datas or annotations (Note : this should be left to default, this is used by NaviAnnotations to change some internal variables)
     """
     def __init__(self, data, rows_list, columns_list, processing="raw", method="unknown", dType="data"):
         assert(len(data) == len(rows_list))
@@ -108,7 +152,7 @@ class NaviData():
         - first line is: GENE word followed by a tab separated list of sample names,
         - each line begins with an gene name and must be followed by a tab separated list of gene/sample values.
 
-        Eliminates genes not present in the NaviCell map.
+        Remove genes not present in hugo_map if provided.
         """
 
         # Change header whether we have annotations or real self
@@ -215,8 +259,8 @@ class NaviAnnotations(NaviData):
                     else:
                         self.samplesPerCategory[annot][annot_value].append(sample)
 
-        if (DEBUG_NAVICOM):
-            print("Modified annotations:" + str(modified_annot))
+        if (DEBUG_NAVIDATA):
+            print("Discretised annotations:" + str(modified_annot))
         if (len(modified_annot) > 0):
             self.old_annots = NaviData(modified_data, modified_annot, self.rows, "old_annotations")
         else:
@@ -281,6 +325,9 @@ class NaviSlice():
         return(NaviSlice(self.data + nvslice.data, self.ids))
 
 def listToDictKeys(ilist):
+    """
+    Convert a list to an ordered dict where each item is a key and gives the id of the item in the list
+    """
     if (isinstance(ilist, dict)):
         return(oDict(ilist))
     res = oDict()
@@ -340,7 +387,10 @@ def signif(x, n=3):
     """
     Keep n significant numbers
     """
-    return(round(x, -int(math.log10(x))+(n-1) ))
+    if (x==0):
+        return 0.
+    return(round(x, -int(math.log10(np.abs(x)))+(n-1) ))
+
 
 def getBiotype(method, processing="raw"):
     """

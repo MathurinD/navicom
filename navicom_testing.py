@@ -1,12 +1,15 @@
 #!/usr/bin/python3
 #-*-coding:utf-8-*-
 
-from import_analyse import *
+from navicom import *
+nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", display_config = DisplayConfig(5, na_color="ffffff"))
+# nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", browser_command="chromium-browser --allow-file-access-from-files %s")
+nc.exportData("log2CNA")
 
-nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt")
 nc.listData()
 nc.listAnnotations()
 
+nc.displayMethylome(['TCGA.04.1331.01'], "raw", "mRNA", "size")
 nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", '')
 
 nc.colorsOverlay("mrna_median", "log2CNA", processing="raw")
