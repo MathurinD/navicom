@@ -1,0 +1,76 @@
+\begin{theindex}
+
+  \item {\_\discretionary {-}{}{}\_\discretionary {-}{}{}init\_\discretionary {-}{}{}\_\discretionary {-}{}{}}
+    \subitem {navicom::displayConfig::DisplayConfig}, \hyperpage{2}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{5}
+
+  \indexspace
+
+  \item {colorsOverlay}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{6}
+
+  \indexspace
+
+  \item {defineModules}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{6}
+  \item {display}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{6}
+  \item {displayMethylome}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{7}
+  \item {displayTranscriptome}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{7}
+
+  \indexspace
+
+  \item {exportData}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{7}
+
+  \indexspace
+
+  \item {generateDistributionData}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{8}
+
+  \indexspace
+
+  \item {loadData}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{8}
+
+  \indexspace
+
+  \item {makeData}
+    \subitem {navicom::navidata::NaviData}, \hyperpage{10}
+
+  \indexspace
+
+  \item {navicom::displayConfig::DisplayConfig}, \hyperpage{1}
+    \subitem {\_\discretionary {-}{}{}\_\discretionary {-}{}{}init\_\discretionary {-}{}{}\_\discretionary {-}{}{}}, 
+		\hyperpage{2}
+  \item {navicom::navicom::NaviCom}, \hyperpage{3}
+    \subitem {\_\discretionary {-}{}{}\_\discretionary {-}{}{}init\_\discretionary {-}{}{}\_\discretionary {-}{}{}}, 
+		\hyperpage{5}
+    \subitem {colorsOverlay}, \hyperpage{6}
+    \subitem {defineModules}, \hyperpage{6}
+    \subitem {display}, \hyperpage{6}
+    \subitem {displayMethylome}, \hyperpage{7}
+    \subitem {displayTranscriptome}, \hyperpage{7}
+    \subitem {exportData}, \hyperpage{7}
+    \subitem {generateDistributionData}, \hyperpage{8}
+    \subitem {loadData}, \hyperpage{8}
+    \subitem {quantifyMutations}, \hyperpage{8}
+    \subitem {saveAllData}, \hyperpage{8}
+  \item {navicom::navidata::NaviAnnotations}, \hyperpage{2}
+  \item {navicom::navidata::NaviData}, \hyperpage{9}
+    \subitem {makeData}, \hyperpage{10}
+  \item {navicom::navidata::NaviSlice}, \hyperpage{11}
+
+  \indexspace
+
+  \item {quantifyMutations}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{8}
+
+  \indexspace
+
+  \item {saveAllData}
+    \subitem {navicom::navicom::NaviCom}, \hyperpage{8}
+
+\end{theindex}

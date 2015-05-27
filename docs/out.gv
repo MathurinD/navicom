@@ -1,0 +1,133 @@
+digraph G {
+concentrate = true;
+			subgraph legend{
+			rank = min;
+			label = "legend";
+			Legend [shape=none, margin=0, label = <
+				<table cellspacing="0" cellpadding="0" border="1"><tr><td>Code2flow Legend</td></tr><tr><td>
+				<table cellspacing="0">
+				<tr><td>Regular function</td><td width="50px"></td></tr>
+				<tr><td>Trunk function (nothing calls this)</td><td bgcolor='coral'></td></tr>
+				<tr><td>Leaf function (this calls nothing else)</td><td bgcolor='green'></td></tr>
+				<tr><td>Function call which returns no value</td><td>&#8594;</td></tr>
+				<tr><td>Function call returns some value</td><td><font color='blue'>&#8594;</font></td></tr>
+				</table></td></tr></table>
+				>];}node1 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "0: navicom_testing.(navicom_testing module frame (runs on import))" ];
+node7 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "37: import_analyse.getLine" ];
+node8 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "965: import_analyse.listToDictKeys" ];
+node9 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "971: import_analyse.buildLine" ];
+node11 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "981: import_analyse.signif" ];
+node13 [splines=ortho shape = "rect" style = "rounded" label = "54: NaviCom.__init__" ];
+node14 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "90: NaviCom.dataAvailable" ];
+node15 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "99: NaviCom.__repr__" ];
+node16 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "107: NaviCom.nameData" ];
+node17 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "114: NaviCom.getDataName" ];
+node18 [splines=ortho shape = "rect" style = "rounded" label = "128: NaviCom.loadData" ];
+node19 [splines=ortho shape = "rect" style = "rounded" label = "194: NaviCom.defineUniformData" ];
+node20 [splines=ortho shape = "rect" style = "rounded" label = "198: NaviCom.newProcessedData" ];
+node21 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "211: NaviCom.defineModules" ];
+node22 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "248: NaviCom.averageModule" ];
+node23 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "299: NaviCom.pcaComp" ];
+node24 [splines=ortho shape = "rect" style = "rounded" label = "302: NaviCom.exportData" ];
+node25 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "347: NaviCom.checkBrowser" ];
+node26 [splines=ortho shape = "rect" style = "rounded" label = "355: NaviCom.exportAnnotations" ];
+node27 [splines=ortho shape = "rect" style = "rounded" label = "366: NaviCom.display" ];
+node28 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "546: NaviCom.resetDisplay" ];
+node29 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "571: NaviCom.resetAnnotations" ];
+node30 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "green" label = "575: NaviCom.selectAnnotations" ];
+node31 [splines=ortho shape = "rect" style = "rounded" label = "592: NaviCom.processSamples" ];
+node32 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "648: NaviCom.displayMethylome" ];
+node33 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "688: NaviCom.displayTranscriptome" ];
+node34 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "712: NaviCom.selectQuantiles" ];
+node36 [splines=ortho shape = "rect" style = "rounded" label = "714: NaviData.__init__" ];
+node37 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "748: NaviData.__getitem__" ];
+node38 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "783: NaviData.__iter__" ];
+node39 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "786: NaviData.__next__" ];
+node40 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "811: NaviData.__repr__" ];
+node41 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "814: NaviData.makeData" ];
+node43 [splines=ortho shape = "rect" style = "rounded" label = "835: NaviAnnotations.__init__" ];
+node45 [splines=ortho shape = "rect" style = "rounded" label = "899: NaviSlice.__init__" ];
+node46 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "913: NaviSlice.__getitem__" ];
+node47 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "927: NaviSlice.__setitem__" ];
+node48 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "947: NaviSlice.__iter__" ];
+node49 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "951: NaviSlice.__repr__" ];
+node50 [splines=ortho shape = "rect" style = "rounded,filled" fillcolor = "coral" label = "955: NaviSlice.__add__" ];
+node1 -> node13;
+node13 -> node18;
+node13 -> node21;
+node18 -> node7 [color="blue" penwidth="2"];
+node18 -> node16 [color="blue" penwidth="2"];
+node18 -> node19;
+node18 -> node36;
+node18 -> node43;
+node19 -> node24;
+node19 -> node36;
+node20 -> node16 [color="blue" penwidth="2"];
+node22 -> node20;
+node22 -> node36;
+node24 -> node16 [color="blue" penwidth="2"];
+node24 -> node25 [color="blue" penwidth="2"];
+node26 -> node25 [color="blue" penwidth="2"];
+node27 -> node24;
+node27 -> node25 [color="blue" penwidth="2"];
+node27 -> node26;
+node27 -> node28;
+node27 -> node31 [color="blue" penwidth="2"];
+node31 -> node29;
+node31 -> node30;
+node32 -> node27;
+node33 -> node27;
+node36 -> node8 [color="blue" penwidth="2"];
+node37 -> node36;
+node37 -> node45;
+node41 -> node9 [color="blue" penwidth="2"];
+node43 -> node11 [color="blue" penwidth="2"];
+node43 -> node36;
+node45 -> node8 [color="blue" penwidth="2"];
+node46 -> node45;
+node50 -> node45;
+subgraph clusternavicom_testing0{
+node1 ;
+label="navicom_testing";
+style=filled;
+color=black;
+graph[style=dotted];
+};
+subgraph clusternavicell_interaction2{
+label="navicell_interaction";
+style=filled;
+color=black;
+graph[style=dotted];
+};
+subgraph clusterimport_analyse6{
+node7 node8 node9 node11 node13 node14 node15 node16 node17 node18 node19 node20 node21 node22 node23 node24 node25 node26 node27 node28 node29 node30 node31 node32 node33 node34 node36 node37 node38 node39 node40 node41 node43 node45 node46 node47 node48 node49 node50 ;
+label="import_analyse";
+style=filled;
+color=black;
+graph[style=dotted];
+subgraph clusterNaviCom12{
+node13 node14 node15 node16 node17 node18 node19 node20 node21 node22 node23 node24 node25 node26 node27 node28 node29 node30 node31 node32 node33 node34 ;
+label="NaviCom";
+style=filled;
+color=black;
+graph[style=dotted];
+}subgraph clusterNaviData35{
+node36 node37 node38 node39 node40 node41 ;
+label="NaviData";
+style=filled;
+color=black;
+graph[style=dotted];
+}subgraph clusterNaviAnnotations42{
+node43 ;
+label="NaviAnnotations";
+style=filled;
+color=black;
+graph[style=dotted];
+}subgraph clusterNaviSlice44{
+node45 node46 node47 node48 node49 node50 ;
+label="NaviSlice";
+style=filled;
+color=black;
+graph[style=dotted];
+}};
+}

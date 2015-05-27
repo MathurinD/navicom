@@ -569,7 +569,8 @@ class NaviCom():
 
         # Control that the user does not try to display to many data or use several times the same display
         if (True):
-            glyph = {gtype:[False] * MAX_GLYPHS for gtype in GLYPH_TYPES}
+            for gtype in GLYPH_TYPES:
+                glyph = {gtype:[False] * MAX_GLYPHS}
             sample_for_glyph = [False] * MAX_GLYPHS
             glyph_samples = [""] * MAX_GLYPHS
             glyph_set = False

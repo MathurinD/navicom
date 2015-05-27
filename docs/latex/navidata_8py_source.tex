@@ -1,0 +1,467 @@
+\hypertarget{navidata_8py_source}{
+\subsection{navicom/navidata.py}
+}
+
+\begin{DoxyCode}
+00001 \textcolor{comment}{################################################################################}
+00002 \textcolor{comment}{# navidata.py}
+00003 \textcolor{comment}{# By Mathurin Dorel}
+00004 \textcolor{comment}{# Classes to store data an annotations in a convenient format for NaviCell export
+      }
+00005 \textcolor{comment}{################################################################################}
+00006 
+00007 \textcolor{keyword}{import} numpy \textcolor{keyword}{as} np
+00008 \textcolor{keyword}{import} re
+00009 \textcolor{keyword}{from} time \textcolor{keyword}{import} sleep
+00010 \textcolor{keyword}{from} collections \textcolor{keyword}{import} OrderedDict \textcolor{keyword}{as} oDict
+00011 \textcolor{keyword}{from} pprint \textcolor{keyword}{import} pprint
+00012 \textcolor{keyword}{import} math
+00013 \textcolor{keyword}{from} warnings \textcolor{keyword}{import} warn
+00014 
+00015 DEBUG\_NAVIDATA = \textcolor{keyword}{True}
+00016 
+00017 \textcolor{comment}{# Constants related to NaviCell}
+00018 MAX\_GLYPHS = 5
+00019 GLYPH\_TYPES = [\textcolor{stringliteral}{"color"}, \textcolor{stringliteral}{"size"}, \textcolor{stringliteral}{"shape"}]
+00020 \textcolor{comment}{# Identify the categories of cBioportal data as (aliases, biotype)}
+00021 TYPES\_SPEC = dict()
+00022 TYPES\_SPEC[\textcolor{stringliteral}{"mRNA"}] = ([\textcolor{stringliteral}{"mrna"}, \textcolor{stringliteral}{"zscores"}, \textcolor{stringliteral}{"mrna\_median\_zscores"}, \textcolor{stringliteral}{"rna\_seq\_mrna\_me
+      dian\_zscores"}, \textcolor{stringliteral}{"rna\_seq\_mrna"}, \textcolor{stringliteral}{"rna\_seq\_v2\_mrna"}, \textcolor{stringliteral}{"rna\_seq\_v2\_mrna\_median\_zscores
+      "}, \textcolor{stringliteral}{"mrna\_U133"}, \textcolor{stringliteral}{"mrna\_U133\_zscores"}, \textcolor{stringliteral}{"mrna\_median"}, \textcolor{stringliteral}{"mrna\_zbynorm"}, \textcolor{stringliteral}{"mrna\_outlier
+      s"}, \textcolor{stringliteral}{"rna\_seq\_rna"}, \textcolor{stringliteral}{"mrna\_znormal"}, \textcolor{stringliteral}{"mrna\_outlier"}, \textcolor{stringliteral}{"mrna\_merged\_median\_zscores"}],
+       \textcolor{stringliteral}{"mRNA expression data"})
+00023 TYPES\_SPEC[\textcolor{stringliteral}{"dCNA"}] = ([\textcolor{stringliteral}{"gistic"}, \textcolor{stringliteral}{"cna"}, \textcolor{stringliteral}{"cna\_rae"}, \textcolor{stringliteral}{"cna\_consensus"}, \textcolor{stringliteral}{"snp-fasst2"}]
+      , \textcolor{stringliteral}{"Discrete Copy number data"})
+00024 TYPES\_SPEC[\textcolor{stringliteral}{"cCNA"}] = ([\textcolor{stringliteral}{"log2cna"}], \textcolor{stringliteral}{"Continuous copy number data"})
+00025 TYPES\_SPEC[\textcolor{stringliteral}{"methylation"}] = ([\textcolor{stringliteral}{"methylation"}, \textcolor{stringliteral}{"methylation\_hm27"}, \textcolor{stringliteral}{"methylation\_hm4
+      50"}], \textcolor{stringliteral}{"mRNA expression data"})
+00026 TYPES\_SPEC[\textcolor{stringliteral}{"protein"}] = ([\textcolor{stringliteral}{"RPPA\_protein\_level"}], \textcolor{stringliteral}{"protein level"})
+00027 TYPES\_SPEC[\textcolor{stringliteral}{"miRNA"}] = ([\textcolor{stringliteral}{"mirna"}, \textcolor{stringliteral}{"mirna\_median\_zscores"}], \textcolor{stringliteral}{"miRNA expression data"
+      })
+00028 TYPES\_SPEC[\textcolor{stringliteral}{"mutations"}] = ([\textcolor{stringliteral}{"mutations"}], \textcolor{stringliteral}{"Mutations"})
+00029 TYPES\_SPEC[\textcolor{stringliteral}{"unknown"}] = ([\textcolor{stringliteral}{"unknown"}], \textcolor{stringliteral}{"mRNA expression data"}) \textcolor{comment}{# If the type of da
+      ta cannot be identified, consider continuous data by default}
+00030 METHODS\_TYPE = dict()
+00031 TYPES\_BIOTYPE = dict()
+00032 \textcolor{keywordflow}{for} bt \textcolor{keywordflow}{in} TYPES\_SPEC:
+00033     TYPES\_BIOTYPE[bt] = TYPES\_SPEC[bt][1]
+00034     \textcolor{keywordflow}{for} cat \textcolor{keywordflow}{in} TYPES\_SPEC[bt][0]:
+00035         METHODS\_TYPE[cat.lower()] = bt
+00036 
+00037 \textcolor{comment}{# Inform what the processing does to the biotype, if -> it changes only some biot
+      ypes, if "something" it turns everything to something, see exportData and saveDat
+      a}
+00038 PROCESSINGS = [\textcolor{stringliteral}{"raw"}, \textcolor{stringliteral}{"moduleAverage"}, \textcolor{stringliteral}{"pcaComp"}, \textcolor{stringliteral}{"geoSmooth"}, \textcolor{stringliteral}{"distribution"}, \textcolor{stringliteral}{"c
+      olors"}, \textcolor{stringliteral}{"mutationQuantification"}]
+00039 PROCESSINGS\_BIOTYPE = \{\textcolor{stringliteral}{"moduleAverage"}:\textcolor{stringliteral}{"Discrete->Continuous"}, \textcolor{stringliteral}{"pcaComp"}:\textcolor{stringliteral}{"Color"},
+       \textcolor{stringliteral}{"geoSmooth"}:\textcolor{stringliteral}{"Discrete->Continuous"}, \textcolor{stringliteral}{"mutationQuantification"}:\textcolor{stringliteral}{"Continuous copy nu
+      mber data"}\}
+00040 DISCRETE\_BIOTYPES = [\textcolor{stringliteral}{"Mutations"}, \textcolor{stringliteral}{"Discrete Copy number data"}]
+00041 CONTINOUS\_BIOTYPES = [\textcolor{stringliteral}{"mRNA expression data"}, \textcolor{stringliteral}{"miRNA expression data"}, \textcolor{stringliteral}{"protein l
+      evel"}, \textcolor{stringliteral}{"Continuous copy number data"}]
+00042 
+00043 
+00044 \textcolor{keyword}{class }NaviData():
+00045     \textcolor{stringliteral}{"""}
+00046 \textcolor{stringliteral}{    Custom class to store the data and be able to access rows and columns by name
+      .}
+00047 \textcolor{stringliteral}{    Args :}
+00048 \textcolor{stringliteral}{        data (list or array) : Values of the data to insert in the NaviData objec
+      t. Must be convertible into a numpy array.}
+00049 \textcolor{stringliteral}{        rows\_list (list) : names of the rows (samples names)}
+00050 \textcolor{stringliteral}{        columns\_list (list) : names of the columns (genes names)}
+00051 \textcolor{stringliteral}{        processing (str) : name of the computer processing applied to the data}
+00052 \textcolor{stringliteral}{        method (str) : name of the experimental method used to get the original (
+      "raw") data}
+00053 \textcolor{stringliteral}{        dType (str) : "data" or "annotations", whether the NaviData object contai
+      ns datas or annotations (Note : this should be left to default, this is used by N
+      aviAnnotations to change some internal variables)}
+\hypertarget{navidata_8py_source_l00054}{}\hyperlink{classnavicom_1_1navidata_1_1NaviData}{00054} \textcolor{stringliteral}{    """}
+00055     \textcolor{keyword}{def }\_\_init\_\_(self, data, rows\_list, columns\_list, processing="raw", method="u
+      nknown", dType="data"):
+00056         \textcolor{keyword}{assert}(len(data) == len(rows\_list))
+00057         \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} data:
+00058             \textcolor{keyword}{assert} len(line) == len(columns\_list), \textcolor{stringliteral}{"Incorrect length of line : "} 
+      + str(line) + \textcolor{stringliteral}{", length = "} + str(len(line)) + \textcolor{stringliteral}{", expected "} + str(len(columns\_li
+      st))
+00059         \textcolor{comment}{# Informations on the data TODO}
+00060         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ab3f30d76377459fe539f440df162ea59}{processing} = processing
+00061         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ae8f909ed788b49a3c894251957e2f732}{method} = method
+00062         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a863ac9998d2facd5f86bcea9b6256003}{biotype} = getBiotype(method, processing)
+00063         \textcolor{comment}{# Initialise data and indexes}
+00064         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a25ff2e12663e590c22e82bb9a7863987}{data} = np.array(data)
+00065         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows} = listToDictKeys(rows\_list)
+00066         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aef041665583f2aa0845418d378ce3a40}{rows_names} = list(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}.keys())
+00067         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns} = listToDictKeys(columns\_list)
+00068         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aebce9bba220d01776cbd5a214d2d3013}{columns_names} = list(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}.keys())
+00069         \textcolor{keywordflow}{if} (dType == \textcolor{stringliteral}{"annotations"}):
+00070             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a080320f0715d257f61490985484e6d54}{inColumns} = \textcolor{stringliteral}{"annotations"}
+00071             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a25c8ddaa3aea26ab2ef034859fb9304d}{annotations} = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}
+00072             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aae9bfcdefa67abad304df58b7e4a62c8}{annotations_names} = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aebce9bba220d01776cbd5a214d2d3013}{columns_names}
+00073             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a172b33d53b897135381a92b045f5576b}{inRows} = \textcolor{stringliteral}{"samples"}
+00074             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a59f086d64ae87f6eaa50f02192380c46}{samples} = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}
+00075             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a5a0f30c9c3f70e500bf5948b9340f4ec}{samples_names} = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aef041665583f2aa0845418d378ce3a40}{rows_names}
+00076         \textcolor{keywordflow}{elif} (dType == \textcolor{stringliteral}{"data"}):
+00077             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a172b33d53b897135381a92b045f5576b}{inRows} = \textcolor{stringliteral}{"genes"}
+00078             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ad936829a89a392c3599c027a5ad088a6}{genes} = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}
+00079             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3a0751cab5bd70196652f8edbb31b257}{genes_names} = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aef041665583f2aa0845418d378ce3a40}{rows_names}
+00080             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a080320f0715d257f61490985484e6d54}{inColumns} = \textcolor{stringliteral}{"samples"}
+00081             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a59f086d64ae87f6eaa50f02192380c46}{samples} = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}
+00082             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a5a0f30c9c3f70e500bf5948b9340f4ec}{samples_names} = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aebce9bba220d01776cbd5a214d2d3013}{columns_names}
+00083         \textcolor{keywordflow}{elif} (dType == \textcolor{stringliteral}{"old\_annotations"}):
+00084             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a172b33d53b897135381a92b045f5576b}{inRows} = \textcolor{stringliteral}{"annotations"}
+00085             self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a080320f0715d257f61490985484e6d54}{inColumns} = \textcolor{stringliteral}{"samples"}
+00086         \textcolor{keywordflow}{else}:
+00087             \textcolor{keywordflow}{raise} ValueError(\textcolor{stringliteral}{"dType '"} + dType + \textcolor{stringliteral}{"' is not valid"})
+00088         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a89cf0727f26dba8aabb38271d85b169d}{dType} = dType
+00089         \textcolor{comment}{# For the iterator}
+00090         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a21c96bfd996af8dd4a12877aa54d4393}{itermode} = \textcolor{stringliteral}{""}
+00091         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_adb2e7ce6c9a691a186d91d4a8d49864a}{index} = 0
+00092 
+00093     \textcolor{keyword}{def }\_\_getitem\_\_(self, index):
+00094         \textcolor{keywordflow}{if} (isinstance(index, int)):
+00095             \textcolor{keywordflow}{return}(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a25ff2e12663e590c22e82bb9a7863987}{data}[index])
+00096         \textcolor{keywordflow}{elif} (isinstance(index, str)):
+00097             \textcolor{keywordflow}{if} (index \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}):
+00098                 \textcolor{keywordflow}{return}( NaviSlice(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a25ff2e12663e590c22e82bb9a7863987}{data}[self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}[index],:], self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}) )
+00099             \textcolor{keywordflow}{elif} (index \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}):
+00100                 \textcolor{keywordflow}{return}( NaviSlice(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a25ff2e12663e590c22e82bb9a7863987}{data}[:,self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}[index]], self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}) )
+00101             \textcolor{keywordflow}{else}:
+00102                 \textcolor{keywordflow}{raise} IndexError(\textcolor{stringliteral}{"'"} + index + \textcolor{stringliteral}{"' is neither a gene or sample nam
+      e"})
+00103         \textcolor{keywordflow}{elif} (isinstance(index, list) \textcolor{keywordflow}{or} isinstance(index, tuple)):
+00104             result = list()
+00105             \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} index:
+00106                 result.append(self[ii].data)
+00107             result = np.array(result)
+00108             \textcolor{keywordflow}{if} (index[0] \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}):
+00109                 \textcolor{keyword}{assert} np.all([idx \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows} \textcolor{keywordflow}{for} idx \textcolor{keywordflow}{in} index]), \textcolor{stringliteral}{"Not all inde
+      x are gene names"}
+00110                 genes = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}.copy()
+00111                 \textcolor{keywordflow}{for} gene \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}:
+00112                     \textcolor{keywordflow}{if} (\textcolor{keywordflow}{not} gene \textcolor{keywordflow}{in} index):
+00113                         genes.pop(gene)
+00114                 \textcolor{keywordflow}{return}( NaviData(result, genes, self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}) )
+00115             \textcolor{keywordflow}{elif} (index[0] \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}):
+00116                 \textcolor{keyword}{assert} np.all([idx \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns} \textcolor{keywordflow}{for} idx \textcolor{keywordflow}{in} index]), \textcolor{stringliteral}{"Not all i
+      ndex are sample names"}
+00117                 samples = self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}.copy()
+00118                 \textcolor{keywordflow}{for} sample \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}:
+00119                     \textcolor{keywordflow}{if}(\textcolor{keywordflow}{not} sample \textcolor{keywordflow}{in} index):
+00120                         samples.pop(sample)
+00121                 \textcolor{keywordflow}{return}( NaviData(result.transpose(), self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}, samples) )
+00122 
+00123     \textcolor{keyword}{def }\_\_iter\_\_(self, by="genes"):
+00124         \textcolor{keywordflow}{if} (\textcolor{keywordflow}{not} by \textcolor{keywordflow}{in} [\textcolor{stringliteral}{"genes"}, \textcolor{stringliteral}{"samples"}]):
+00125             \textcolor{keywordflow}{raise} ValueError(\textcolor{stringliteral}{"'by' must be in ['genes', 'samples']"})
+00126         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ac21c979a9421ac607778d907380475fc}{iter_mode} = by
+00127         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_adb2e7ce6c9a691a186d91d4a8d49864a}{index} = 0
+00128         \textcolor{keywordflow}{return}(self)
+00129 
+00130     \textcolor{keyword}{def }\_\_next\_\_(self):
+00131         \textcolor{keywordflow}{try}:
+00132             \textcolor{keywordflow}{if} (self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ac21c979a9421ac607778d907380475fc}{iter_mode} == \textcolor{stringliteral}{"genes"}):
+00133                 key = list(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows}.keys())[self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_adb2e7ce6c9a691a186d91d4a8d49864a}{index}]
+00134                 result = [key] + list(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a25ff2e12663e590c22e82bb9a7863987}{data}[self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_adb2e7ce6c9a691a186d91d4a8d49864a}{index},:])
+00135             \textcolor{keywordflow}{elif} (self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ac21c979a9421ac607778d907380475fc}{iter_mode} == \textcolor{stringliteral}{"samples"}):
+00136                 key = list(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns}.keys())[self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_adb2e7ce6c9a691a186d91d4a8d49864a}{index}]
+00137                 result = [key] + list(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a25ff2e12663e590c22e82bb9a7863987}{data}[:,self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_adb2e7ce6c9a691a186d91d4a8d49864a}{index}])
+00138         \textcolor{keywordflow}{except} IndexError:
+00139             \textcolor{keywordflow}{raise} StopIteration
+00140         self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_adb2e7ce6c9a691a186d91d4a8d49864a}{index} += 1
+00141         \textcolor{keywordflow}{return}(result)
+00142 
+00143     \textcolor{keyword}{def }\_\_repr\_\_(self):
+00144         rpr = \textcolor{stringliteral}{"NaviData array with "} + str(len(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3aabc82d01a697d1c22e82f171438399}{rows})) + \textcolor{stringliteral}{" "} + self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a172b33d53b897135381a92b045f5576b}{inRows} + 
+      \textcolor{stringliteral}{" and "}
+00145         rpr += str(len(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a16de6799b97fad281e7e4e954b9e4de5}{columns})) + \textcolor{stringliteral}{" "} + self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a080320f0715d257f61490985484e6d54}{inColumns}
+00146         \textcolor{keywordflow}{return}(rpr)
+00147 
+00148     \textcolor{keyword}{def }\hyperlink{classnavicom_1_1navidata_1_1NaviData_a0ad79f0fbf4ab86ca13255069bf98632}{makeData}(self, hugo\_map=""):
+00149         \textcolor{stringliteral}{""" Builds a string suitable for NaviCell Web Service from a python matri
+      x of gene/sample values or a NaviCom object.}
+00150 \textcolor{stringliteral}{}
+00151 \textcolor{stringliteral}{        Matrix format:}
+00152 \textcolor{stringliteral}{        - first line is: GENE word followed by a tab separated list of sample nam
+      es,}
+00153 \textcolor{stringliteral}{        - each line begins with an gene name and must be followed by a tab separa
+      ted list of gene/sample values.}
+00154 \textcolor{stringliteral}{}
+00155 \textcolor{stringliteral}{        Remove genes not present in hugo\_map if provided.}
+\hypertarget{navidata_8py_source_l00156}{}\hyperlink{classnavicom_1_1navidata_1_1NaviData_a0ad79f0fbf4ab86ca13255069bf98632}{00156} \textcolor{stringliteral}{        """}
+00157 
+00158         \textcolor{comment}{# Change header whether we have annotations or real self}
+00159         \textcolor{keywordflow}{if} (self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a89cf0727f26dba8aabb38271d85b169d}{dType} == \textcolor{stringliteral}{"annotations"}):
+00160             ret = \textcolor{stringliteral}{"NAME\(\backslash\)t"} + \textcolor{stringliteral}{'\(\backslash\)t'}.join(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aae9bfcdefa67abad304df58b7e4a62c8}{annotations_names}) + \textcolor{stringliteral}{"\(\backslash\)n"}
+00161             \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} self:
+00162                 ret += buildLine(line)
+00163         \textcolor{keywordflow}{elif} (self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a89cf0727f26dba8aabb38271d85b169d}{dType} == \textcolor{stringliteral}{"data"}):
+00164             ret = \textcolor{stringliteral}{"GENE\(\backslash\)t"} + \textcolor{stringliteral}{'\(\backslash\)t'}.join(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aebce9bba220d01776cbd5a214d2d3013}{columns_names}) + \textcolor{stringliteral}{"\(\backslash\)n"}
+00165             \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} self:
+00166                 \textcolor{keywordflow}{if} (line[0] \textcolor{keywordflow}{in} hugo\_map \textcolor{keywordflow}{or} hugo\_map == \textcolor{stringliteral}{""}):
+00167                     ret += buildLine(line)
+00168         \textcolor{keywordflow}{else}:
+00169             \textcolor{keywordflow}{raise} ValueError(\textcolor{stringliteral}{"Data type must be 'data' or 'annotations'"})
+00170 
+00171         \textcolor{keywordflow}{return}(\textcolor{stringliteral}{"@DATA\(\backslash\)n"} + ret)
+00172 
+00173     \textcolor{keyword}{def }\hyperlink{classnavicom_1_1navidata_1_1NaviData_a485fbc0ffff49b94f3736b2a0f8cb54e}{exportToNaviCell}(self, nv, biotype, dataName):
+00174         \textcolor{stringliteral}{"""}
+00175 \textcolor{stringliteral}{        Export data to a NaviCell map}
+\hypertarget{navidata_8py_source_l00176}{}\hyperlink{classnavicom_1_1navidata_1_1NaviData_a485fbc0ffff49b94f3736b2a0f8cb54e}{00176} \textcolor{stringliteral}{        """}
+00177         nv.importDatatables(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a0ad79f0fbf4ab86ca13255069bf98632}{makeData}(nv.getHugoList()), dataName, biotype) \textcolor{comment}{#
+       Remove name once in self}
+00178         \textcolor{comment}{#nv.importDatatables(self.makeData(nv.getHugoList()), dataName, self.biot
+      ype)}
+00179 
+00180     \textcolor{keyword}{def }\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3dfc92056e5fc254e80607cef39234bf}{saveData}(self, baseName="", mode="w"):
+00181         \textcolor{stringliteral}{"""}
+00182 \textcolor{stringliteral}{        Save the NaviData datas in a file that can be used in NaviCell, but can a
+      lso be loaded as NaviData}
+\hypertarget{navidata_8py_source_l00183}{}\hyperlink{classnavicom_1_1navidata_1_1NaviData_a3dfc92056e5fc254e80607cef39234bf}{00183} \textcolor{stringliteral}{        """}
+00184         fname = baseName + \textcolor{stringliteral}{"["} + self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ab3f30d76377459fe539f440df162ea59}{processing} + \textcolor{stringliteral}{"]"} + \textcolor{stringliteral}{"["} + self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ae8f909ed788b49a3c894251957e2f732}{method} + \textcolor{stringliteral}{"].n
+      cd"}
+00185         \textcolor{keywordflow}{if} (mode == \textcolor{stringliteral}{"a"}):
+00186             fname = baseName
+00187         with open(fname, mode) \textcolor{keyword}{as} ff:
+00188             \textcolor{comment}{# First line, and first word in the }
+00189             \textcolor{keywordflow}{if} (self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a89cf0727f26dba8aabb38271d85b169d}{dType} == \textcolor{stringliteral}{"data"}):
+00190                 \textcolor{keywordflow}{if} (mode == \textcolor{stringliteral}{"a"}):
+00191                     ff.write(\textcolor{stringliteral}{"M "}+self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ae8f909ed788b49a3c894251957e2f732}{method}+\textcolor{stringliteral}{"\(\backslash\)t"}+self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ab3f30d76377459fe539f440df162ea59}{processing}+\textcolor{stringliteral}{"\(\backslash\)n"})
+00192                 ff.write(\textcolor{stringliteral}{"GENE"})
+00193             \textcolor{keywordflow}{elif} (self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a89cf0727f26dba8aabb38271d85b169d}{dType} == \textcolor{stringliteral}{"annotations"} \textcolor{keywordflow}{or} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a89cf0727f26dba8aabb38271d85b169d}{dType} == \textcolor{stringliteral}{"old\_annots"}):
+00194                 \textcolor{keywordflow}{if} (mode == \textcolor{stringliteral}{"a"}):
+00195                     ff.write(\textcolor{stringliteral}{"ANNOTATIONS "}+self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ae8f909ed788b49a3c894251957e2f732}{method}+\textcolor{stringliteral}{"\(\backslash\)t"}+self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_ab3f30d76377459fe539f440df162ea59}{processing}+\textcolor{stringliteral}{"\(\backslash\)n"
+      })
+00196                 ff.write(\textcolor{stringliteral}{"NAME"})
+00197             \textcolor{keywordflow}{for} nn \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aebce9bba220d01776cbd5a214d2d3013}{columns_names}:
+00198                 ff.write(\textcolor{stringliteral}{"\(\backslash\)t"} + nn)
+00199             ff.write(\textcolor{stringliteral}{"\(\backslash\)n"})
+00200             \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} range(len(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aef041665583f2aa0845418d378ce3a40}{rows_names})):
+00201                 ff.write(self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_aef041665583f2aa0845418d378ce3a40}{rows_names}[ii])
+00202                 \textcolor{keywordflow}{for} sv \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviData_a25ff2e12663e590c22e82bb9a7863987}{data}[ii]:
+00203                     ff.write(\textcolor{stringliteral}{"\(\backslash\)t"} + str(sv))
+00204                 ff.write(\textcolor{stringliteral}{"\(\backslash\)n"})
+00205             
+00206 MAX\_GROUPS = 7
+00207 \textcolor{keyword}{class }\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations}{NaviAnnotations}(\hyperlink{classnavicom_1_1navidata_1_1NaviData}{NaviData}):
+00208     \textcolor{stringliteral}{"""}
+00209 \textcolor{stringliteral}{    Enhance NaviData to contain annotations and associate annotations values with
+       samples. Also reduce continuous data with to many levels to a limited number of 
+      interval levels.}
+\hypertarget{navidata_8py_source_l00210}{}\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations}{00210} \textcolor{stringliteral}{    """}
+00211 
+00212     \textcolor{keyword}{def }\_\_init\_\_(self, data, rows\_list, columns\_list, dType="annotations"):
+00213         NaviData.\_\_init\_\_(self, data, rows\_list, columns\_list, dType=dType)
+00214         \textcolor{comment}{# Get the values for each annotations and which samples are associated to
+       a value}
+00215         self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a1c26e115cb2eabe4384cd2fa0c7f776f}{categoriesPerAnnotation} = dict()
+00216         self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a7cbb4ab623948f19e055f5b4b7c938a9}{samplesPerCategory} = dict()
+00217         modified\_data = list()
+00218         modified\_annot = list()
+00219         \textcolor{keywordflow}{for} annot \textcolor{keywordflow}{in} self.annotations:
+00220             self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a1c26e115cb2eabe4384cd2fa0c7f776f}{categoriesPerAnnotation}[annot] = list()
+00221             self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a7cbb4ab623948f19e055f5b4b7c938a9}{samplesPerCategory}[annot] = dict()
+00222             reduced = \textcolor{keyword}{False}
+00223             \textcolor{comment}{# Reduce the annotations set if they are continuous integers with too
+       many values}
+00224             \textcolor{keywordflow}{if} (len(np.unique(self[annot].data)) > MAX\_GROUPS):
+00225                 \textcolor{keywordflow}{try}:
+00226                     values = [float(value) \textcolor{keywordflow}{for} value \textcolor{keywordflow}{in} np.unique(self[annot].dat
+      a)]
+00227                     \textcolor{comment}{# Define the new annotations}
+00228                     min\_value = min(values)
+00229                     max\_value = max(values)
+00230                     step = (max\_value-min\_value)/MAX\_GROUPS
+00231                     new\_values = [signif(cat) \textcolor{keywordflow}{for} cat \textcolor{keywordflow}{in} np.arange(min\_value, max
+      \_value+step/2, 1.01*step)]
+00232                     new\_categories = [str(new\_values[icat])+\textcolor{stringliteral}{"<X<"}+str(new\_values[
+      icat+1]) \textcolor{keywordflow}{for} icat \textcolor{keywordflow}{in} range(len(new\_values)-1)] + [\textcolor{stringliteral}{"NaN"}]
+00233                     self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a1c26e115cb2eabe4384cd2fa0c7f776f}{categoriesPerAnnotation}[annot] = new\_categories
+00234                     \textcolor{comment}{# Attribute the new annotations to samples}
+00235                     modified\_data.append(self[annot].data.copy())
+00236                     modified\_annot.append(annot)
+00237                     \textcolor{keywordflow}{for} cat \textcolor{keywordflow}{in} new\_categories:
+00238                         self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a7cbb4ab623948f19e055f5b4b7c938a9}{samplesPerCategory}[annot][cat] = list()
+00239                     \textcolor{keywordflow}{for} sample \textcolor{keywordflow}{in} self.samples:
+00240                         annot\_value = float(self[annot][sample])
+00241                         \textcolor{keywordflow}{if} (np.isnan(annot\_value)):
+00242                             self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a7cbb4ab623948f19e055f5b4b7c938a9}{samplesPerCategory}[annot][\textcolor{stringliteral}{"NaN"}].append(sample)
+00243                         \textcolor{keywordflow}{else}:
+00244                             icat = 0
+00245                             \textcolor{keywordflow}{while} (signif(annot\_value) >= new\_values[icat+1]):
+00246                                 icat += 1
+00247                             self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a7cbb4ab623948f19e055f5b4b7c938a9}{samplesPerCategory}[annot][new\_categories[icat]].
+      append(sample)
+00248                             self[annot][sample] = new\_categories[icat]
+00249                     reduced = \textcolor{keyword}{True}
+00250                 \textcolor{keywordflow}{except} ValueError: 
+00251                     reduced = \textcolor{keyword}{False}
+00252             \textcolor{comment}{# Non numeric values or with few enough levels are not modified and s
+      imply indexed}
+00253             \textcolor{keywordflow}{if} (\textcolor{keywordflow}{not} reduced):
+00254                 \textcolor{keywordflow}{for} sample \textcolor{keywordflow}{in} self.samples:
+00255                     annot\_value = self[annot][sample]
+00256                     \textcolor{keywordflow}{if} (\textcolor{keywordflow}{not} annot\_value \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a1c26e115cb2eabe4384cd2fa0c7f776f}{categoriesPerAnnotation}[annot]):
+00257                         self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a1c26e115cb2eabe4384cd2fa0c7f776f}{categoriesPerAnnotation}[annot].append(annot\_value)
+00258                         self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a7cbb4ab623948f19e055f5b4b7c938a9}{samplesPerCategory}[annot][annot\_value] = [sample]
+00259                     \textcolor{keywordflow}{else}:
+00260                         self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_a7cbb4ab623948f19e055f5b4b7c938a9}{samplesPerCategory}[annot][annot\_value].append(sample
+      )
+00261 
+00262         \textcolor{keywordflow}{if} (DEBUG\_NAVIDATA):
+00263             \textcolor{keywordflow}{print}(\textcolor{stringliteral}{"Discretised annotations:"} + str(modified\_annot))
+00264         \textcolor{keywordflow}{if} (len(modified\_annot) > 0):
+00265             self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_ab053ca65505c1a9d72e2afb96ddcae9c}{old_annots} = NaviData(modified\_data, modified\_annot, self.rows, 
+      \textcolor{stringliteral}{"old\_annotations"})
+00266         \textcolor{keywordflow}{else}:
+00267             self.\hyperlink{classnavicom_1_1navidata_1_1NaviAnnotations_ab053ca65505c1a9d72e2afb96ddcae9c}{old_annots} = list()
+00268 
+00269 \textcolor{keyword}{class }\hyperlink{classnavicom_1_1navidata_1_1NaviSlice}{NaviSlice}():
+00270     \textcolor{stringliteral}{"""}
+00271 \textcolor{stringliteral}{    A slice from a NaviData array}
+\hypertarget{navidata_8py_source_l00272}{}\hyperlink{classnavicom_1_1navidata_1_1NaviSlice}{00272} \textcolor{stringliteral}{    """}
+00273     \textcolor{keyword}{def }\_\_init\_\_(self, data, index\_dict):
+00274         \textcolor{keywordflow}{if} (isinstance(data, np.ndarray)):
+00275             self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_a21ac86b9fbcb4ffc952782983690af5f}{data} = data
+00276         \textcolor{keywordflow}{elif} (isinstance(data, list)):
+00277             self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_a21ac86b9fbcb4ffc952782983690af5f}{data} = np.array(data)
+00278         \textcolor{keywordflow}{else}:
+00279             \textcolor{keywordflow}{raise} TypeError
+00280         \textcolor{keywordflow}{if} (isinstance(index\_dict, dict)):
+00281             self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_abc8769a0168ce54ee35624363deb0bcd}{ids} = index\_dict
+00282         \textcolor{keywordflow}{elif} (isinstance(index\_dict, list)):
+00283             self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_abc8769a0168ce54ee35624363deb0bcd}{ids} = listToDictKeys(index\_dict)
+00284         \textcolor{keywordflow}{else}:
+00285             \textcolor{keywordflow}{raise} TypeError
+00286 
+00287     \textcolor{keyword}{def }\_\_getitem\_\_(self, index):
+00288         \textcolor{keywordflow}{if} (isinstance(index, int)):
+00289             \textcolor{keywordflow}{return}(self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_a21ac86b9fbcb4ffc952782983690af5f}{data}[index])
+00290         \textcolor{keywordflow}{elif} (isinstance(index, str)):
+00291             \textcolor{keywordflow}{return}(self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_a21ac86b9fbcb4ffc952782983690af5f}{data}[self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_abc8769a0168ce54ee35624363deb0bcd}{ids}[index]])
+00292         \textcolor{keywordflow}{elif} (isinstance(index, list)):
+00293             ret\_value = list()
+00294             ret\_name = list()
+00295             \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} index:
+00296                 \textcolor{keywordflow}{if} (ii \textcolor{keywordflow}{in} self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_abc8769a0168ce54ee35624363deb0bcd}{ids}):
+00297                     ret\_name.append(ii)
+00298                 \textcolor{keywordflow}{else}:
+00299                     ret\_name.append(self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_abc8769a0168ce54ee35624363deb0bcd}{ids}[ii])
+00300                 ret\_value.append(self[ii])
+00301             \textcolor{keywordflow}{return}(NaviSlice(ret\_value, ret\_name))
+00302 
+00303     \textcolor{keyword}{def }\_\_setitem\_\_(self, index, value):
+00304         \textcolor{keywordflow}{if} (isinstance(index, int)):
+00305             self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_a21ac86b9fbcb4ffc952782983690af5f}{data}[index] = value
+00306         \textcolor{keywordflow}{elif} (isinstance(index, str)):
+00307             self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_a21ac86b9fbcb4ffc952782983690af5f}{data}[self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_abc8769a0168ce54ee35624363deb0bcd}{ids}[index]] = value
+00308         \textcolor{keywordflow}{elif} (isinstance(index, list)):
+00309             \textcolor{keywordflow}{if} (isinstance(value, list) \textcolor{keywordflow}{and} len(value) == len(index)):
+00310                 \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} range(len(index)):
+00311                     self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_a21ac86b9fbcb4ffc952782983690af5f}{data}[index[ii]] = value[ii]
+00312             \textcolor{keywordflow}{else}:
+00313                 \textcolor{keywordflow}{raise} ValueError(\textcolor{stringliteral}{"Length of indexes to change and new values diff
+      er"})
+00314 
+00315     \textcolor{keyword}{def }\_\_iter\_\_(self):
+00316         \textcolor{keywordflow}{return}(self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_a21ac86b9fbcb4ffc952782983690af5f}{data}.\_\_iter\_\_())
+00317 
+00318     \textcolor{keyword}{def }\_\_repr\_\_(self):
+00319         rpr = \textcolor{stringliteral}{"NaviData slice with "} + str(len(self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_abc8769a0168ce54ee35624363deb0bcd}{ids})) + \textcolor{stringliteral}{" elements"}
+00320         \textcolor{keywordflow}{return}(rpr)
+00321 
+00322     \textcolor{keyword}{def }\_\_add\_\_(self, nvslice):
+00323         \textcolor{keyword}{assert}(isinstance(nvslice, NaviSlice))
+00324         \textcolor{comment}{#assert(self.ids == nvslice.ids)}
+00325         \textcolor{keywordflow}{return}(NaviSlice(self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_a21ac86b9fbcb4ffc952782983690af5f}{data} + nvslice.data, self.\hyperlink{classnavicom_1_1navidata_1_1NaviSlice_abc8769a0168ce54ee35624363deb0bcd}{ids}))
+00326 
+00327 \textcolor{keyword}{def }listToDictKeys(ilist):
+00328     \textcolor{stringliteral}{"""}
+00329 \textcolor{stringliteral}{    Convert a list to an ordered dict where each item is a key and gives the id o
+      f the item in the list}
+00330 \textcolor{stringliteral}{    """}
+00331     \textcolor{keywordflow}{if} (isinstance(ilist, dict)):
+00332         \textcolor{keywordflow}{return}(oDict(ilist))
+00333     res = oDict()
+00334     ii = 0
+00335     \textcolor{keywordflow}{for} key \textcolor{keywordflow}{in} ilist:
+00336         res[str(key)] = ii
+00337         ii += 1
+00338     \textcolor{keywordflow}{return}(res)
+00339 
+00340 \textcolor{keyword}{def }buildLine(line, sep="\(\backslash\)t"):
+00341     ret = \textcolor{stringliteral}{""}
+00342     \textcolor{keywordflow}{for} el \textcolor{keywordflow}{in} line:
+00343         ret += str(el) + sep
+00344     \textcolor{keywordflow}{return}(re.sub(\textcolor{stringliteral}{"NaN|nan"}, \textcolor{stringliteral}{"NA"}, ret[:-1]) + \textcolor{stringliteral}{"\(\backslash\)n"})
+00345 
+00346 \textcolor{keyword}{def }parseFilename(fname):
+00347     \textcolor{stringliteral}{"""}
+00348 \textcolor{stringliteral}{    Extract data name, method and processing from the name of the file}
+00349 \textcolor{stringliteral}{    """}
+00350     fname = re.sub(\textcolor{stringliteral}{".*/([^/]+)"}, \textcolor{stringliteral}{"\(\backslash\)\(\backslash\)1"}, fname)
+00351     \textcolor{keywordflow}{if} (re.search(\textcolor{stringliteral}{"\(\backslash\).ncd$|\(\backslash\).nca$"}, fname)):
+00352         names = re.split(\textcolor{stringliteral}{"\(\backslash\)["}, re.sub(\textcolor{stringliteral}{".ncd$|.nca$"}, \textcolor{stringliteral}{""}, fname))
+00353         dname = re.sub(\textcolor{stringliteral}{"\_$"}, \textcolor{stringliteral}{""}, names[0])
+00354         processing = re.sub(\textcolor{stringliteral}{"\(\backslash\)]|\_$|^\_"}, \textcolor{stringliteral}{""}, names[1])
+00355         method = re.sub(\textcolor{stringliteral}{"\(\backslash\)[|\_$|^\_"}, \textcolor{stringliteral}{""}, names[2])
+00356     \textcolor{keywordflow}{elif} (re.search(\textcolor{stringliteral}{"\(\backslash\).tsv$"}, fname)):
+00357         processing = \textcolor{stringliteral}{"raw"} \textcolor{comment}{# No processing is done by the R extractor}
+00358         names = re.split(\textcolor{stringliteral}{"\_"}, re.sub(\textcolor{stringliteral}{"\(\backslash\).tsv"}, \textcolor{stringliteral}{""}, fname))
+00359         ll = len(names)
+00360         \textcolor{keywordflow}{while} (\textcolor{keywordflow}{not} \textcolor{stringliteral}{"\_"}.join(names[-ll:]) \textcolor{keywordflow}{in} METHODS\_TYPE \textcolor{keywordflow}{and} ll >= 1):
+00361             ll-=1
+00362         \textcolor{keywordflow}{if} (ll >= 1):
+00363             method = \textcolor{stringliteral}{"\_"}.join(names[-ll:])
+00364             dname = \textcolor{stringliteral}{"\_"}.join(names[:-ll])
+00365     \textcolor{keywordflow}{else}:
+00366         \textcolor{keywordflow}{return} (re.sub(\textcolor{stringliteral}{"\(\backslash\).[^.]*$"}, \textcolor{stringliteral}{""}, fname), \textcolor{stringliteral}{"raw"}, \textcolor{stringliteral}{"unknown"})
+00367     \textcolor{keywordflow}{return} (dname, processing, method)
+00368 
+00369 \textcolor{keyword}{def }pca\_cov(data):
+00370     \textcolor{stringliteral}{"""}
+00371 \textcolor{stringliteral}{    Run Principal Component Analysis using the covariance matrix and returns the 
+      eigen-vectors sorted by decreasing eigenvalues}
+00372 \textcolor{stringliteral}{    """}
+00373     cov\_mat = np.cov(data)
+00374 
+00375     \textcolor{comment}{# Compute eigenvectors and eigenvalues, linalg returns eigenvectors of norm 1
+      }
+00376     eig\_val, eig\_vec = np.linalg.eig(cov\_mat)
+00377     \textcolor{comment}{# Make a list of value-vector tuples to sort by eigenvalue}
+00378     eig\_pairs = [(np.abs(eig\_val[ii]), eig\_vec[:,ii]) \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} range(len(eig\_val
+      ))]
+00379     eig\_pairs.sort()
+00380     eig\_pairs.reverse()
+00381 
+00382     \textcolor{comment}{# Create the ordered eigenvectors matrix}
+00383     eigen\_matrix = np.matrix([eig\_pairs[1] \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} range(len(eig\_pairs))])
+00384     \textcolor{keywordflow}{return} (eigen\_matrix)
+00385 
+00386 \textcolor{keyword}{def }signif(x, n=3):
+00387     \textcolor{stringliteral}{"""}
+00388 \textcolor{stringliteral}{    Keep n significant numbers}
+00389 \textcolor{stringliteral}{    """}
+00390     \textcolor{keywordflow}{if} (x==0):
+00391         \textcolor{keywordflow}{return} 0.
+00392     \textcolor{keywordflow}{return}(round(x, -int(math.log10(np.abs(x)))+(n-1) ))
+00393 
+00394 
+00395 \textcolor{keyword}{def }getBiotype(method, processing="raw"):
+00396     \textcolor{stringliteral}{"""}
+00397 \textcolor{stringliteral}{    Get the biotype from the method and the processing}
+00398 \textcolor{stringliteral}{    """}
+00399     \textcolor{keywordflow}{if} (processing \textcolor{keywordflow}{in} PROCESSINGS\_BIOTYPE):
+00400         transform\_biotype = PROCESSINGS\_BIOTYPE[processing]
+00401         \textcolor{keywordflow}{if} (re.search(\textcolor{stringliteral}{'->'}, transform\_biotype)):
+00402             modes = transform\_biotype.split(\textcolor{stringliteral}{"->"})
+00403             biotype = re.sub(modes[0], modes[1], TYPES\_BIOTYPE[METHODS\_TYPE[metho
+      d.lower()]])
+00404         \textcolor{keywordflow}{else}:
+00405             biotype = PROCESSINGS\_BIOTYPE[processing]
+00406     \textcolor{keywordflow}{else}:
+00407         biotype = TYPES\_BIOTYPE[METHODS\_TYPE[method.lower()]]
+00408     \textcolor{keywordflow}{return} biotype
+00409 
+\end{DoxyCode}

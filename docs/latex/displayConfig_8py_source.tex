@@ -1,0 +1,124 @@
+\hypertarget{displayConfig_8py_source}{
+\subsection{navicom/displayConfig.py}
+}
+
+\begin{DoxyCode}
+00001 \textcolor{comment}{################################################################################}
+00002 \textcolor{comment}{# displayConfig.py}
+00003 \textcolor{comment}{# By Mathurin Dorel}
+00004 \textcolor{comment}{# Configuration of the color gradients for NaviCell}
+00005 \textcolor{comment}{################################################################################}
+00006 
+00007 \textcolor{keyword}{def }rgbValid(color):
+00008     \textcolor{stringliteral}{"""}
+00009 \textcolor{stringliteral}{    Check whether a color string is a valid rgb color}
+00010 \textcolor{stringliteral}{    """}
+00011     \textcolor{keywordflow}{if} (len(color) != 6):
+00012         \textcolor{keywordflow}{if} (len(color) == 7 \textcolor{keywordflow}{and} color[0]==\textcolor{stringliteral}{"#"}):
+00013             color = color[1:]
+00014         \textcolor{keywordflow}{elif} (len(color) == 8 \textcolor{keywordflow}{and} color[1]==\textcolor{stringliteral}{"x"}):
+00015             color = color[2:]
+00016         \textcolor{keywordflow}{else}:
+00017             \textcolor{keywordflow}{raise} ValueError(str(color) + \textcolor{stringliteral}{" is not a valid RGB color (does not co
+      mply to the format (#|0x)?RRGGBB)"})
+00018     \textcolor{keywordflow}{for} cc \textcolor{keywordflow}{in} color:
+00019         \textcolor{keywordflow}{if} (\textcolor{keywordflow}{not} cc.lower() \textcolor{keywordflow}{in} [str(el) \textcolor{keywordflow}{for} el \textcolor{keywordflow}{in} range(10)]+[chr(aa) \textcolor{keywordflow}{for} aa \textcolor{keywordflow}{in} ra
+      nge(ord(\textcolor{stringliteral}{"a"}), ord(\textcolor{stringliteral}{"f"})+1)]):
+00020             \textcolor{keywordflow}{raise} ValueError(str(color) + \textcolor{stringliteral}{" is not a valid RGB color ("} + str(cc)
+       + \textcolor{stringliteral}{" is not an hexadecimal digit)"})
+00021     \textcolor{keywordflow}{return}(color)
+00022 
+00023 \textcolor{keyword}{def }getGradient(color0, color1, steps):
+00024     \textcolor{stringliteral}{"""}
+00025 \textcolor{stringliteral}{    Create a gradient between two colors.}
+00026 \textcolor{stringliteral}{    Args:}
+00027 \textcolor{stringliteral}{        color0 (str): first RGB color of the gradient}
+00028 \textcolor{stringliteral}{        color1 (str): second RGB color of the gradient}
+00029 \textcolor{stringliteral}{        steps (int): number of colors in the final gradient}
+00030 \textcolor{stringliteral}{    Return:}
+00031 \textcolor{stringliteral}{        gradient (str): a list of RGB colors (str)}
+00032 \textcolor{stringliteral}{    """}
+00033     \textcolor{keyword}{assert} steps >= 2, ValueError(\textcolor{stringliteral}{"Cannot make a gradient with only one value"})
+00034     \textcolor{keyword}{def }hex2(nb):
+00035         nb = hex(nb)[2:]
+00036         \textcolor{keywordflow}{if} (len(nb) == 1):
+00037             nb = \textcolor{stringliteral}{"0"}+nb
+00038         \textcolor{keywordflow}{return}(nb)
+00039     c0 = [int(color0[ii:ii+2], 16) \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} range(0, 6, 2)]
+00040     c1 = [int(color1[ii:ii+2], 16) \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} range(0, 6, 2)]
+00041     gradient=list()
+00042     \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} range(steps):
+00043         ccolor = [c0[jj]+ii*(c1[jj]-c0[jj])//(steps-1) \textcolor{keywordflow}{for} jj \textcolor{keywordflow}{in} range(3)]
+00044         ccolor = \textcolor{stringliteral}{""}.join([hex2(el) \textcolor{keywordflow}{for} el \textcolor{keywordflow}{in} ccolor])
+00045         gradient.append(ccolor)
+00046     \textcolor{keywordflow}{return}(gradient)
+00047 
+00048 \textcolor{keyword}{class }DisplayConfig():
+00049     \textcolor{stringliteral}{"""}
+00050 \textcolor{stringliteral}{    DisplayConfig class to set the color gradients configuration in NaviCell}
+\hypertarget{displayConfig_8py_source_l00051}{}\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig}{00051} \textcolor{stringliteral}{    """}
+00052 
+00053     \textcolor{keyword}{def }\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a26387ee9e6fe63612bc87a4d5d4a17f2}{__init__}(self, step\_count=3, color\_gradient=["00FF00", "FF0000"], zero\_co
+      lor="ffffff", na\_color="ffffff", zero\_size=0, na\_size=0, use\_absolute\_values = Fa
+      lse):
+00054         \textcolor{stringliteral}{"""}
+00055 \textcolor{stringliteral}{        Initialise a color gradient configuration}
+00056 \textcolor{stringliteral}{        Args:}
+00057 \textcolor{stringliteral}{            step\_count (int): number of steps for the color gradients. A step for
+       NAs is automatically attributed.}
+00058 \textcolor{stringliteral}{            color\_gradient (list): a list of colors of length 2 or step\_count. If
+       length 2 a gradient is built, if the length is step\_count the list is used for t
+      he colors.}
+00059 \textcolor{stringliteral}{            zero\_color (str): an hexadecimal string for the color of the zero, on
+      ly visible if step\_count is odd}
+\hypertarget{displayConfig_8py_source_l00060}{}\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a26387ee9e6fe63612bc87a4d5d4a17f2}{00060} \textcolor{stringliteral}{        """}
+00061         \textcolor{keyword}{assert} isinstance(step\_count, int), ValueError(\textcolor{stringliteral}{"'step\_count' must be an i
+      nteger"})
+00062         \textcolor{keyword}{assert} isinstance(color\_gradient, list) \textcolor{keywordflow}{and} len(color\_gradient)>=2, Value
+      Error(\textcolor{stringliteral}{"'color\_gradient' must be list of 2 or more elements"})
+00063         \textcolor{keywordflow}{for} ii \textcolor{keywordflow}{in} range(len(color\_gradient)):
+00064             color\_gradient[ii] = rgbValid(color\_gradient[ii])
+00065         \textcolor{keyword}{assert} isinstance(zero\_color, str), ValueError(\textcolor{stringliteral}{"'zero\_color' must be a st
+      ring"})
+00066         zero\_color = rgbValid(zero\_color)
+00067         \textcolor{keyword}{assert} isinstance(na\_color, str) \textcolor{keywordflow}{and} len(na\_color) > 3, ValueError(\textcolor{stringliteral}{"'na\_c
+      olor' must be a string of at least 3 characters representing a RGB color"})
+00068         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ad8f95c1e3b29ac5622a18b7328b07f50}{na_color} = rgbValid(na\_color)
+00069         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a0309d659680f7db85475e025fced9c29}{zero_color} = zero\_color
+00070         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aa157506adb33080de983987dd182fa29}{na_size} = na\_size
+00071         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aab0e7c765bfc4071416c5e04fd7bbb2f}{zero_size} = zero\_size
+00072 
+00073         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a86870c1c1b5c920d4cc93554c7528d8a}{use_absolute_values} = use\_absolute\_values
+00074 
+00075         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count} = step\_count
+00076         \textcolor{keywordflow}{if} (len(color\_gradient) == step\_count):
+00077             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} = color\_gradient
+00078         \textcolor{keywordflow}{elif} (len(color\_gradient) == 2):
+00079             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_acf7e4fcee4a2d6acb5f3641bacfa64c3}{color} = list()
+00080             \textcolor{keywordflow}{if} (zero\_color == \textcolor{stringliteral}{""}):
+00081                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} = getGradient(color\_gradient[0], color\_gradient[1], s
+      elf.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count})
+00082             \textcolor{keywordflow}{else}:
+00083                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} = getGradient(color\_gradient[0], zero\_color, self.
+      \hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count}//2+1)[:-1]
+00084                 \textcolor{keywordflow}{if} (self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count}%2 == 1):
+00085                     self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} += [zero\_color]
+00086                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} += getGradient(zero\_color, color\_gradient[1], self.
+      \hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count}//2+1)[1:]
+00087         \textcolor{keywordflow}{elif} (len(color\_gradient) == step\_count-1 \textcolor{keywordflow}{and} zero\_color != \textcolor{stringliteral}{""}):
+00088             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} = color\_gradient[:step\_count//2+1]
+00089             \textcolor{keywordflow}{if} (step\_count%2 == 1):
+00090                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} += [zero\_color]
+00091             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} += color\_gradient[step\_count//2+1:]
+00092         \textcolor{keywordflow}{else}:
+00093             \textcolor{keywordflow}{raise} ValueError(\textcolor{stringliteral}{"The length of 'color\_gradient' must be 2 or equal t
+      o step\_count"})
+00094 
+00095     \textcolor{keyword}{def }\_\_repr\_\_(self):
+00096         rpr = \textcolor{stringliteral}{"DisplayConfig object :\(\backslash\)n"}
+00097         rpr+= \textcolor{stringliteral}{"\(\backslash\)tGradient colors: "} + str(self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors}) + \textcolor{stringliteral}{"\(\backslash\)n"}
+00098         rpr+= \textcolor{stringliteral}{"\(\backslash\)tNA color: "} + str(self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ad8f95c1e3b29ac5622a18b7328b07f50}{na_color})
+00099         \textcolor{keywordflow}{return}(rpr)
+00100 
+00101 
+\end{DoxyCode}

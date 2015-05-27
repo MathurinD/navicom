@@ -1,0 +1,497 @@
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom}{
+\subsection{navicom::navicom::NaviCom Class Reference}
+\label{classnavicom_1_1navicom_1_1NaviCom}\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+}
+
+
+NaviComm class to handle data and display them in a standardized way on NaviCell maps.  
+
+
+\subsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ae6133fe7ec63cf5643c1794f4f8e2349}{\_\-\_\-init\_\-\_\-}
+\begin{DoxyCompactList}\small\item\em Initialize a Navicell communication object. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a6eadb16a25ab948c152661c740175383}{
+def {\bfseries listData}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a6eadb16a25ab948c152661c740175383}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_aaf13b634968129b3216c5cb54b70c2ad}{
+def {\bfseries listAnnotations}}
+\label{classnavicom_1_1navicom_1_1NaviCom_aaf13b634968129b3216c5cb54b70c2ad}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a29ada4f47f518f16ecd59dc569840078}{
+def {\bfseries \_\-\_\-repr\_\-\_\-}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a29ada4f47f518f16ecd59dc569840078}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a8e735eed992a5cf92616113d47eea6ee}{
+def {\bfseries nameData}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a8e735eed992a5cf92616113d47eea6ee}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a51ecb41beebc7636bde73be2e1ffc407}{
+def {\bfseries getDataName}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a51ecb41beebc7636bde73be2e1ffc407}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ad8ac5b74afb4ceb6ed094604787d4d19}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ad8ac5b74afb4ceb6ed094604787d4d19}{getDataTuple}}
+\label{classnavicom_1_1navicom_1_1NaviCom_ad8ac5b74afb4ceb6ed094604787d4d19}
+
+\begin{DoxyCompactList}\small\item\em Return tuple corresponding to the data name or tuple. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ad675e899836271ff4f2fd4bd17ea81d9}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ad675e899836271ff4f2fd4bd17ea81d9}{getData}}
+\label{classnavicom_1_1navicom_1_1NaviCom_ad675e899836271ff4f2fd4bd17ea81d9}
+
+\begin{DoxyCompactList}\small\item\em Return the NaviData entity corresponding to the data name or tuple. \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a10e8b8a4c06b4ecf09366ca6b69efff6}{loadData}
+\begin{DoxyCompactList}\small\item\em Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ae310adb1d4e8932f0b72b6d8b6ca6301}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ae310adb1d4e8932f0b72b6d8b6ca6301}{bindNaviData}}
+\label{classnavicom_1_1navicom_1_1NaviCom_ae310adb1d4e8932f0b72b6d8b6ca6301}
+
+\begin{DoxyCompactList}\small\item\em Bind NaviData to the \hyperlink{classnavicom_1_1navicom_1_1NaviCom}{NaviCom} object in order to use it. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a628c6252226b65dca80237d6783c08c6}{
+def {\bfseries defineUniformData}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a628c6252226b65dca80237d6783c08c6}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a42c3198667c80bbf3d61a3d57b39a883}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a42c3198667c80bbf3d61a3d57b39a883}{newProcessedData}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a42c3198667c80bbf3d61a3d57b39a883}
+
+\begin{DoxyCompactList}\small\item\em Update adequate arrays when processed data are generated. \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a5314c49d6b9749693519a4a86cbfde71}{quantifyMutations}
+\begin{DoxyCompactList}\small\item\em Transform the qualitative mutation datas into a quantitative one, where 1 means a mutation and 0 no mutation. \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a6411b52971f15bd11270942cb98eaa1a}{defineModules}
+\begin{DoxyCompactList}\small\item\em Defines the modules to use and which module each gene belongs to. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_afd1a299b687bc97e171cff0a738b7b73}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_afd1a299b687bc97e171cff0a738b7b73}{averageModule}}
+\label{classnavicom_1_1navicom_1_1NaviCom_afd1a299b687bc97e171cff0a738b7b73}
+
+\begin{DoxyCompactList}\small\item\em Perform module averaging for every modules for one data type. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a369bba5d2dc39a565880bc6f853f0da1}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a369bba5d2dc39a565880bc6f853f0da1}{pcaComp}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a369bba5d2dc39a565880bc6f853f0da1}
+
+\begin{DoxyCompactList}\small\item\em Run pca on the data and create a color matrix with the 3 principal components in the three main colors. \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a7395c2253695b46bf95cd48ed1be6d3e}{exportData}
+\begin{DoxyCompactList}\small\item\em Export data to NaviCell, can be processed data. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_aa7aadc5d33a24f0fd5705e363c0fedcb}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_aa7aadc5d33a24f0fd5705e363c0fedcb}{checkBrowser}}
+\label{classnavicom_1_1navicom_1_1NaviCom_aa7aadc5d33a24f0fd5705e363c0fedcb}
+
+\begin{DoxyCompactList}\small\item\em Check if the browser is opened or open it. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a5a59edead26b5d02f17a60df055576f5}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a5a59edead26b5d02f17a60df055576f5}{exportAnnotations}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a5a59edead26b5d02f17a60df055576f5}
+
+\begin{DoxyCompactList}\small\item\em Export samples annotations to NaviCell. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a5b6fef64cb29988c7a4c07138c03b5c1}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a5b6fef64cb29988c7a4c07138c03b5c1}{configureDisplay}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a5b6fef64cb29988c7a4c07138c03b5c1}
+
+\begin{DoxyCompactList}\small\item\em Changes the Color and Size Configuration for the datatable to the one precised by the user. \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ad7d4390d700d4a6d2533647887f8ab94}{display}
+\begin{DoxyCompactList}\small\item\em Display data on the NaviCell map. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a379f15a87ba5c41c3501e9f386102c05}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a379f15a87ba5c41c3501e9f386102c05}{resetDisplay}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a379f15a87ba5c41c3501e9f386102c05}
+
+\begin{DoxyCompactList}\small\item\em Reset the data and samples selections in NaviCell. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ab92b6e95417e01126d9d73903acc2a3b}{
+def {\bfseries resetAnnotations}}
+\label{classnavicom_1_1navicom_1_1NaviCom_ab92b6e95417e01126d9d73903acc2a3b}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ad298207a958acd2cee82c7df7eace0d3}{
+def {\bfseries selectAnnotations}}
+\label{classnavicom_1_1navicom_1_1NaviCom_ad298207a958acd2cee82c7df7eace0d3}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a6536cf86235df90cb7443c23f11870e4}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a6536cf86235df90cb7443c23f11870e4}{processSampleSelection}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a6536cf86235df90cb7443c23f11870e4}
+
+\begin{DoxyCompactList}\small\item\em Process a list of samples or groups to a list of samples/groups names exportable to NaviCell or to \char`\"{}all\_\-groups\char`\"{}/\char`\"{}all\_\-samples\char`\"{} for heatmap and barplot, and select the correct groups in NaviCell. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_af04ea16f3ccb0d883f5b01471c0c1a6f}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_af04ea16f3ccb0d883f5b01471c0c1a6f}{processGroupsName}}
+\label{classnavicom_1_1navicom_1_1NaviCom_af04ea16f3ccb0d883f5b01471c0c1a6f}
+
+\begin{DoxyCompactList}\small\item\em Process a group selection string and return the names of the individual groups to select and the corresponding values selected. \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a018f936de625af8a5dd7e8250ede6483}{displayMethylome}
+\begin{DoxyCompactList}\small\item\em Display the methylation data as glyphs or heatmap on the NaviCell map, with mRNA expression of gene CNV as map staining. \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a001dadf6f3dc0c77ba5b14da621b110d}{displayTranscriptome}
+\begin{DoxyCompactList}\small\item\em Display one transcriptome data as map staining, with optionnaly some extra displays (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes). \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a8d417589ac7fb5ab3c26ccd025938504}{generateDistributionData}
+\begin{DoxyCompactList}\small\item\em Compute distribution of values for all genes for one type of data. \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a66a4bf5d38161f7ca29f030037b3565b}{colorsOverlay}
+\begin{DoxyCompactList}\small\item\em Create a dataset where values are colors. \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ab539e16bff0a424ebd2753c153ff4e53}{saveAllData}
+\begin{DoxyCompactList}\small\item\em Save all data in an .ncc file. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ac53d9dc53ca0af44586a55fb1bffe8bd}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ac53d9dc53ca0af44586a55fb1bffe8bd}{saveData}}
+\label{classnavicom_1_1navicom_1_1NaviCom_ac53d9dc53ca0af44586a55fb1bffe8bd}
+
+\begin{DoxyCompactList}\small\item\em Save the data in a file that can be exported to NaviCell or imported in \hyperlink{classnavicom_1_1navicom_1_1NaviCom}{NaviCom}. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_af740fe52f9f3cfc076ae88ca696bd05e}{
+{\bfseries nv}}
+\label{classnavicom_1_1navicom_1_1NaviCom_af740fe52f9f3cfc076ae88ca696bd05e}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a950e5ebf199edea40d55c506b8aaf134}{
+{\bfseries name}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a950e5ebf199edea40d55c506b8aaf134}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_aff54ed91d1f335cea31829f59d4efb81}{
+{\bfseries exported\_\-annotations}}
+\label{classnavicom_1_1navicom_1_1NaviCom_aff54ed91d1f335cea31829f59d4efb81}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a32c1346193b73ea8558dd0318ae6932c}{
+{\bfseries browser\_\-opened}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a32c1346193b73ea8558dd0318ae6932c}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a48c57d5aca173ba7167dbc51501fb1ac}{
+{\bfseries biotypes}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a48c57d5aca173ba7167dbc51501fb1ac}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a56628d774db59cb8b06af3801fb6306c}{
+{\bfseries display\_\-config}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a56628d774db59cb8b06af3801fb6306c}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a5a255d56e997ddcc653d8f06c741ea13}{
+{\bfseries processings}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a5a255d56e997ddcc653d8f06c741ea13}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_aa1abff245573ed8406c6bddb4596f093}{
+{\bfseries data}}
+\label{classnavicom_1_1navicom_1_1NaviCom_aa1abff245573ed8406c6bddb4596f093}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a5995e07de24daa015b8b44b1ae0cada7}{
+{\bfseries exported\_\-data}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a5995e07de24daa015b8b44b1ae0cada7}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a68646454fe1481b0065d2f43548319df}{
+{\bfseries data\_\-names}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a68646454fe1481b0065d2f43548319df}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a1d7072ae29e32d7ddd1da9cc5def7199}{
+{\bfseries associated\_\-data}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a1d7072ae29e32d7ddd1da9cc5def7199}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a0386d881214943cf3432d0ffe22cbb71}{
+{\bfseries annotations}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a0386d881214943cf3432d0ffe22cbb71}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a56141660ddf29a36a8291e938246578c}{
+{\bfseries modules}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a56141660ddf29a36a8291e938246578c}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a9f3e4dbfabe319967c14bf61eaf8d022}{
+{\bfseries associated\_\-modules}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a9f3e4dbfabe319967c14bf61eaf8d022}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ac8b826435d1ae69420151967b3a872eb}{
+{\bfseries hsid}}
+\label{classnavicom_1_1navicom_1_1NaviCom_ac8b826435d1ae69420151967b3a872eb}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a35fe0d421abe7e1b08fc92ca58b689db}{
+{\bfseries hdid}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a35fe0d421abe7e1b08fc92ca58b689db}
+
+\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a1f652094a5c16ca0b721856f5e5aadf2}{
+{\bfseries bid}}
+\label{classnavicom_1_1navicom_1_1NaviCom_a1f652094a5c16ca0b721856f5e5aadf2}
+
+\end{DoxyCompactItemize}
+
+
+\subsubsection{Detailed Description}
+NaviComm class to handle data and display them in a standardized way on NaviCell maps. 
+
+Definition at line \hyperlink{navicom_8py_source_l00028}{28} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+
+
+\subsubsection{Member Function Documentation}
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ae6133fe7ec63cf5643c1794f4f8e2349}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!\_\-\_\-init\_\-\_\-@{\_\-\_\-init\_\-\_\-}}
+\index{\_\-\_\-init\_\-\_\-@{\_\-\_\-init\_\-\_\-}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{\_\-\_\-init\_\-\_\-}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::\_\-\_\-init\_\-\_\- (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ map\_\-url = {\ttfamily 'https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php'}, }
+\item[{}]{ fname = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{}]{ modules\_\-dict = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{}]{ browser\_\-command = {\ttfamily \char`\"{}firefox~\%s\char`\"{}}, }
+\item[{}]{ display\_\-config = {\ttfamily DisplayConfig()}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_ae6133fe7ec63cf5643c1794f4f8e2349}
+
+
+Initialize a Navicell communication object. 
+
+
+\begin{DoxyParams}{Parameters}
+\item[{\em map\_\-url}]URL of the NaviCell map \item[{\em fname}]name of the data file to load \item[{\em modules\_\-dict}]name of the module definition file (.gmt) to load \item[{\em browser\_\-command}]command to open the browser \end{DoxyParams}
+
+
+Definition at line \hyperlink{navicom_8py_source_l00038}{38} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a66a4bf5d38161f7ca29f030037b3565b}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!colorsOverlay@{colorsOverlay}}
+\index{colorsOverlay@{colorsOverlay}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{colorsOverlay}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::colorsOverlay (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ red = {\ttfamily \char`\"{}uniform\char`\"{}}, }
+\item[{}]{ green = {\ttfamily \char`\"{}uniform\char`\"{}}, }
+\item[{}]{ blue = {\ttfamily \char`\"{}uniform\char`\"{}}, }
+\item[{}]{ processing = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_a66a4bf5d38161f7ca29f030037b3565b}
+
+
+Create a dataset where values are colors. 
+
+The color is calculated according to three datasets.
+
+
+\begin{DoxyParams}{Parameters}
+\item[{\em red}]data name or tuple (processing, method) \item[{\em green}]data name or tuple (processing, method) \item[{\em blue}]data name or tuple (processing, method) \end{DoxyParams}
+
+
+Definition at line \hyperlink{navicom_8py_source_l00950}{950} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a6411b52971f15bd11270942cb98eaa1a}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!defineModules@{defineModules}}
+\index{defineModules@{defineModules}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{defineModules}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::defineModules (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ modules\_\-dict = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_a6411b52971f15bd11270942cb98eaa1a}
+
+
+Defines the modules to use and which module each gene belongs to. 
+
+
+\begin{DoxyParams}{Parameters}
+\item[{\em modules\_\-dict}]Either a dict indexed by module name or a file name with the description of each module (.gmt \href{file:}{\tt file:} tab delimited, first column module name, second column description, then list of entities in the module) \end{DoxyParams}
+
+
+Definition at line \hyperlink{navicom_8py_source_l00290}{290} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ad7d4390d700d4a6d2533647887f8ab94}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!display@{display}}
+\index{display@{display}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{display}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::display (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ perform\_\-list, }
+\item[{}]{ default\_\-samples = {\ttfamily \char`\"{}all:~1.0\char`\"{}}, }
+\item[{}]{ colors = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{}]{ module = {\ttfamily ''}, }
+\item[{}]{ reset = {\ttfamily True}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_ad7d4390d700d4a6d2533647887f8ab94}
+
+
+Display data on the NaviCell map. 
+
+perform\_\-list (list of 2-\/tuples): each tuple must contain the name of the data to display and the mode of display (\char`\"{}glyphN\_\-(color$|$size$|$shape)\char`\"{}, \char`\"{}barplot\char`\"{}, \char`\"{}heatmap\char`\"{} or \char`\"{}map\_\-staining\char`\"{}). Barplots and heatmaps cannot be displayed simultaneously. Several data types can be specified for heatmaps. Specifying \char`\"{}glyph\char`\"{} (without number) will automatically select a new glyph for each data using the same properties (shape, color or size) in glyphs (maximum of 5 glyphs). 
+\begin{DoxyParams}{Parameters}
+\item[{\em colors}]range of colors to use (NOT IMPLEMENTED YET) default\_\-samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all default\_\-samples from the list are used for heatmaps and barplots. Use 'all\_\-samples' to use all default\_\-samples or \mbox{[}'annot1:...:annotn', 'all\_\-groups'\mbox{]} to use all groups corresponding to the combinations of annot1...annotn. \end{DoxyParams}
+
+
+Definition at line \hyperlink{navicom_8py_source_l00539}{539} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a018f936de625af8a5dd7e8250ede6483}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!displayMethylome@{displayMethylome}}
+\index{displayMethylome@{displayMethylome}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{displayMethylome}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::displayMethylome (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ samples = {\ttfamily \char`\"{}all:~1.0\char`\"{}}, }
+\item[{}]{ processing = {\ttfamily \char`\"{}raw\char`\"{}}, }
+\item[{}]{ background = {\ttfamily \char`\"{}mRNA\char`\"{}}, }
+\item[{}]{ methylation = {\ttfamily \char`\"{}glyph\char`\"{}}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_a018f936de625af8a5dd7e8250ede6483}
+
+
+Display the methylation data as glyphs or heatmap on the NaviCell map, with mRNA expression of gene CNV as map staining. 
+
+
+\begin{DoxyParams}{Parameters}
+\item[{\em background}]should genes, mRNA or no data be used for the map staining \item[{\em processing}]should the processed data be used \end{DoxyParams}
+
+
+Definition at line \hyperlink{navicom_8py_source_l00836}{836} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a001dadf6f3dc0c77ba5b14da621b110d}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!displayTranscriptome@{displayTranscriptome}}
+\index{displayTranscriptome@{displayTranscriptome}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{displayTranscriptome}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::displayTranscriptome (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ dataName, }
+\item[{}]{ group = {\ttfamily \char`\"{}all:~1.0\char`\"{}}, }
+\item[{}]{ samplesDisplay = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{}]{ samples = {\ttfamily list()}, }
+\item[{}]{ binsNb = {\ttfamily 10}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_a001dadf6f3dc0c77ba5b14da621b110d}
+
+
+Display one transcriptome data as map staining, with optionnaly some extra displays (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes). 
+
+
+\begin{DoxyItemize}
+\item dataName (str or tuple): name or identifier of the data.
+\item group (str): Identifier of the group to display
+\item samplesDisplay (str): Channel where the individual samples should be displayed (heatmap or barplot)
+\item samples (list or str): list of samples to display, or a string specifying how such a list should be built ('quantiles' to get the distribution of values)
+\item nbOfSamples (int): number of individual samples to display, ignored if samples is a list 
+\end{DoxyItemize}
+
+Definition at line \hyperlink{navicom_8py_source_l00877}{877} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a7395c2253695b46bf95cd48ed1be6d3e}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!exportData@{exportData}}
+\index{exportData@{exportData}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{exportData}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::exportData (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ method, }
+\item[{}]{ processing = {\ttfamily \char`\"{}raw\char`\"{}}, }
+\item[{}]{ name = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_a7395c2253695b46bf95cd48ed1be6d3e}
+
+
+Export data to NaviCell, can be processed data. 
+
+
+\begin{DoxyParams}{Parameters}
+\item[{\em method}]name of the method to export \item[{\em processing}]\char`\"{}\char`\"{} to export raw data, processing method to export processed data. See 'averageModule' and 'pcaComponent' \end{DoxyParams}
+
+
+Definition at line \hyperlink{navicom_8py_source_l00380}{380} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a8d417589ac7fb5ab3c26ccd025938504}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!generateDistributionData@{generateDistributionData}}
+\index{generateDistributionData@{generateDistributionData}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{generateDistributionData}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::generateDistributionData (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ dataName, }
+\item[{}]{ group, }
+\item[{}]{ binsNb = {\ttfamily 10}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_a8d417589ac7fb5ab3c26ccd025938504}
+
+
+Compute distribution of values for all genes for one type of data. 
+
+Use the same scale for all genes. The distribution is centered on 0 if it is included, so that it is easy to see if a gene is over-\/ or under-\/expressed. 
+
+Definition at line \hyperlink{navicom_8py_source_l00896}{896} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a10e8b8a4c06b4ecf09366ca6b69efff6}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!loadData@{loadData}}
+\index{loadData@{loadData}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{loadData}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::loadData (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ fname = {\ttfamily \char`\"{}data/Ovarian\_\-Serous\_\-Cystadenocarcinoma\_\-TCGA\_\-Nature\_\-2011.txt\char`\"{}}, }
+\item[{}]{ keep\_\-mutations\_\-nan = {\ttfamily False}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_a10e8b8a4c06b4ecf09366ca6b69efff6}
+
+
+Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method. 
+
+
+\begin{DoxyParams}{Parameters}
+\item[{\em fname}]name of the file from which the data should be loaded \item[{\em keep\_\-mutations\_\-nan}]whether nan in mutations data should be considered as no mutation (False) or missing value (True) \end{DoxyParams}
+
+
+Definition at line \hyperlink{navicom_8py_source_l00141}{141} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a5314c49d6b9749693519a4a86cbfde71}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!quantifyMutations@{quantifyMutations}}
+\index{quantifyMutations@{quantifyMutations}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{quantifyMutations}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::quantifyMutations (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ method, }
+\item[{}]{ keep\_\-nan = {\ttfamily False}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_a5314c49d6b9749693519a4a86cbfde71}
+
+
+Transform the qualitative mutation datas into a quantitative one, where 1 means a mutation and 0 no mutation. 
+
+
+\begin{DoxyParams}{Parameters}
+\item[{\em keep\_\-nan}]Should nan values be converted to O (no mutations) or kept as missing data \end{DoxyParams}
+
+
+Definition at line \hyperlink{navicom_8py_source_l00267}{267} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_ab539e16bff0a424ebd2753c153ff4e53}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!saveAllData@{saveAllData}}
+\index{saveAllData@{saveAllData}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{saveAllData}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::saveAllData (
+\begin{DoxyParamCaption}
+\item[{}]{ self, }
+\item[{}]{ folder = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)}\hfill}
+\label{classnavicom_1_1navicom_1_1NaviCom_ab539e16bff0a424ebd2753c153ff4e53}
+
+
+Save all data in an .ncc file. 
+
+Does not save the distribution nor color data. 
+
+Definition at line \hyperlink{navicom_8py_source_l01004}{1004} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+
+
+The documentation for this class was generated from the following file:\begin{DoxyCompactItemize}
+\item 
+navicom/navicom.py\end{DoxyCompactItemize}
