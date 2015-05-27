@@ -5,8 +5,8 @@
 ################################################################################
 
 from curie.navicell import *
-from navidata import *
-from displayConfig import *
+from .navidata import *
+from .displayConfig import *
 
 DEBUG_NAVICOM = True
 VERBOSE_NAVICOM = True
