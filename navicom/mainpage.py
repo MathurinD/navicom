@@ -37,9 +37,10 @@ nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/i
 
 Data in the \ref navicom::navicom::NaviCom "NaviCom" class are represented in the \ref navicom::navidata::NaviData "NaviData" format, which is a matrix of data that can be indexed by row and column names. \ref navicom::navidata::NaviData "NaviData" objects can be created independently and integrated to a \ref navicom::navicom::NaviCom "NaviCom" object:
 \code
-extra_data = NaviData(data_matrix, row_names, col_names)
+extra_data = NaviData(data_matrix, row_names, col_names, method, processing)
 nc.bindNaviData(extra_data, "extra_data")
 \endcode
+Each datatable is identified by its method, which is the biological or computationnal method used to generate the data, and its processing, which is a NaviCell map related processing to tweak the visualisation of the data. The default processing for unprocessed data is 'raw".
 
 \section visualisation Data visualisation
 

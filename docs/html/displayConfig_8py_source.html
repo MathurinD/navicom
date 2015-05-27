@@ -94,7 +94,7 @@
 <a name="l00066"></a>00066         zero_color = rgbValid(zero_color)
 <a name="l00067"></a>00067         <span class="keyword">assert</span> isinstance(na_color, str) <span class="keywordflow">and</span> len(na_color) &gt; 3, ValueError(<span class="stringliteral">&quot;&#39;na_color&#39; must be a string of at least 3 characters representing a RGB color&quot;</span>)
 <a name="l00068"></a>00068         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ad8f95c1e3b29ac5622a18b7328b07f50">na_color</a> = rgbValid(na_color)
-<a name="l00069"></a>00069         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a0309d659680f7db85475e025fced9c29">zero_color</a> = zero_color
+<a name="l00069"></a>00069         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a65435f89606c60323d44bac7e1ee0340">_zero_color</a> = zero_color
 <a name="l00070"></a>00070         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aa157506adb33080de983987dd182fa29">na_size</a> = na_size
 <a name="l00071"></a>00071         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aab0e7c765bfc4071416c5e04fd7bbb2f">zero_size</a> = zero_size
 <a name="l00072"></a>00072 
@@ -102,33 +102,33 @@
 <a name="l00074"></a>00074 
 <a name="l00075"></a>00075         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a> = step_count
 <a name="l00076"></a>00076         <span class="keywordflow">if</span> (len(color_gradient) == step_count):
-<a name="l00077"></a>00077             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ac0745c689a4132681e6dc8e525fecebc">colors</a> = color_gradient
+<a name="l00077"></a>00077             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = color_gradient
 <a name="l00078"></a>00078         <span class="keywordflow">elif</span> (len(color_gradient) == 2):
-<a name="l00079"></a>00079             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#acf7e4fcee4a2d6acb5f3641bacfa64c3">color</a> = list()
+<a name="l00079"></a>00079             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = list()
 <a name="l00080"></a>00080             <span class="keywordflow">if</span> (zero_color == <span class="stringliteral">&quot;&quot;</span>):
-<a name="l00081"></a>00081                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ac0745c689a4132681e6dc8e525fecebc">colors</a> = getGradient(color_gradient[0], color_gradient[1], self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>)
+<a name="l00081"></a>00081                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = getGradient(color_gradient[0], color_gradient[1], self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>)
 <a name="l00082"></a>00082             <span class="keywordflow">else</span>:
-<a name="l00083"></a>00083                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ac0745c689a4132681e6dc8e525fecebc">colors</a> = getGradient(color_gradient[0], zero_color, self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>//2+1)[:-1]
+<a name="l00083"></a>00083                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = getGradient(color_gradient[0], zero_color, self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>//2+1)[:-1]
 <a name="l00084"></a>00084                 <span class="keywordflow">if</span> (self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>%2 == 1):
-<a name="l00085"></a>00085                     self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ac0745c689a4132681e6dc8e525fecebc">colors</a> += [zero_color]
-<a name="l00086"></a>00086                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ac0745c689a4132681e6dc8e525fecebc">colors</a> += getGradient(zero_color, color_gradient[1], self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>//2+1)[1:]
+<a name="l00085"></a>00085                     self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += [zero_color]
+<a name="l00086"></a>00086                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += getGradient(zero_color, color_gradient[1], self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>//2+1)[1:]
 <a name="l00087"></a>00087         <span class="keywordflow">elif</span> (len(color_gradient) == step_count-1 <span class="keywordflow">and</span> zero_color != <span class="stringliteral">&quot;&quot;</span>):
-<a name="l00088"></a>00088             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ac0745c689a4132681e6dc8e525fecebc">colors</a> = color_gradient[:step_count//2+1]
+<a name="l00088"></a>00088             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = color_gradient[:step_count//2+1]
 <a name="l00089"></a>00089             <span class="keywordflow">if</span> (step_count%2 == 1):
-<a name="l00090"></a>00090                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ac0745c689a4132681e6dc8e525fecebc">colors</a> += [zero_color]
-<a name="l00091"></a>00091             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ac0745c689a4132681e6dc8e525fecebc">colors</a> += color_gradient[step_count//2+1:]
+<a name="l00090"></a>00090                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += [zero_color]
+<a name="l00091"></a>00091             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += color_gradient[step_count//2+1:]
 <a name="l00092"></a>00092         <span class="keywordflow">else</span>:
 <a name="l00093"></a>00093             <span class="keywordflow">raise</span> ValueError(<span class="stringliteral">&quot;The length of &#39;color_gradient&#39; must be 2 or equal to step_count&quot;</span>)
 <a name="l00094"></a>00094 
 <a name="l00095"></a>00095     <span class="keyword">def </span>__repr__(self):
 <a name="l00096"></a>00096         rpr = <span class="stringliteral">&quot;DisplayConfig object :\n&quot;</span>
-<a name="l00097"></a>00097         rpr+= <span class="stringliteral">&quot;\tGradient colors: &quot;</span> + str(self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ac0745c689a4132681e6dc8e525fecebc">colors</a>) + <span class="stringliteral">&quot;\n&quot;</span>
+<a name="l00097"></a>00097         rpr+= <span class="stringliteral">&quot;\tGradient colors: &quot;</span> + str(self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a>) + <span class="stringliteral">&quot;\n&quot;</span>
 <a name="l00098"></a>00098         rpr+= <span class="stringliteral">&quot;\tNA color: &quot;</span> + str(self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ad8f95c1e3b29ac5622a18b7328b07f50">na_color</a>)
 <a name="l00099"></a>00099         <span class="keywordflow">return</span>(rpr)
 <a name="l00100"></a>00100 
 </pre></div></div>
 </div>
-<hr class="footer"/><address class="footer"><small>Generated on Wed May 27 2015 16:34:48 for navicom by&nbsp;
+<hr class="footer"/><address class="footer"><small>Generated on Wed May 27 2015 18:05:00 for navicom by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.7.1 </small></address>
 </body>

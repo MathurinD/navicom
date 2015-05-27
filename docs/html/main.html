@@ -47,9 +47,10 @@ nc = NaviCom(map_url=<span class="stringliteral">&#39;https://navicell.curie.fr/
 </pre></div><h3><a class="anchor" id="extra_data"></a>
 Adding extra data</h3>
 <p>Data in the <a class="el" href="classnavicom_1_1navicom_1_1NaviCom.html">NaviCom</a> class are represented in the <a class="el" href="classnavicom_1_1navidata_1_1NaviData.html">NaviData</a> format, which is a matrix of data that can be indexed by row and column names. <a class="el" href="classnavicom_1_1navidata_1_1NaviData.html">NaviData</a> objects can be created independently and integrated to a <a class="el" href="classnavicom_1_1navicom_1_1NaviCom.html">NaviCom</a> object: </p>
-<div class="fragment"><pre class="fragment">extra_data = NaviData(data_matrix, row_names, col_names)
+<div class="fragment"><pre class="fragment">extra_data = NaviData(data_matrix, row_names, col_names, method, processing)
 nc.bindNaviData(extra_data, <span class="stringliteral">&quot;extra_data&quot;</span>)
-</pre></div><h2><a class="anchor" id="visualisation"></a>
+</pre></div><p> Each datatable is identified by its method, which is the biological or computationnal method used to generate the data, and its processing, which is a NaviCell map related processing to tweak the visualisation of the data. The default processing for unprocessed data is 'raw".</p>
+<h2><a class="anchor" id="visualisation"></a>
 Data visualisation</h2>
 <p>The <a class="el" href="classnavicom_1_1navicom_1_1NaviCom.html">NaviCom</a> class provides several method to display the data in NaviCell: </p>
 <ul>
@@ -57,7 +58,7 @@ Data visualisation</h2>
 <li><b>displayOmics</b> Display -omics data as map staining with extra information or data on using the other display modes </li>
 </ul>
 </div>
-<hr class="footer"/><address class="footer"><small>Generated on Wed May 27 2015 16:34:48 for navicom by&nbsp;
+<hr class="footer"/><address class="footer"><small>Generated on Wed May 27 2015 18:05:00 for navicom by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.7.1 </small></address>
 </body>

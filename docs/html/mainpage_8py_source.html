@@ -65,20 +65,21 @@
 <a name="l00037"></a>00037 <span class="stringliteral"></span>
 <a name="l00038"></a>00038 <span class="stringliteral">Data in the \ref navicom::navicom::NaviCom &quot;NaviCom&quot; class are represented in the \ref navicom::navidata::NaviData &quot;NaviData&quot; format, which is a matrix of data that can be indexed by row and column names. \ref navicom::navidata::NaviData &quot;NaviData&quot; objects can be created independently and integrated to a \ref navicom::navicom::NaviCom &quot;NaviCom&quot; object:</span>
 <a name="l00039"></a>00039 <span class="stringliteral">\code</span>
-<a name="l00040"></a>00040 <span class="stringliteral">extra_data = NaviData(data_matrix, row_names, col_names)</span>
+<a name="l00040"></a>00040 <span class="stringliteral">extra_data = NaviData(data_matrix, row_names, col_names, method, processing)</span>
 <a name="l00041"></a>00041 <span class="stringliteral">nc.bindNaviData(extra_data, &quot;extra_data&quot;)</span>
 <a name="l00042"></a>00042 <span class="stringliteral">\endcode</span>
-<a name="l00043"></a>00043 <span class="stringliteral"></span>
-<a name="l00044"></a>00044 <span class="stringliteral">\section visualisation Data visualisation</span>
-<a name="l00045"></a>00045 <span class="stringliteral"></span>
-<a name="l00046"></a>00046 <span class="stringliteral">The \ref navicom::navicom::NaviCom &quot;NaviCom&quot; class provides several method to display the data in NaviCell:</span>
-<a name="l00047"></a>00047 <span class="stringliteral">    \li \b display Generic display function to perform any kind of personnalised display</span>
-<a name="l00048"></a>00048 <span class="stringliteral">    \li \b displayOmics Display -omics data as map staining with extra information or data on using the other display modes</span>
-<a name="l00049"></a>00049 <span class="stringliteral"></span>
-<a name="l00050"></a>00050 <span class="stringliteral">&quot;&quot;&quot;</span>
+<a name="l00043"></a>00043 <span class="stringliteral">Each datatable is identified by its method, which is the biological or computationnal method used to generate the data, and its processing, which is a NaviCell map related processing to tweak the visualisation of the data. The default processing for unprocessed data is &#39;raw&quot;.</span>
+<a name="l00044"></a>00044 <span class="stringliteral"></span>
+<a name="l00045"></a>00045 <span class="stringliteral">\section visualisation Data visualisation</span>
+<a name="l00046"></a>00046 <span class="stringliteral"></span>
+<a name="l00047"></a>00047 <span class="stringliteral">The \ref navicom::navicom::NaviCom &quot;NaviCom&quot; class provides several method to display the data in NaviCell:</span>
+<a name="l00048"></a>00048 <span class="stringliteral">    \li \b display Generic display function to perform any kind of personnalised display</span>
+<a name="l00049"></a>00049 <span class="stringliteral">    \li \b displayOmics Display -omics data as map staining with extra information or data on using the other display modes</span>
+<a name="l00050"></a>00050 <span class="stringliteral"></span>
+<a name="l00051"></a>00051 <span class="stringliteral">&quot;&quot;&quot;</span>
 </pre></div></div>
 </div>
-<hr class="footer"/><address class="footer"><small>Generated on Wed May 27 2015 16:34:48 for navicom by&nbsp;
+<hr class="footer"/><address class="footer"><small>Generated on Wed May 27 2015 18:05:00 for navicom by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.7.1 </small></address>
 </body>

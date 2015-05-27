@@ -60,18 +60,22 @@
       Data" objects can be created independently and integrated to a \(\backslash\)ref navicom::navi
       com::NaviCom "NaviCom" object:}
 00039 \textcolor{stringliteral}{\(\backslash\)code}
-00040 \textcolor{stringliteral}{extra\_data = NaviData(data\_matrix, row\_names, col\_names)}
+00040 \textcolor{stringliteral}{extra\_data = NaviData(data\_matrix, row\_names, col\_names, method, processing)}
 00041 \textcolor{stringliteral}{nc.bindNaviData(extra\_data, "extra\_data")}
 00042 \textcolor{stringliteral}{\(\backslash\)endcode}
-00043 \textcolor{stringliteral}{}
-00044 \textcolor{stringliteral}{\(\backslash\)section visualisation Data visualisation}
-00045 \textcolor{stringliteral}{}
-00046 \textcolor{stringliteral}{The \(\backslash\)ref navicom::navicom::NaviCom "NaviCom" class provides several method to dis
+00043 \textcolor{stringliteral}{Each datatable is identified by its method, which is the biological or computatio
+      nnal method used to generate the data, and its processing, which is a NaviCell ma
+      p related processing to tweak the visualisation of the data. The default processi
+      ng for unprocessed data is 'raw".}
+00044 \textcolor{stringliteral}{}
+00045 \textcolor{stringliteral}{\(\backslash\)section visualisation Data visualisation}
+00046 \textcolor{stringliteral}{}
+00047 \textcolor{stringliteral}{The \(\backslash\)ref navicom::navicom::NaviCom "NaviCom" class provides several method to dis
       play the data in NaviCell:}
-00047 \textcolor{stringliteral}{    \(\backslash\)li \(\backslash\)b display Generic display function to perform any kind of personnalised 
+00048 \textcolor{stringliteral}{    \(\backslash\)li \(\backslash\)b display Generic display function to perform any kind of personnalised 
       display}
-00048 \textcolor{stringliteral}{    \(\backslash\)li \(\backslash\)b displayOmics Display -omics data as map staining with extra informatio
+00049 \textcolor{stringliteral}{    \(\backslash\)li \(\backslash\)b displayOmics Display -omics data as map staining with extra informatio
       n or data on using the other display modes}
-00049 \textcolor{stringliteral}{}
-00050 \textcolor{stringliteral}{"""}
+00050 \textcolor{stringliteral}{}
+00051 \textcolor{stringliteral}{"""}
 \end{DoxyCode}

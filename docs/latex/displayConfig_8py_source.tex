@@ -84,7 +84,7 @@
 00067         \textcolor{keyword}{assert} isinstance(na\_color, str) \textcolor{keywordflow}{and} len(na\_color) > 3, ValueError(\textcolor{stringliteral}{"'na\_c
       olor' must be a string of at least 3 characters representing a RGB color"})
 00068         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ad8f95c1e3b29ac5622a18b7328b07f50}{na_color} = rgbValid(na\_color)
-00069         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a0309d659680f7db85475e025fced9c29}{zero_color} = zero\_color
+00069         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a65435f89606c60323d44bac7e1ee0340}{_zero_color} = zero\_color
 00070         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aa157506adb33080de983987dd182fa29}{na_size} = na\_size
 00071         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aab0e7c765bfc4071416c5e04fd7bbb2f}{zero_size} = zero\_size
 00072 
@@ -92,31 +92,31 @@
 00074 
 00075         self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count} = step\_count
 00076         \textcolor{keywordflow}{if} (len(color\_gradient) == step\_count):
-00077             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} = color\_gradient
+00077             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors} = color\_gradient
 00078         \textcolor{keywordflow}{elif} (len(color\_gradient) == 2):
-00079             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_acf7e4fcee4a2d6acb5f3641bacfa64c3}{color} = list()
+00079             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors} = list()
 00080             \textcolor{keywordflow}{if} (zero\_color == \textcolor{stringliteral}{""}):
-00081                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} = getGradient(color\_gradient[0], color\_gradient[1], s
-      elf.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count})
+00081                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors} = getGradient(color\_gradient[0], color\_gradient[1], 
+      self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count})
 00082             \textcolor{keywordflow}{else}:
-00083                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} = getGradient(color\_gradient[0], zero\_color, self.
+00083                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors} = getGradient(color\_gradient[0], zero\_color, self.
       \hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count}//2+1)[:-1]
 00084                 \textcolor{keywordflow}{if} (self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count}%2 == 1):
-00085                     self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} += [zero\_color]
-00086                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} += getGradient(zero\_color, color\_gradient[1], self.
+00085                     self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors} += [zero\_color]
+00086                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors} += getGradient(zero\_color, color\_gradient[1], self.
       \hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_a79144928881551fa1f1a18d062d761ea}{step_count}//2+1)[1:]
 00087         \textcolor{keywordflow}{elif} (len(color\_gradient) == step\_count-1 \textcolor{keywordflow}{and} zero\_color != \textcolor{stringliteral}{""}):
-00088             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} = color\_gradient[:step\_count//2+1]
+00088             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors} = color\_gradient[:step\_count//2+1]
 00089             \textcolor{keywordflow}{if} (step\_count%2 == 1):
-00090                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} += [zero\_color]
-00091             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors} += color\_gradient[step\_count//2+1:]
+00090                 self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors} += [zero\_color]
+00091             self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors} += color\_gradient[step\_count//2+1:]
 00092         \textcolor{keywordflow}{else}:
 00093             \textcolor{keywordflow}{raise} ValueError(\textcolor{stringliteral}{"The length of 'color\_gradient' must be 2 or equal t
       o step\_count"})
 00094 
 00095     \textcolor{keyword}{def }\_\_repr\_\_(self):
 00096         rpr = \textcolor{stringliteral}{"DisplayConfig object :\(\backslash\)n"}
-00097         rpr+= \textcolor{stringliteral}{"\(\backslash\)tGradient colors: "} + str(self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ac0745c689a4132681e6dc8e525fecebc}{colors}) + \textcolor{stringliteral}{"\(\backslash\)n"}
+00097         rpr+= \textcolor{stringliteral}{"\(\backslash\)tGradient colors: "} + str(self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_aad7d4675303fbdf926ded6041ae876cf}{_colors}) + \textcolor{stringliteral}{"\(\backslash\)n"}
 00098         rpr+= \textcolor{stringliteral}{"\(\backslash\)tNA color: "} + str(self.\hyperlink{classnavicom_1_1displayConfig_1_1DisplayConfig_ad8f95c1e3b29ac5622a18b7328b07f50}{na_color})
 00099         \textcolor{keywordflow}{return}(rpr)
 00100 

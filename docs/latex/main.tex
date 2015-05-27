@@ -34,9 +34,9 @@ nc = NaviCom(map\_url=\textcolor{stringliteral}{'https://navicell.curie.fr/navic
 \hypertarget{main_extra_data}{}\subsubsection{Adding extra data}\label{main_extra_data}
 Data in the \hyperlink{classnavicom_1_1navicom_1_1NaviCom}{NaviCom} class are represented in the \hyperlink{classnavicom_1_1navidata_1_1NaviData}{NaviData} format, which is a matrix of data that can be indexed by row and column names. \hyperlink{classnavicom_1_1navidata_1_1NaviData}{NaviData} objects can be created independently and integrated to a \hyperlink{classnavicom_1_1navicom_1_1NaviCom}{NaviCom} object: 
 \begin{DoxyCode}
-extra\_data = NaviData(data\_matrix, row\_names, col\_names)
+extra\_data = NaviData(data\_matrix, row\_names, col\_names, method, processing)
 nc.bindNaviData(extra\_data, \textcolor{stringliteral}{"extra\_data"})
 \end{DoxyCode}
-\hypertarget{main_visualisation}{}\subsection{Data visualisation}\label{main_visualisation}
+ Each datatable is identified by its method, which is the biological or computationnal method used to generate the data, and its processing, which is a NaviCell map related processing to tweak the visualisation of the data. The default processing for unprocessed data is 'raw".\hypertarget{main_visualisation}{}\subsection{Data visualisation}\label{main_visualisation}
 The \hyperlink{classnavicom_1_1navicom_1_1NaviCom}{NaviCom} class provides several method to display the data in NaviCell: \begin{DoxyItemize}
 \item {\bfseries display} Generic display function to perform any kind of personnalised display \item {\bfseries displayOmics} Display -\/omics data as map staining with extra information or data on using the other display modes \end{DoxyItemize}

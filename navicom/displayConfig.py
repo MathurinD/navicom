@@ -66,7 +66,7 @@ class DisplayConfig():
         zero_color = rgbValid(zero_color)
         assert isinstance(na_color, str) and len(na_color) > 3, ValueError("'na_color' must be a string of at least 3 characters representing a RGB color")
         self.na_color = rgbValid(na_color)
-        self.zero_color = zero_color
+        self._zero_color = zero_color
         self.na_size = na_size
         self.zero_size = zero_size
 
@@ -74,27 +74,27 @@ class DisplayConfig():
 
         self.step_count = step_count
         if (len(color_gradient) == step_count):
-            self.colors = color_gradient
+            self._colors = color_gradient
         elif (len(color_gradient) == 2):
-            self.color = list()
+            self._colors = list()
             if (zero_color == ""):
-                self.colors = getGradient(color_gradient[0], color_gradient[1], self.step_count)
+                self._colors = getGradient(color_gradient[0], color_gradient[1], self.step_count)
             else:
-                self.colors = getGradient(color_gradient[0], zero_color, self.step_count//2+1)[:-1]
+                self._colors = getGradient(color_gradient[0], zero_color, self.step_count//2+1)[:-1]
                 if (self.step_count%2 == 1):
-                    self.colors += [zero_color]
-                self.colors += getGradient(zero_color, color_gradient[1], self.step_count//2+1)[1:]
+                    self._colors += [zero_color]
+                self._colors += getGradient(zero_color, color_gradient[1], self.step_count//2+1)[1:]
         elif (len(color_gradient) == step_count-1 and zero_color != ""):
-            self.colors = color_gradient[:step_count//2+1]
+            self._colors = color_gradient[:step_count//2+1]
             if (step_count%2 == 1):
-                self.colors += [zero_color]
-            self.colors += color_gradient[step_count//2+1:]
+                self._colors += [zero_color]
+            self._colors += color_gradient[step_count//2+1:]
         else:
             raise ValueError("The length of 'color_gradient' must be 2 or equal to step_count")
 
     def __repr__(self):
         rpr = "DisplayConfig object :\n"
-        rpr+= "\tGradient colors: " + str(self.colors) + "\n"
+        rpr+= "\tGradient colors: " + str(self._colors) + "\n"
         rpr+= "\tNA color: " + str(self.na_color)
         return(rpr)
 
