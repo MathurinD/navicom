@@ -40,7 +40,6 @@ PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color"
 DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
 CONTINOUS_BIOTYPES = ["mRNA expression data", "miRNA expression data", "protein level", "Continuous copy number data"]
 
-
 class NaviData():
     """
     Custom class to store the data and be able to access rows and columns by name.
@@ -390,7 +389,6 @@ def signif(x, n=3):
     if (x==0):
         return 0.
     return(round(x, -int(math.log10(np.abs(x)))+(n-1) ))
-
 
 def getBiotype(method, processing="raw"):
     """

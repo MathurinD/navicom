@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.7.3)  27 MAY 2015 15:07
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.7.3)  27 MAY 2015 16:38
 entering extended mode
  %&-line parsing enabled.
 **refman.tex
@@ -784,61 +784,60 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 \openout5 = `refman.toc'.
 
 Package hyperref Info: Option `pageanchor' set `true' on input line 50.
- (./hierarchy.tex
+ (./main.tex
 LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <12> not available
-(Font)              Font shape `T1/ptm/b/n' tried instead on input line 1.
-) (./annotated.tex
+(Font)              Font shape `T1/ptm/b/n' tried instead on input line 9.
 LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <7> not available
-(Font)              Font shape `T1/ptm/b/n' tried instead on input line 3.
- [1])
-(./classnavicom_1_1displayConfig_1_1DisplayConfig.tex
-LaTeX Font Info:    Try loading font information for TS1+ptm on input line 13.
-
-(/usr/share/texmf-texlive/tex/latex/psnfss/ts1ptm.fd
-File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
-)
-LaTeX Font Info:    Font shape `T1/ptm/bx/it' in size <10> not available
-(Font)              Font shape `T1/ptm/b/it' tried instead on input line 88.
-LaTeX Font Info:    Try loading font information for T1+pcr on input line 88.
+(Font)              Font shape `T1/ptm/b/n' tried instead on input line 11.
+ [1]
+LaTeX Font Info:    Try loading font information for T1+pcr on input line 11.
 
 (/usr/share/texmf-texlive/tex/latex/psnfss/t1pcr.fd
 File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
 )
+LaTeX Font Info:    Try loading font information for TS1+ptm on input line 20.
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/ts1ptm.fd
+File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
+)) (./hierarchy.tex
+[2]) (./annotated.tex) (./classnavicom_1_1displayConfig_1_1DisplayConfig.tex
+[3]
+LaTeX Font Info:    Font shape `T1/ptm/bx/it' in size <10> not available
+(Font)              Font shape `T1/ptm/b/it' tried instead on input line 88.
 LaTeX Font Info:    Font shape `T1/pcr/bx/it' in size <10> not available
 (Font)              Font shape `T1/pcr/b/it' tried instead on input line 88.
 LaTeX Font Info:    Font shape `T1/pcr/b/it' in size <10> not available
 (Font)              Font shape `T1/pcr/b/sl' tried instead on input line 88.
- [2])
-(./classnavicom_1_1navidata_1_1NaviAnnotations.tex
-<classnavicom_1_1navidata_1_1NaviAnnotations.pdf, id=154, 501.875pt x 183.33493
+) (./classnavicom_1_1navidata_1_1NaviAnnotations.tex
+<classnavicom_1_1navidata_1_1NaviAnnotations.pdf, id=187, 501.875pt x 183.33493
 pt>
 File: classnavicom_1_1navidata_1_1NaviAnnotations.pdf Graphic file (type pdf)
- <use classnavicom_1_1navidata_1_1NaviAnnotations.pdf> [3 <./classnavicom_1_1na
+ <use classnavicom_1_1navidata_1_1NaviAnnotations.pdf> [4 <./classnavicom_1_1na
 vidata_1_1NaviAnnotations.pdf>]) (./classnavicom_1_1navicom_1_1NaviCom.tex
-[4] [5]
+[5] [6]
 Overfull \hbox (23.41376pt too wide) in paragraph at lines 250--250
 \T1/pcr/b/sl/10 'https://navicell.curie.fr/navicell/maps/cellcycle/master/index
 .php'\T1/ptm/b/it/10 , 
  []
 
-[6] [7] [8]) (./classnavicom_1_1navidata_1_1NaviData.tex [9]
-<classnavicom_1_1navidata_1_1NaviData.pdf, id=332, 501.875pt x 183.33493pt>
+[7] [8] [9] [10]) (./classnavicom_1_1navidata_1_1NaviData.tex
+<classnavicom_1_1navidata_1_1NaviData.pdf, id=374, 501.875pt x 183.33493pt>
 File: classnavicom_1_1navidata_1_1NaviData.pdf Graphic file (type pdf)
 
-<use classnavicom_1_1navidata_1_1NaviData.pdf> [10 <./classnavicom_1_1navidata_
-1_1NaviData.pdf>]) (./classnavicom_1_1navidata_1_1NaviSlice.tex [11])
-(./refman.ind [12] [13
+<use classnavicom_1_1navidata_1_1NaviData.pdf> [11 <./classnavicom_1_1navidata_
+1_1NaviData.pdf>]) (./classnavicom_1_1navidata_1_1NaviSlice.tex [12])
+(./refman.ind [13] [14
 
 
 ]) (./refman.aux) ) 
 Here is how much of TeX's memory you used:
- 8556 strings out of 493857
- 129619 string characters out of 1153306
- 212900 words of memory out of 3000000
- 11481 multiletter control sequences out of 15000+50000
- 33800 words of font info for 40 fonts, out of 3000000 for 9000
+ 8583 strings out of 493857
+ 129951 string characters out of 1153306
+ 213900 words of memory out of 3000000
+ 11494 multiletter control sequences out of 15000+50000
+ 36065 words of font info for 43 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
- 38i,12n,58p,748b,496s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 38i,12n,58p,748b,498s stack positions out of 5000i,500n,10000p,200000b,50000s
 pdfTeX warning (dest): name{navidata_8py_source_l00272} has 
 been referenced but does not exist, replaced by a fixed one
 
@@ -909,9 +908,9 @@ r8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/times/utmb8a.pfb></usr/share/
 texmf-texlive/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texmf-texlive/fonts
 /type1/urw/times/utmr8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/times/utm
 ri8a.pfb>
-Output written on refman.pdf (14 pages, 185768 bytes).
+Output written on refman.pdf (15 pages, 201457 bytes).
 PDF statistics:
- 511 PDF objects out of 1000 (max. 8388607)
- 182 named destinations out of 1000 (max. 500000)
- 155 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 556 PDF objects out of 1000 (max. 8388607)
+ 193 named destinations out of 1000 (max. 500000)
+ 195 words of extra memory for PDF output out of 10000 (max. 10000000)
 

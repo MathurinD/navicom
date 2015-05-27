@@ -98,4 +98,3 @@ class DisplayConfig():
         rpr+= "\tNA color: " + str(self.na_color)
         return(rpr)
 
-

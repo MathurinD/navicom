@@ -1,31 +1,36 @@
-\contentsline {section}{\numberline {1}Class Index}{1}{section.1}
-\contentsline {subsection}{\numberline {1.1}Class Hierarchy}{1}{subsection.1.1}
-\contentsline {section}{\numberline {2}Class Index}{2}{section.2}
-\contentsline {subsection}{\numberline {2.1}Class List}{2}{subsection.2.1}
-\contentsline {section}{\numberline {3}Class Documentation}{2}{section.3}
-\contentsline {subsection}{\numberline {3.1}navicom::displayConfig::DisplayConfig Class Reference}{2}{subsection.3.1}
-\contentsline {subsubsection}{\numberline {3.1.1}Detailed Description}{2}{subsubsection.3.1.1}
-\contentsline {subsubsection}{\numberline {3.1.2}Member Function Documentation}{3}{subsubsection.3.1.2}
-\contentsline {paragraph}{\numberline {3.1.2.1}\_\discretionary {-}{}{}\_\discretionary {-}{}{}init\_\discretionary {-}{}{}\_\discretionary {-}{}{}}{3}{paragraph.3.1.2.1}
-\contentsline {subsection}{\numberline {3.2}navicom::navidata::NaviAnnotations Class Reference}{3}{subsection.3.2}
-\contentsline {subsubsection}{\numberline {3.2.1}Detailed Description}{3}{subsubsection.3.2.1}
-\contentsline {subsection}{\numberline {3.3}navicom::navicom::NaviCom Class Reference}{4}{subsection.3.3}
-\contentsline {subsubsection}{\numberline {3.3.1}Detailed Description}{6}{subsubsection.3.3.1}
-\contentsline {subsubsection}{\numberline {3.3.2}Member Function Documentation}{6}{subsubsection.3.3.2}
-\contentsline {paragraph}{\numberline {3.3.2.1}\_\discretionary {-}{}{}\_\discretionary {-}{}{}init\_\discretionary {-}{}{}\_\discretionary {-}{}{}}{6}{paragraph.3.3.2.1}
-\contentsline {paragraph}{\numberline {3.3.2.2}colorsOverlay}{7}{paragraph.3.3.2.2}
-\contentsline {paragraph}{\numberline {3.3.2.3}defineModules}{7}{paragraph.3.3.2.3}
-\contentsline {paragraph}{\numberline {3.3.2.4}display}{7}{paragraph.3.3.2.4}
-\contentsline {paragraph}{\numberline {3.3.2.5}displayMethylome}{8}{paragraph.3.3.2.5}
-\contentsline {paragraph}{\numberline {3.3.2.6}displayTranscriptome}{8}{paragraph.3.3.2.6}
-\contentsline {paragraph}{\numberline {3.3.2.7}exportData}{8}{paragraph.3.3.2.7}
-\contentsline {paragraph}{\numberline {3.3.2.8}generateDistributionData}{9}{paragraph.3.3.2.8}
-\contentsline {paragraph}{\numberline {3.3.2.9}loadData}{9}{paragraph.3.3.2.9}
-\contentsline {paragraph}{\numberline {3.3.2.10}quantifyMutations}{9}{paragraph.3.3.2.10}
-\contentsline {paragraph}{\numberline {3.3.2.11}saveAllData}{9}{paragraph.3.3.2.11}
-\contentsline {subsection}{\numberline {3.4}navicom::navidata::NaviData Class Reference}{10}{subsection.3.4}
-\contentsline {subsubsection}{\numberline {3.4.1}Detailed Description}{11}{subsubsection.3.4.1}
-\contentsline {subsubsection}{\numberline {3.4.2}Member Function Documentation}{11}{subsubsection.3.4.2}
-\contentsline {paragraph}{\numberline {3.4.2.1}makeData}{11}{paragraph.3.4.2.1}
-\contentsline {subsection}{\numberline {3.5}navicom::navidata::NaviSlice Class Reference}{11}{subsection.3.5}
-\contentsline {subsubsection}{\numberline {3.5.1}Detailed Description}{12}{subsubsection.3.5.1}
+\contentsline {section}{\numberline {1}navicom package documentation}{1}{section.1}
+\contentsline {subsection}{\numberline {1.1}Getting started}{2}{subsection.1.1}
+\contentsline {subsubsection}{\numberline {1.1.1}Display configuration}{2}{subsubsection.1.1.1}
+\contentsline {subsubsection}{\numberline {1.1.2}Adding extra data}{2}{subsubsection.1.1.2}
+\contentsline {subsection}{\numberline {1.2}Data visualisation}{2}{subsection.1.2}
+\contentsline {section}{\numberline {2}Class Index}{3}{section.2}
+\contentsline {subsection}{\numberline {2.1}Class Hierarchy}{3}{subsection.2.1}
+\contentsline {section}{\numberline {3}Class Index}{3}{section.3}
+\contentsline {subsection}{\numberline {3.1}Class List}{3}{subsection.3.1}
+\contentsline {section}{\numberline {4}Class Documentation}{3}{section.4}
+\contentsline {subsection}{\numberline {4.1}navicom::displayConfig::DisplayConfig Class Reference}{3}{subsection.4.1}
+\contentsline {subsubsection}{\numberline {4.1.1}Detailed Description}{4}{subsubsection.4.1.1}
+\contentsline {subsubsection}{\numberline {4.1.2}Member Function Documentation}{4}{subsubsection.4.1.2}
+\contentsline {paragraph}{\numberline {4.1.2.1}\_\discretionary {-}{}{}\_\discretionary {-}{}{}init\_\discretionary {-}{}{}\_\discretionary {-}{}{}}{4}{paragraph.4.1.2.1}
+\contentsline {subsection}{\numberline {4.2}navicom::navidata::NaviAnnotations Class Reference}{4}{subsection.4.2}
+\contentsline {subsubsection}{\numberline {4.2.1}Detailed Description}{5}{subsubsection.4.2.1}
+\contentsline {subsection}{\numberline {4.3}navicom::navicom::NaviCom Class Reference}{5}{subsection.4.3}
+\contentsline {subsubsection}{\numberline {4.3.1}Detailed Description}{7}{subsubsection.4.3.1}
+\contentsline {subsubsection}{\numberline {4.3.2}Member Function Documentation}{7}{subsubsection.4.3.2}
+\contentsline {paragraph}{\numberline {4.3.2.1}\_\discretionary {-}{}{}\_\discretionary {-}{}{}init\_\discretionary {-}{}{}\_\discretionary {-}{}{}}{7}{paragraph.4.3.2.1}
+\contentsline {paragraph}{\numberline {4.3.2.2}colorsOverlay}{8}{paragraph.4.3.2.2}
+\contentsline {paragraph}{\numberline {4.3.2.3}defineModules}{8}{paragraph.4.3.2.3}
+\contentsline {paragraph}{\numberline {4.3.2.4}display}{8}{paragraph.4.3.2.4}
+\contentsline {paragraph}{\numberline {4.3.2.5}displayMethylome}{9}{paragraph.4.3.2.5}
+\contentsline {paragraph}{\numberline {4.3.2.6}displayTranscriptome}{9}{paragraph.4.3.2.6}
+\contentsline {paragraph}{\numberline {4.3.2.7}exportData}{9}{paragraph.4.3.2.7}
+\contentsline {paragraph}{\numberline {4.3.2.8}generateDistributionData}{10}{paragraph.4.3.2.8}
+\contentsline {paragraph}{\numberline {4.3.2.9}loadData}{10}{paragraph.4.3.2.9}
+\contentsline {paragraph}{\numberline {4.3.2.10}quantifyMutations}{10}{paragraph.4.3.2.10}
+\contentsline {paragraph}{\numberline {4.3.2.11}saveAllData}{10}{paragraph.4.3.2.11}
+\contentsline {subsection}{\numberline {4.4}navicom::navidata::NaviData Class Reference}{11}{subsection.4.4}
+\contentsline {subsubsection}{\numberline {4.4.1}Detailed Description}{12}{subsubsection.4.4.1}
+\contentsline {subsubsection}{\numberline {4.4.2}Member Function Documentation}{12}{subsubsection.4.4.2}
+\contentsline {paragraph}{\numberline {4.4.2.1}makeData}{12}{paragraph.4.4.2.1}
+\contentsline {subsection}{\numberline {4.5}navicom::navidata::NaviSlice Class Reference}{13}{subsection.4.5}
+\contentsline {subsubsection}{\numberline {4.5.1}Detailed Description}{13}{subsubsection.4.5.1}
