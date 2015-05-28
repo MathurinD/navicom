@@ -51,7 +51,7 @@ class NaviData():
         method (str) : name of the experimental method used to get the original ("raw") data
         dType (str) : "data" or "annotations", whether the NaviData object contains datas or annotations (Note : this should be left to default, this is used by NaviAnnotations to change some internal variables)
     """
-    def __init__(self, data, rows_list, columns_list, processing="raw", method="unknown", dType="data"):
+    def __init__(self, data, rows_list, columns_list, method="unknown", processing="raw", dType="data"):
         assert(len(data) == len(rows_list))
         for line in data:
             assert len(line) == len(columns_list), "Incorrect length of line : " + str(line) + ", length = " + str(len(line)) + ", expected " + str(len(columns_list))
@@ -70,17 +70,17 @@ class NaviData():
         self.columns_names = list(self._columns.keys())
         if (dType == "annotations"):
             self.inColumns = "annotations"
-            self._annotations = self.columns
+            self._annotations = self._columns
             self.annotations_names = self.columns_names
             self.inRows = "samples"
-            self._samples = self.rows
+            self._samples = self._rows
             self.samples_names = self.rows_names
         elif (dType == "data"):
             self.inRows = "genes"
-            self._genes = self.rows
+            self._genes = self._rows
             self.genes_names = self.rows_names
             self.inColumns = "samples"
-            self._samples = self.columns
+            self._samples = self._columns
             self.samples_names = self.columns_names
         elif (dType == "old_annotations"):
             self.inRows = "annotations"
@@ -194,7 +194,12 @@ class NaviData():
             fullName (bool): Whether the baseName should be used alone (True) or with the extra information of the method and processing.
         """
         assert mode in ["a", "w"], ValueError("Cannot open the file with this mode to save data")
-        fname = baseName + "[" + self.processing + "]" + "[" + self.method + "].ncd"
+        # Build filename
+        if (self.dType == "data"):
+            fname = baseName + "[" + self.processing + "]" + "[" + self.method + "].ncd"
+        elif (self.dType == "annotations"):
+            fname = baseName + "_annotations.nca"
+        # Save data
         if (mode == "a" or fullName):
             fname = baseName
         with open(fname, mode) as ff:
@@ -275,7 +280,7 @@ class NaviAnnotations(NaviData):
         if (DEBUG_NAVIDATA):
             print("Discretised annotations:" + str(modified_annot))
         if (len(modified_annot) > 0):
-            self.old_annots = NaviData(modified_data, modified_annot, self._rows, "old_annotations")
+            self.old_annots = NaviData(modified_data, modified_annot, self._rows, dType="old_annotations")
         else:
             self.old_annots = list()
 
@@ -415,6 +420,8 @@ def getBiotype(method, processing="raw"):
             biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[METHODS_TYPE[method.lower()]])
         else:
             biotype = PROCESSINGS_BIOTYPE[processing]
+    elif (method == "uniform"):
+        biotype = "Discrete Copy number data" # TODO Continuous is better for grouping but posses problems with glyphs
     else:
         biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
     return biotype

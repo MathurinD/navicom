@@ -63,7 +63,7 @@ class NaviCom():
             self._data_names[processing] = dict()
         self._exported_data["uniform"] = False
         ## Annotations of the samples
-        self.annotations = dict()
+        self._annotations = dict()
         ## Composition of the modules
         self.modules = dict()
         self._associated_modules = dict() # Number of modules each gene belong to
@@ -86,8 +86,8 @@ class NaviCom():
 
     def listAnnotations(self):
         print("Annotations available (values) :")
-        for annot in self.annotations.annotations:
-            print("\t" + annot + " : " + str(set(self.annotations[annot])))
+        for annot in self._annotations.annotations:
+            print("\t" + annot + " : " + str(set(self._annotations[annot])))
 
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self._data)) + " types of data:\n"
@@ -208,7 +208,7 @@ class NaviCom():
                     ll += 1
                 if (processing in self._data and method in self._data[processing]):
                     warn("Overwriting data for method " + method + " with processing " + processing)
-                self._data[processing][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"], processing, method)
+                self._data[processing][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"], method, processing)
                 self._exported_data[processing][method] = False
                 self.quantifyMutations(method)
                 self._nameData(method, processing)
@@ -245,7 +245,7 @@ class NaviCom():
                     annot["samples"].append(al[0])
 
                     ll = ll+1
-                self.annotations = NaviAnnotations(annot["annot"], annot["samples"], annot["names"], dType="annotations")
+                self._annotations = NaviAnnotations(annot["annot"], annot["samples"], annot["names"], dType="annotations")
             else:
                 raise ValueError("Incorrect format, file must be a valid file for NaviCell or an aggregation of such files with headers to indicate the type of data")
 
@@ -259,13 +259,13 @@ class NaviCom():
             processing (str): the visualisation related processing applied to the data
         """
         assert isinstance(navidata, NaviData), "navidata is not a NaviData object"
-        self._newProcessedData(processing, method, navidata)
+        self._newProcessedData(method, processing, navidata)
 
     def _defineUniformData(self, samples, genes):
-        self._data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples )
+        self._data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples, "uniform")
         # TODO change to 1.0 when < is changed to <= for continuous data
 
-    def _newProcessedData(self, processing, method, data):
+    def _newProcessedData(self, method, processing, data):
         """
         Update adequate arrays when processed data are generated
         """
@@ -282,7 +282,7 @@ class NaviCom():
             keep_nan : Should nan values be converted to O (no mutations) or kept as missing data
         """
         if (method in self._data["raw"] and METHODS_TYPE[method.lower()] == "mutations"):
-            mutations = NaviData(np.zeros(self._data["raw"][method].data.shape), self._data["raw"][method].rows_names, self._data["raw"][method].columns_names, method)
+            mutations = NaviData(np.zeros(self._data["raw"][method].data.shape), self._data["raw"][method].rows_names, self._data["raw"][method].columns_names, method, "mutationQuantification")
             for rr in range(len(self._data["raw"][method].rows_names)):
                 for cc in range(len(self._data["raw"][method].columns_names)):
                     value = self._data["raw"][method][rr][cc]
@@ -295,7 +295,7 @@ class NaviCom():
                         mutations.data[rr][cc] = 0
                     else:
                         mutations.data[rr][cc] = 1
-            self._newProcessedData("mutationQuantification", method, mutations)
+            self._newProcessedData(method, "mutationQuantification", mutations)
 
     def defineModules(self, modules_dict=""):
         """
@@ -377,7 +377,7 @@ class NaviCom():
 
         # Put the averaging in a NaviData structure
         #self._data["moduleAverage"][method] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples) # Usefull if NaviCell allow modules values one day
-        self._newProcessedData("moduleAverage", method, NaviData(gene_module_average, list(data.genes), samples))
+        self._newProcessedData(method, "moduleAverage", NaviData(gene_module_average, list(data.genes), samples))
 
     def _pcaComp(self, method, colors=["red", "green", "blue"]):
         """
@@ -402,7 +402,7 @@ class NaviCom():
                 if(method.lower() in METHODS_TYPE):
                     if (not self._exported_data[processing][method]):
                         name = self._nameData(method, processing, name)
-                        print("Exporting " + name + " to NaviCell...")
+                        print("Exporting '" + name + "' to NaviCell...")
                         # Processing change the type of data, like discrete data into continuous, or anything to color data
                         biotype = getBiotype(method, processing)
                         self._nv.importDatatables(self._data[processing][method]._makeData(self._nv.getHugoList()), name, biotype)
@@ -415,13 +415,12 @@ class NaviCom():
                     raise ValueError("Biotype of '" + method + "' is unknown")
             elif (method == "uniform"): # Uniform data for glyphs
                 if (not self._exported_data["uniform"]):
-                    self._nv.importDatatables(self._data["uniform"]._makeData(self._nv.getHugoList()), "uniform", "Discrete Copy number data") # Continuous is better for grouping but posses problems with glyphs
-                    name = "uniform"
-                    print("Exporting " + name + " to NaviCell...")
+                    print("Exporting 'uniform'  to NaviCell...")
+                    self._nv.importDatatables( self._data["uniform"]._makeData(self._nv.getHugoList()), "uniform", getBiotype("uniform") )
                     done_export = True
                     self._exported_data["uniform"] = True
             elif (method in self._data["distribution"]):
-                pass # Exported on creation, to change for multiple NaviCell
+                pass # Exported on creation, TODO change for multiple NaviCell
             else:
                 raise KeyError("Method '" + method + "' with processing '" + processing + "' does not exist")
         else:
@@ -448,7 +447,7 @@ class NaviCom():
         self._checkBrowser()
 
         if (not self._exported_annotations):
-            self._nv.sampleAnnotationImport(self.annotations._makeData())
+            self._nv.sampleAnnotationImport(self._annotations._makeData())
             self._exported_annotations = True
 
     def _configureDisplay(self, method, processing="raw"):
@@ -762,7 +761,7 @@ class NaviCom():
         self._hdid = 0
 
     def _resetAnnotationsSelection(self, module=''):
-        for annot in self.annotations.annotations:
+        for annot in self._annotations.annotations:
             self._nv.sampleAnnotationSelectAnnotation(module, annot, False)
         self._nv.sampleAnnotationApply(module)
 
@@ -832,14 +831,14 @@ class NaviCom():
         for select in selections:
             subName = select.split(":")
             group = subName[0].strip()
-            if (group in self.annotations.annotations):
+            if (group in self._annotations.annotations):
                 value = subName[1].strip()
                 groups.append(group)
                 try:
                     values.append(float(value))
                 except ValueError:
                     values.append(value)
-            elif (not (group in self.annotations.samples or re.match("sub", group) or group == "NaN")):
+            elif (not (group in self._annotations.samples or re.match("sub", group) or group == "NaN")):
                 if (len(subName) > 1):
                     raise ValueError("Annotation " + group + " does not exist")
                 else:
@@ -923,11 +922,11 @@ class NaviCom():
             return(distName)
 
         # Identify the samples selected by the group definition
-        samples = self.annotations.samplesPerCategory[groups[0]][values[0]]
+        samples = self._annotations.samplesPerCategory[groups[0]][values[0]]
         for idx in range(1, len(groups)):
             to_drop = list()
             for spl in samples:
-                if (not spl in self.annotations.samplesPerCategory[groups[idx]][values[idx]]):
+                if (not spl in self._annotations.samplesPerCategory[groups[idx]][values[idx]]):
                     to_drop.append(spl)
             for spl in to_drop:
                 samples.remove(spl)
@@ -951,10 +950,7 @@ class NaviCom():
                     while (value > qseq[idx+1]):
                         idx += 1
                     newData[-1][idx] += 1
-        self._data["distribution"][distName] = NaviData(newData, data.genes, distSamples)
-        # Fill the dictionnaries to avoid display bugs
-        self._data_names['distribution'][distName] = distName
-        self._associated_data[distName] = ('distribution', distName)
+        self._newProcessedData( distName, "distribution", NaviData(newData, data.genes, distSamples) )
 
         return(distName, distSamples)
 
@@ -1014,29 +1010,38 @@ class NaviCom():
                                 intensity = "0" + intensity
                             dataset[rr,cc] += intensity
         mset = re.sub("_$", "", mset)
-        self._data["colors"][mset] = NaviData(dataset, self._data[processing][method].rows, self._data[processing][method].columns, processing="colors", method="unknown")
+        # TODO See if mset is used as the method for export
+        self._data["colors"][mset] = NaviData(dataset, self._data[processing][method].rows, self._data[processing][method].columns, method="unknown", processing="colors")
 
     # Saving data
-    def saveAllData(self, folder=""):
+    def saveAllData(self, folder="", indFiles=False):
         """
         Save all data in an .ncc file. Does not save the distribution nor color data.
+
+        Args:
+            folder (str): folder where the data will be save, the name is automatically attributed from the name of the dataset, the method and the processing
+            indFiles (bool): whether the data should be saved in a single file or in separate files
         """
         if (folder != ""):
             folder = re.sub("/?$", "/", folder)
         fname = folder + self.name + ".ncc"
         print("Saving as " + fname)
-        ff = open(fname, "w")
-        ff.close()
+        if (indFiles):
+            wmode = "w"
+        else:
+            wmode = "a"
+            ff = open(fname, "w")
+            ff.close()
         allProcessings = list(self._data)
         allProcessings.remove("uniform")
         allProcessings.remove("distribution")
-        allProcessings.remove("color")
+        allProcessings.remove("colors")
         for processing in allProcessings:
             for method in self._data[processing]:
                 print("Saving " + processing + ", " + method)# + ", " + str(self._data[processing][method]))
-                self._data[processing][method].saveData(fname, "a")
+                self._data[processing][method].saveData(fname, wmode)
         print("Saving Annotations")
-        self.annotations.saveData(fname, "a")
+        self._annotations.saveData(fname, wmode)
 
     def saveData(self, method, processing="raw", folder="./"):
         """
@@ -1052,4 +1057,12 @@ class NaviCom():
                 raise ValueError("Method " + method + " does not exist with processing " + processing)
         else:
             raise ValueError("Processing " + processing + " does not exist")
+
+    def saveAnnotations(self, folder="./"):
+        """
+        Save the annotations in a file than can be exported to NaviCell or imported in NaviCom
+        """
+        if (folder != ""):
+            folder = re.sub("/?$", "/", folder)
+        self._annotations.saveData(folder+self.name)
 
