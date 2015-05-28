@@ -463,16 +463,29 @@ class NaviCom():
                 self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step
 
             dtable = self._data[processing][method].data
-            maxval = np.nanmax(dtable)
-            minval = np.nanmin(dtable)
+            ftable = dtable.flatten()
+            ftable.sort()
+            # Remove extreme values if applicable
+            ptable = ftable[ftable > 0]
+            if (len(ptable) > 0):
+                keep = math.floor( (1 - self._display_config._excluded) * len(ptable) )
+                ptable = ptable[:keep]
+                maxval = ptable[-1]
+            else:
+                maxval = np.nanmax(ftable)
+            ntable = ftable[ftable < 0]
+            if (len(ntable) > 0):
+                keep = math.ceil( self._display_config._excluded * len(ptable) )
+                ntable = ntable[keep:]
+                minval = ntable[0]
+            else:
+                minval = np.nanmin(ftable)
             # Use the same scales for positive and negative values, choose the smallest to enhance contrast
             if (minval * maxval < 0):
                 if (-minval > maxval):
                     minval = -maxval
                 elif (maxval > -minval):
                     maxval = -minval
-            ftable = dtable.flatten()
-            ftable.sort()
 
             if (len(ftable[np.isnan(ftable)]) > 0):
                 navicell_offset = 1 # First value is nan
@@ -485,7 +498,7 @@ class NaviCom():
                 half_count = step_count//2
                 if (half_count != 1):
                     # Negative values
-                    if (minval > 0): maxval = -1
+                    if (minval > 0): minval = -1
                     step = -minval/half_count
                     values_list = [signif(val) for val in np.arange(minval, step/2, step)][:-1]
                     for ii in range(half_count):

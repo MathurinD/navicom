@@ -50,13 +50,14 @@ class DisplayConfig():
     DisplayConfig class to set the color gradients configuration in NaviCell
     """
 
-    def __init__(self, step_count=3, color_gradient=["00FF00", "FF0000"], zero_color="ffffff", na_color="ffffff", zero_size=0, na_size=0, use_absolute_values = False):
+    def __init__(self, step_count=3, color_gradient=["00FF00", "FF0000"], zero_color="ffffff", na_color="ffffff", zero_size=0, na_size=0, use_absolute_values = False, excluded="10%"):
         """
         Initialise a color gradient configuration
         Args:
             step_count (int): number of steps for the color gradients. A step for NAs is automatically attributed.
             color_gradient (list): a list of colors of length 2 or step_count. If length 2 a gradient is built, if the length is step_count the list is used for the colors.
             zero_color (str): an hexadecimal string for the color of the zero, only visible if step_count is odd
+            exclude (str or float): percentage of values to exclude for the color gradient, usefull to avoid a distortion of the colorscale by the extreme values. If str, must match '\d\d?%'.
         """
         assert isinstance(step_count, int), ValueError("'step_count' must be an integer")
         assert isinstance(color_gradient, list) and len(color_gradient)>=2, ValueError("'color_gradient' must be list of 2 or more elements")
@@ -91,6 +92,16 @@ class DisplayConfig():
             self._colors += color_gradient[step_count//2+1:]
         else:
             raise ValueError("The length of 'color_gradient' must be 2 or equal to step_count")
+
+        # Fraction of excluded values
+        if (isinstance(excluded, str)):
+            assert excluded[-1] == "%", "Invalid percentage format"
+            self._excluded = float(excluded[:-1]) / 100
+        elif (isinstance(excluded, float)):
+            self._excluded = excluded
+        else:
+            raise TypeError("'excluded' must be a float or a str (X%)")
+        assert self._excluded < 1., "Cannot exclude more than 100% of the extreme values"
 
     def __repr__(self):
         rpr = "DisplayConfig object :\n"
