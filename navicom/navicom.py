@@ -86,7 +86,7 @@ class NaviCom():
 
     def listAnnotations(self):
         print("Annotations available (values) :")
-        for annot in self._annotations.annotations:
+        for annot in self._annotations._annotations:
             print("\t" + annot + " : " + str(set(self._annotations[annot])))
 
     def __repr__(self):
@@ -599,8 +599,9 @@ class NaviCom():
 
         # Control that the user does not try to display to many data or use several times the same display
         if (True):
+            glyph = dict()
             for gtype in GLYPH_TYPES:
-                glyph = {gtype:[False] * MAX_GLYPHS}
+                glyph[gtype] = [False] * MAX_GLYPHS
             sample_for_glyph = [False] * MAX_GLYPHS
             glyph_samples = [""] * MAX_GLYPHS
             glyph_set = False
@@ -644,10 +645,10 @@ class NaviCom():
                         glyph_setup = [parse_setup[1]]
                 elif (len(parse_setup) != 1):
                     raise ValueError("Glyph specification '" + dmode + "' incorrect")
-                try:
+                try: # Use the number is specified...
                     glyph_number = int(glyph_setup[0][-1])
                     glyph_type = glyph_setup[0][:-1]
-                except ValueError:
+                except ValueError: # ... or use the first free slot for the type selected
                     glyph_type = glyph_setup[0]
                     glyph_number = 1
                     while (glyph[glyph_type][glyph_number-1]):
@@ -776,7 +777,7 @@ class NaviCom():
         self._hdid = 0
 
     def _resetAnnotationsSelection(self, module=''):
-        for annot in self._annotations.annotations:
+        for annot in self._annotations._annotations:
             self._nv.sampleAnnotationSelectAnnotation(module, annot, False)
         self._nv.sampleAnnotationApply(module)
 
@@ -846,14 +847,14 @@ class NaviCom():
         for select in selections:
             subName = select.split(":")
             group = subName[0].strip()
-            if (group in self._annotations.annotations):
+            if (group in self._annotations._annotations):
                 value = subName[1].strip()
                 groups.append(group)
                 try:
                     values.append(float(value))
                 except ValueError:
                     values.append(value)
-            elif (not (group in self._annotations.samples or re.match("sub", group) or group == "NaN")):
+            elif (not (group in self._annotations._samples or re.match("sub", group) or group == "NaN")):
                 if (len(subName) > 1):
                     raise ValueError("Annotation " + group + " does not exist")
                 else:
@@ -913,9 +914,9 @@ class NaviCom():
         dataName = self.getDataName(dataName)
         self.display([(dataName, "map_staining")], group)
         if (samplesDisplay != ""):
-            if (isinstance(samples, list)):
+            if (isinstance(samples, list) and len(samples) > 0):
                 self.display([(dataName, samplesDisplay)], samples, reset=False)
-            elif (isinstance(samples, str)):
+            elif (isinstance(samples, str) and samples != ""):
                 if (samples == "quantiles"):
                     distName, distSamples = self._generateDistributionData(dataName, group, binsNb)
                     self._data["distribution"][distName].exportToNaviCell(self._nv, TYPES_BIOTYPE['mRNA'], distName)
@@ -937,11 +938,11 @@ class NaviCom():
             return(distName)
 
         # Identify the samples selected by the group definition
-        samples = self._annotations.samplesPerCategory[groups[0]][values[0]]
+        samples = self._annotations._samplesPerCategory[groups[0]][values[0]]
         for idx in range(1, len(groups)):
             to_drop = list()
             for spl in samples:
-                if (not spl in self._annotations.samplesPerCategory[groups[idx]][values[idx]]):
+                if (not spl in self._annotations._samplesPerCategory[groups[idx]][values[idx]]):
                     to_drop.append(spl)
             for spl in to_drop:
                 samples.remove(spl)

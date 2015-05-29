@@ -10,6 +10,7 @@ nc.listData()
 nc.listAnnotations()
 
 nc.displayMethylome(['TCGA.04.1331.01'], "raw", "mRNA", "size")
+nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot")
 nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", '')
 
 nc._colorsOverlay("mrna_median", "log2CNA", processing="raw")
