@@ -861,12 +861,84 @@ class NaviCom():
                     raise ValueError("Sample " + group + " does not exist")
         return((groups, values))
 
-    def displayMethylome(self, samples="all: 1.0", processing="raw", background="mRNA", methylation="glyph"):
+    def completeDisplay(self):
+        """
+        Display as many data as possible on one map. If available draw CNV as map staining, mRNA or protein level as barplot, methylation as glyphs size, and mutations as a blue glyph.
+        """
+
+    def getTranscriptomicsData(self, processing="raw"):
+        """
+        Returns the names of the mRNA datatables in the dataset
+        """
+        return(self.getMRNAData(processing))
+    def getMRNAData(self, processing="raw"):
+        """
+        Returns the names of the mRNA datatables in the dataset
+        """
+        mrna_datas = list()
+        for mrna in TYPES_SPEC["mRNA"][0]:
+            if (mrna in self._data[processing]):
+                mrna_datas.append(mrna)
+        for method in self._data[processing]:
+            if (re.search("mrna", method.lower()) and not method.lower() in mrna_datas):
+                mrna_datas.append(method)
+        return(mrna_datas)
+    
+    def getGenomicData(self, processing="raw"):
+        """
+        Returns the names of CNV datatables in the dataset
+        """
+        return(self.getGenomicData(processing))
+    def getCNAData(self, processing="raw"):
+        """
+        Returns the names of CNV datatables in the dataset
+        """
+        cnv_datas = list()
+        dcnv_datas = list()
+        for method in self._data[processing]:
+            if (method.lower() in TYPES_SPEC["cCNA"][0]):
+                cnv_datas.append(method)
+            if (method.lower() in TYPES_SPEC["dCNA"][0]):
+                dcnv_datas.append(method)
+        return(cnv_datas+dcnv_datas)
+
+    def getMethylationData(self, processing="raw"):
+        """
+        Returns the names of the methylation datatables in the dataset
+        """
+        methylation_datas = list()
+        for method in self._data[processing]:
+            if ( method.lower() in TYPES_SPEC["methylation"][0] or re.search("methylation", method.lower()) ):
+                methylation_datas.append(method)
+        return(methylation_datas)
+    
+    def getProteomicsData(self, processing="raw"):
+        """
+        Returns the names of the proteomics datatables in the dataset
+        """
+        proteomics_datas = list()
+        for method in self._data[processing]:
+            if ( method.lower() in TYPES_SPEC["protein"][0] or re.search("protein", method.lower()) ):
+                proteomics_datas.append(method)
+        return(proteomics_datas)
+    
+    def getMutationsData(self, processing="raw"):
+        """
+        Returns the names of the mutations datatables in the dataset
+        """
+        mutations_datas = list()
+        for method in self._data[processing]:
+            if ( method.lower() in TYPES_SPEC["mutations"][0] or re.search("mutations", method.lower()) ):
+                mutations_datas.append(method)
+        return(mutations_datas)
+
+    def displayMethylome(self, samples="all: 1.0", processing="raw", background="mRNA", methylation="size"):
         """
             Display the methylation data as glyphs or heatmap on the NaviCell map, with mRNA expression of gene CNV as map staining
             Args:
-                background (str) : should genes, mRNA or no data be used for the map staining
-                processing (str) : should the processed data be used
+                background (str) : Data used for the map staining (CNV, mRNA or no data)
+                processing (str) : Processing of the data to use
+                methylation (str): The display mode for the methylation data (either 'heatmap' or 'size')
         """
         # Groups cannot be used for now because of limitations in NaviCell unless the median is taken as grouping operation
         mrna_alias = ["MRNA"] # TODO Define what to put here
@@ -874,7 +946,7 @@ class NaviCom():
         background = background.upper()
         assert background in mrna_alias + gene_alias + ["NO", ""], "Select either genes, mRNA or no data for the map staining"
         assert methylation in ["glyph", "glyphs", "heatmap", "size", "glyph_size"], "Cannot use " + methylation + " to display methylation data"
-        if (methylation != "heatmap"): methylation="size"
+        if (methylation != "heatmap"): methylation="size" # TODO Change default to barplot when available
         assert processing in self._data, "Processing " + processing + " does not exist"
 
         # Select all methylation data and display as heatmap
