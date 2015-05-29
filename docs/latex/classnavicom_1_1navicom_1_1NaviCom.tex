@@ -63,15 +63,20 @@ def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a379f15a87ba5c41c3501e9f386102
 \begin{DoxyCompactList}\small\item\em Reset the data and samples selections in NaviCell. \item\end{DoxyCompactList}\item 
 def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a018f936de625af8a5dd7e8250ede6483}{displayMethylome}
 \begin{DoxyCompactList}\small\item\em Display the methylation data as glyphs or heatmap on the NaviCell map, with mRNA expression of gene CNV as map staining. \item\end{DoxyCompactList}\item 
-def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a001dadf6f3dc0c77ba5b14da621b110d}{displayTranscriptome}
-\begin{DoxyCompactList}\small\item\em Display one transcriptome data as map staining, with optionnaly some extra displays (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes). \item\end{DoxyCompactList}\item 
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a01066363389ca01c24f683956f3dc9ad}{displayOmics}
+\begin{DoxyCompactList}\small\item\em Display one -\/omics datatable as map staining, with optionnaly some extra information displayed on top (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes, distribution as heatmap). \item\end{DoxyCompactList}\item 
 def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ab539e16bff0a424ebd2753c153ff4e53}{saveAllData}
 \begin{DoxyCompactList}\small\item\em Save all data in an .ncc file. \item\end{DoxyCompactList}\item 
 \hypertarget{classnavicom_1_1navicom_1_1NaviCom_ac53d9dc53ca0af44586a55fb1bffe8bd}{
 def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ac53d9dc53ca0af44586a55fb1bffe8bd}{saveData}}
 \label{classnavicom_1_1navicom_1_1NaviCom_ac53d9dc53ca0af44586a55fb1bffe8bd}
 
-\begin{DoxyCompactList}\small\item\em Save the data in a file that can be exported to NaviCell or imported in \hyperlink{classnavicom_1_1navicom_1_1NaviCom}{NaviCom}. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Save the data in a file that can be exported to NaviCell or imported in \hyperlink{classnavicom_1_1navicom_1_1NaviCom}{NaviCom}. \item\end{DoxyCompactList}\item 
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_aa6a527c98c20f4f75b8529fca178dddc}{
+def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_aa6a527c98c20f4f75b8529fca178dddc}{saveAnnotations}}
+\label{classnavicom_1_1navicom_1_1NaviCom_aa6a527c98c20f4f75b8529fca178dddc}
+
+\begin{DoxyCompactList}\small\item\em Save the annotations in a file than can be exported to NaviCell or imported in \hyperlink{classnavicom_1_1navicom_1_1NaviCom}{NaviCom}. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsubsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
@@ -80,11 +85,6 @@ def \hyperlink{classnavicom_1_1navicom_1_1NaviCom_ac53d9dc53ca0af44586a55fb1bffe
 \label{classnavicom_1_1navicom_1_1NaviCom_a950e5ebf199edea40d55c506b8aaf134}
 
 \begin{DoxyCompactList}\small\item\em Name of the dataset. \item\end{DoxyCompactList}\item 
-\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a0386d881214943cf3432d0ffe22cbb71}{
-\hyperlink{classnavicom_1_1navicom_1_1NaviCom_a0386d881214943cf3432d0ffe22cbb71}{annotations}}
-\label{classnavicom_1_1navicom_1_1NaviCom_a0386d881214943cf3432d0ffe22cbb71}
-
-\begin{DoxyCompactList}\small\item\em Annotations of the samples. \item\end{DoxyCompactList}\item 
 \hypertarget{classnavicom_1_1navicom_1_1NaviCom_a56141660ddf29a36a8291e938246578c}{
 \hyperlink{classnavicom_1_1navicom_1_1NaviCom_a56141660ddf29a36a8291e938246578c}{modules}}
 \label{classnavicom_1_1navicom_1_1NaviCom_a56141660ddf29a36a8291e938246578c}
@@ -192,7 +192,7 @@ perform\_\-list (list of 2-\/tuples): each tuple must contain the name of the da
 \item[{\em colors}]range of colors to use (NOT IMPLEMENTED YET) default\_\-samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all default\_\-samples from the list are used for heatmaps and barplots. Use 'all\_\-samples' to use all default\_\-samples or \mbox{[}'annot1:...:annotn', 'all\_\-groups'\mbox{]} to use all groups corresponding to the combinations of annot1...annotn. \end{DoxyParams}
 
 
-Definition at line \hyperlink{navicom_8py_source_l00565}{565} of file \hyperlink{navicom_8py_source}{navicom.py}.
+Definition at line \hyperlink{navicom_8py_source_l00579}{579} of file \hyperlink{navicom_8py_source}{navicom.py}.
 
 \hypertarget{classnavicom_1_1navicom_1_1NaviCom_a018f936de625af8a5dd7e8250ede6483}{
 \index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!displayMethylome@{displayMethylome}}
@@ -216,12 +216,12 @@ Display the methylation data as glyphs or heatmap on the NaviCell map, with mRNA
 \item[{\em background}]should genes, mRNA or no data be used for the map staining \item[{\em processing}]should the processed data be used \end{DoxyParams}
 
 
-Definition at line \hyperlink{navicom_8py_source_l00871}{871} of file \hyperlink{navicom_8py_source}{navicom.py}.
+Definition at line \hyperlink{navicom_8py_source_l00886}{886} of file \hyperlink{navicom_8py_source}{navicom.py}.
 
-\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a001dadf6f3dc0c77ba5b14da621b110d}{
-\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!displayTranscriptome@{displayTranscriptome}}
-\index{displayTranscriptome@{displayTranscriptome}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
-\paragraph[{displayTranscriptome}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::displayTranscriptome (
+\hypertarget{classnavicom_1_1navicom_1_1NaviCom_a01066363389ca01c24f683956f3dc9ad}{
+\index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!displayOmics@{displayOmics}}
+\index{displayOmics@{displayOmics}!navicom::navicom::NaviCom@{navicom::navicom::NaviCom}}
+\paragraph[{displayOmics}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::displayOmics (
 \begin{DoxyParamCaption}
 \item[{}]{ self, }
 \item[{}]{ dataName, }
@@ -231,17 +231,17 @@ Definition at line \hyperlink{navicom_8py_source_l00871}{871} of file \hyperlink
 \item[{}]{ binsNb = {\ttfamily 10}}
 \end{DoxyParamCaption}
 )}\hfill}
-\label{classnavicom_1_1navicom_1_1NaviCom_a001dadf6f3dc0c77ba5b14da621b110d}
+\label{classnavicom_1_1navicom_1_1NaviCom_a01066363389ca01c24f683956f3dc9ad}
 
 
-Display one transcriptome data as map staining, with optionnaly some extra displays (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes). 
+Display one -\/omics datatable as map staining, with optionnaly some extra information displayed on top (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes, distribution as heatmap). 
 
 dataName (str or tuple): name or identifier of the data. 
 \begin{DoxyParams}{Parameters}
 \item[{\em group}]Identifier of the group to display \item[{\em samplesDisplay}]Channel where the individual samples should be displayed (heatmap or barplot) samples (list or str): list of samples to display, or a string specifying how such a list should be built ('quantiles' to get the distribution of values) \item[{\em nbOfSamples}]number of individual samples to display, ignored if samples is a list \end{DoxyParams}
 
 
-Definition at line \hyperlink{navicom_8py_source_l00912}{912} of file \hyperlink{navicom_8py_source}{navicom.py}.
+Definition at line \hyperlink{navicom_8py_source_l00927}{927} of file \hyperlink{navicom_8py_source}{navicom.py}.
 
 \hypertarget{classnavicom_1_1navicom_1_1NaviCom_ad675e899836271ff4f2fd4bd17ea81d9}{
 \index{navicom::navicom::NaviCom@{navicom::navicom::NaviCom}!getData@{getData}}
@@ -329,7 +329,8 @@ Definition at line \hyperlink{navicom_8py_source_l00285}{285} of file \hyperlink
 \paragraph[{saveAllData}]{\setlength{\rightskip}{0pt plus 5cm}def navicom::navicom::NaviCom::saveAllData (
 \begin{DoxyParamCaption}
 \item[{}]{ self, }
-\item[{}]{ folder = {\ttfamily \char`\"{}\char`\"{}}}
+\item[{}]{ folder = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{}]{ indFiles = {\ttfamily False}}
 \end{DoxyParamCaption}
 )}\hfill}
 \label{classnavicom_1_1navicom_1_1NaviCom_ab539e16bff0a424ebd2753c153ff4e53}
@@ -337,9 +338,14 @@ Definition at line \hyperlink{navicom_8py_source_l00285}{285} of file \hyperlink
 
 Save all data in an .ncc file. 
 
-Does not save the distribution nor color data. 
+Does not save the distribution nor color data.
 
-Definition at line \hyperlink{navicom_8py_source_l01043}{1043} of file \hyperlink{navicom_8py_source}{navicom.py}.
+
+\begin{DoxyParams}{Parameters}
+\item[{\em folder}]folder where the data will be save, the name is automatically attributed from the name of the dataset, the method and the processing \item[{\em indFiles}]whether the data should be saved in a single file or in separate files \end{DoxyParams}
+
+
+Definition at line \hyperlink{navicom_8py_source_l01060}{1060} of file \hyperlink{navicom_8py_source}{navicom.py}.
 
 
 

@@ -68,7 +68,8 @@ Definition at line \hyperlink{displayConfig_8py_source_l00051}{51} of file \hype
 \item[{}]{ na\_\-color = {\ttfamily \char`\"{}ffffff\char`\"{}}, }
 \item[{}]{ zero\_\-size = {\ttfamily 0}, }
 \item[{}]{ na\_\-size = {\ttfamily 0}, }
-\item[{}]{ use\_\-absolute\_\-values = {\ttfamily False}}
+\item[{}]{ use\_\-absolute\_\-values = {\ttfamily False}, }
+\item[{}]{ excluded = {\ttfamily \char`\"{}10\%\char`\"{}}}
 \end{DoxyParamCaption}
 )}\hfill}
 \label{classnavicom_1_1displayConfig_1_1DisplayConfig_a26387ee9e6fe63612bc87a4d5d4a17f2}
@@ -78,10 +79,10 @@ Initialise a color gradient configuration.
 
 
 \begin{DoxyParams}{Parameters}
-\item[{\em step\_\-count}]number of steps for the color gradients. A step for NAs is automatically attributed. \item[{\em color\_\-gradient}]a list of colors of length 2 or step\_\-count. If length 2 a gradient is built, if the length is step\_\-count the list is used for the colors. \item[{\em zero\_\-color}]an hexadecimal string for the color of the zero, only visible if step\_\-count is odd \end{DoxyParams}
+\item[{\em step\_\-count}]number of steps for the color gradients. A step for NAs is automatically attributed. \item[{\em color\_\-gradient}]a list of colors of length 2 or step\_\-count. If length 2 a gradient is built, if the length is step\_\-count the list is used for the colors. \item[{\em zero\_\-color}]an hexadecimal string for the color of the zero, only visible if step\_\-count is odd exclude (str or float): percentage of values to exclude for the color gradient, usefull to avoid a distortion of the colorscale by the extreme values. If str, must match '?'. \end{DoxyParams}
 
 
-Definition at line \hyperlink{displayConfig_8py_source_l00060}{60} of file \hyperlink{displayConfig_8py_source}{displayConfig.py}.
+Definition at line \hyperlink{displayConfig_8py_source_l00061}{61} of file \hyperlink{displayConfig_8py_source}{displayConfig.py}.
 
 
 

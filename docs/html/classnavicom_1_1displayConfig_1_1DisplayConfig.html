@@ -126,7 +126,13 @@ Public Attributes</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">&nbsp;</td>
-          <td class="paramname"> <em>use_absolute_values</em> = <code>False</code></td><td>&nbsp;</td>
+          <td class="paramname"> <em>use_absolute_values</em> = <code>False</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&nbsp;</td>
+          <td class="paramname"> <em>excluded</em> = <code>&quot;10%&quot;</code></td><td>&nbsp;</td>
         </tr>
         <tr>
           <td></td>
@@ -142,12 +148,12 @@ Public Attributes</h2></td></tr>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>step_count</em>&nbsp;</td><td>number of steps for the color gradients. A step for NAs is automatically attributed. </td></tr>
     <tr><td valign="top"></td><td valign="top"><em>color_gradient</em>&nbsp;</td><td>a list of colors of length 2 or step_count. If length 2 a gradient is built, if the length is step_count the list is used for the colors. </td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>zero_color</em>&nbsp;</td><td>an hexadecimal string for the color of the zero, only visible if step_count is odd </td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>zero_color</em>&nbsp;</td><td>an hexadecimal string for the color of the zero, only visible if step_count is odd exclude (str or float): percentage of values to exclude for the color gradient, usefull to avoid a distortion of the colorscale by the extreme values. If str, must match '?'. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="displayConfig_8py_source.html#l00060">60</a> of file <a class="el" href="displayConfig_8py_source.html">displayConfig.py</a>.</p>
+<p>Definition at line <a class="el" href="displayConfig_8py_source.html#l00061">61</a> of file <a class="el" href="displayConfig_8py_source.html">displayConfig.py</a>.</p>
 
 </div>
 </div>
@@ -155,7 +161,7 @@ Public Attributes</h2></td></tr>
 <li>navicom/<a class="el" href="displayConfig_8py_source.html">displayConfig.py</a></li>
 </ul>
 </div>
-<hr class="footer"/><address class="footer"><small>Generated on Wed May 27 2015 18:05:01 for navicom by&nbsp;
+<hr class="footer"/><address class="footer"><small>Generated on Fri May 29 2015 14:28:04 for navicom by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.7.1 </small></address>
 </body>

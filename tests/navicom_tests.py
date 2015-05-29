@@ -10,8 +10,8 @@ nc.listData()
 nc.listAnnotations()
 
 nc.displayMethylome(['TCGA.04.1331.01'], "raw", "mRNA", "size")
-nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot")
-nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", '')
+nc.displayOmics('log2CNA', 'OS_STATUS: LIVING', "barplot")
+nc.displayOmics('log2CNA', 'OS_STATUS: LIVING', "barplot", '')
 
 nc._colorsOverlay("mrna_median", "log2CNA", processing="raw")
 nc.listData()
@@ -25,9 +25,9 @@ dd=nc.generateDistributionData(nc.getDataName('log2CNA'), 'OS_STATUS: LIVING')
 nc.distData[dd[0]].exportToNaviCell(nc.nv, TYPES_BIOTYPE['mRNA'], dd[0])
 
 nc.exportAnnotations()
-nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
+nc.displayOmics('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
 
-nc.displayTranscriptome('log2CNA', 'OS_STATUS: NA', "barplot", 'TCGA.04.1331.01')
+nc.displayOmics('log2CNA', 'OS_STATUS: NA', "barplot", 'TCGA.04.1331.01')
 
 nc.defineModules("data/cellcycle_v1.0.gmt")
 nc.averageModule("gistic") # TODO Warning might be to fix

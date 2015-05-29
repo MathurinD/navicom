@@ -78,57 +78,68 @@
 <a name="l00050"></a>00050 <span class="stringliteral">    DisplayConfig class to set the color gradients configuration in NaviCell</span>
 <a name="l00051"></a><a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html">00051</a> <span class="stringliteral">    &quot;&quot;&quot;</span>
 <a name="l00052"></a>00052 
-<a name="l00053"></a>00053     <span class="keyword">def </span><a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a26387ee9e6fe63612bc87a4d5d4a17f2" title="Initialise a color gradient configuration.">__init__</a>(self, step_count=3, color_gradient=[&quot;00FF00&quot;, &quot;FF0000&quot;], zero_color=&quot;ffffff&quot;, na_color=&quot;ffffff&quot;, zero_size=0, na_size=0, use_absolute_values = False):
+<a name="l00053"></a>00053     <span class="keyword">def </span><a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a26387ee9e6fe63612bc87a4d5d4a17f2" title="Initialise a color gradient configuration.">__init__</a>(self, step_count=3, color_gradient=[&quot;00FF00&quot;, &quot;FF0000&quot;], zero_color=&quot;ffffff&quot;, na_color=&quot;ffffff&quot;, zero_size=0, na_size=0, use_absolute_values = False, excluded=&quot;10%&quot;):
 <a name="l00054"></a>00054         <span class="stringliteral">&quot;&quot;&quot;</span>
 <a name="l00055"></a>00055 <span class="stringliteral">        Initialise a color gradient configuration</span>
 <a name="l00056"></a>00056 <span class="stringliteral">        Args:</span>
 <a name="l00057"></a>00057 <span class="stringliteral">            step_count (int): number of steps for the color gradients. A step for NAs is automatically attributed.</span>
 <a name="l00058"></a>00058 <span class="stringliteral">            color_gradient (list): a list of colors of length 2 or step_count. If length 2 a gradient is built, if the length is step_count the list is used for the colors.</span>
 <a name="l00059"></a>00059 <span class="stringliteral">            zero_color (str): an hexadecimal string for the color of the zero, only visible if step_count is odd</span>
-<a name="l00060"></a><a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a26387ee9e6fe63612bc87a4d5d4a17f2">00060</a> <span class="stringliteral">        &quot;&quot;&quot;</span>
-<a name="l00061"></a>00061         <span class="keyword">assert</span> isinstance(step_count, int), ValueError(<span class="stringliteral">&quot;&#39;step_count&#39; must be an integer&quot;</span>)
-<a name="l00062"></a>00062         <span class="keyword">assert</span> isinstance(color_gradient, list) <span class="keywordflow">and</span> len(color_gradient)&gt;=2, ValueError(<span class="stringliteral">&quot;&#39;color_gradient&#39; must be list of 2 or more elements&quot;</span>)
-<a name="l00063"></a>00063         <span class="keywordflow">for</span> ii <span class="keywordflow">in</span> range(len(color_gradient)):
-<a name="l00064"></a>00064             color_gradient[ii] = rgbValid(color_gradient[ii])
-<a name="l00065"></a>00065         <span class="keyword">assert</span> isinstance(zero_color, str), ValueError(<span class="stringliteral">&quot;&#39;zero_color&#39; must be a string&quot;</span>)
-<a name="l00066"></a>00066         zero_color = rgbValid(zero_color)
-<a name="l00067"></a>00067         <span class="keyword">assert</span> isinstance(na_color, str) <span class="keywordflow">and</span> len(na_color) &gt; 3, ValueError(<span class="stringliteral">&quot;&#39;na_color&#39; must be a string of at least 3 characters representing a RGB color&quot;</span>)
-<a name="l00068"></a>00068         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ad8f95c1e3b29ac5622a18b7328b07f50">na_color</a> = rgbValid(na_color)
-<a name="l00069"></a>00069         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a65435f89606c60323d44bac7e1ee0340">_zero_color</a> = zero_color
-<a name="l00070"></a>00070         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aa157506adb33080de983987dd182fa29">na_size</a> = na_size
-<a name="l00071"></a>00071         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aab0e7c765bfc4071416c5e04fd7bbb2f">zero_size</a> = zero_size
-<a name="l00072"></a>00072 
-<a name="l00073"></a>00073         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a86870c1c1b5c920d4cc93554c7528d8a">use_absolute_values</a> = use_absolute_values
-<a name="l00074"></a>00074 
-<a name="l00075"></a>00075         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a> = step_count
-<a name="l00076"></a>00076         <span class="keywordflow">if</span> (len(color_gradient) == step_count):
-<a name="l00077"></a>00077             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = color_gradient
-<a name="l00078"></a>00078         <span class="keywordflow">elif</span> (len(color_gradient) == 2):
-<a name="l00079"></a>00079             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = list()
-<a name="l00080"></a>00080             <span class="keywordflow">if</span> (zero_color == <span class="stringliteral">&quot;&quot;</span>):
-<a name="l00081"></a>00081                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = getGradient(color_gradient[0], color_gradient[1], self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>)
-<a name="l00082"></a>00082             <span class="keywordflow">else</span>:
-<a name="l00083"></a>00083                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = getGradient(color_gradient[0], zero_color, self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>//2+1)[:-1]
-<a name="l00084"></a>00084                 <span class="keywordflow">if</span> (self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>%2 == 1):
-<a name="l00085"></a>00085                     self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += [zero_color]
-<a name="l00086"></a>00086                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += getGradient(zero_color, color_gradient[1], self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>//2+1)[1:]
-<a name="l00087"></a>00087         <span class="keywordflow">elif</span> (len(color_gradient) == step_count-1 <span class="keywordflow">and</span> zero_color != <span class="stringliteral">&quot;&quot;</span>):
-<a name="l00088"></a>00088             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = color_gradient[:step_count//2+1]
-<a name="l00089"></a>00089             <span class="keywordflow">if</span> (step_count%2 == 1):
-<a name="l00090"></a>00090                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += [zero_color]
-<a name="l00091"></a>00091             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += color_gradient[step_count//2+1:]
-<a name="l00092"></a>00092         <span class="keywordflow">else</span>:
-<a name="l00093"></a>00093             <span class="keywordflow">raise</span> ValueError(<span class="stringliteral">&quot;The length of &#39;color_gradient&#39; must be 2 or equal to step_count&quot;</span>)
-<a name="l00094"></a>00094 
-<a name="l00095"></a>00095     <span class="keyword">def </span>__repr__(self):
-<a name="l00096"></a>00096         rpr = <span class="stringliteral">&quot;DisplayConfig object :\n&quot;</span>
-<a name="l00097"></a>00097         rpr+= <span class="stringliteral">&quot;\tGradient colors: &quot;</span> + str(self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a>) + <span class="stringliteral">&quot;\n&quot;</span>
-<a name="l00098"></a>00098         rpr+= <span class="stringliteral">&quot;\tNA color: &quot;</span> + str(self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ad8f95c1e3b29ac5622a18b7328b07f50">na_color</a>)
-<a name="l00099"></a>00099         <span class="keywordflow">return</span>(rpr)
-<a name="l00100"></a>00100 
+<a name="l00060"></a>00060 <span class="stringliteral">            exclude (str or float): percentage of values to exclude for the color gradient, usefull to avoid a distortion of the colorscale by the extreme values. If str, must match &#39;\d\d?%&#39;.</span>
+<a name="l00061"></a><a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a26387ee9e6fe63612bc87a4d5d4a17f2">00061</a> <span class="stringliteral">        &quot;&quot;&quot;</span>
+<a name="l00062"></a>00062         <span class="keyword">assert</span> isinstance(step_count, int), ValueError(<span class="stringliteral">&quot;&#39;step_count&#39; must be an integer&quot;</span>)
+<a name="l00063"></a>00063         <span class="keyword">assert</span> isinstance(color_gradient, list) <span class="keywordflow">and</span> len(color_gradient)&gt;=2, ValueError(<span class="stringliteral">&quot;&#39;color_gradient&#39; must be list of 2 or more elements&quot;</span>)
+<a name="l00064"></a>00064         <span class="keywordflow">for</span> ii <span class="keywordflow">in</span> range(len(color_gradient)):
+<a name="l00065"></a>00065             color_gradient[ii] = rgbValid(color_gradient[ii])
+<a name="l00066"></a>00066         <span class="keyword">assert</span> isinstance(zero_color, str), ValueError(<span class="stringliteral">&quot;&#39;zero_color&#39; must be a string&quot;</span>)
+<a name="l00067"></a>00067         zero_color = rgbValid(zero_color)
+<a name="l00068"></a>00068         <span class="keyword">assert</span> isinstance(na_color, str) <span class="keywordflow">and</span> len(na_color) &gt; 3, ValueError(<span class="stringliteral">&quot;&#39;na_color&#39; must be a string of at least 3 characters representing a RGB color&quot;</span>)
+<a name="l00069"></a>00069         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ad8f95c1e3b29ac5622a18b7328b07f50">na_color</a> = rgbValid(na_color)
+<a name="l00070"></a>00070         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a65435f89606c60323d44bac7e1ee0340">_zero_color</a> = zero_color
+<a name="l00071"></a>00071         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aa157506adb33080de983987dd182fa29">na_size</a> = na_size
+<a name="l00072"></a>00072         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aab0e7c765bfc4071416c5e04fd7bbb2f">zero_size</a> = zero_size
+<a name="l00073"></a>00073 
+<a name="l00074"></a>00074         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a86870c1c1b5c920d4cc93554c7528d8a">use_absolute_values</a> = use_absolute_values
+<a name="l00075"></a>00075 
+<a name="l00076"></a>00076         self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a> = step_count
+<a name="l00077"></a>00077         <span class="keywordflow">if</span> (len(color_gradient) == step_count):
+<a name="l00078"></a>00078             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = color_gradient
+<a name="l00079"></a>00079         <span class="keywordflow">elif</span> (len(color_gradient) == 2):
+<a name="l00080"></a>00080             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = list()
+<a name="l00081"></a>00081             <span class="keywordflow">if</span> (zero_color == <span class="stringliteral">&quot;&quot;</span>):
+<a name="l00082"></a>00082                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = getGradient(color_gradient[0], color_gradient[1], self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>)
+<a name="l00083"></a>00083             <span class="keywordflow">else</span>:
+<a name="l00084"></a>00084                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = getGradient(color_gradient[0], zero_color, self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>//2+1)[:-1]
+<a name="l00085"></a>00085                 <span class="keywordflow">if</span> (self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>%2 == 1):
+<a name="l00086"></a>00086                     self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += [zero_color]
+<a name="l00087"></a>00087                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += getGradient(zero_color, color_gradient[1], self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a79144928881551fa1f1a18d062d761ea">step_count</a>//2+1)[1:]
+<a name="l00088"></a>00088         <span class="keywordflow">elif</span> (len(color_gradient) == step_count-1 <span class="keywordflow">and</span> zero_color != <span class="stringliteral">&quot;&quot;</span>):
+<a name="l00089"></a>00089             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> = color_gradient[:step_count//2+1]
+<a name="l00090"></a>00090             <span class="keywordflow">if</span> (step_count%2 == 1):
+<a name="l00091"></a>00091                 self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += [zero_color]
+<a name="l00092"></a>00092             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a> += color_gradient[step_count//2+1:]
+<a name="l00093"></a>00093         <span class="keywordflow">else</span>:
+<a name="l00094"></a>00094             <span class="keywordflow">raise</span> ValueError(<span class="stringliteral">&quot;The length of &#39;color_gradient&#39; must be 2 or equal to step_count&quot;</span>)
+<a name="l00095"></a>00095 
+<a name="l00096"></a>00096         <span class="comment"># Fraction of excluded values</span>
+<a name="l00097"></a>00097         <span class="keywordflow">if</span> (isinstance(excluded, str)):
+<a name="l00098"></a>00098             <span class="keyword">assert</span> excluded[-1] == <span class="stringliteral">&quot;%&quot;</span>, <span class="stringliteral">&quot;Invalid percentage format&quot;</span>
+<a name="l00099"></a>00099             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a826f4cfb7ebee0706db94a78c4bfe778">_excluded</a> = float(excluded[:-1]) / 100
+<a name="l00100"></a>00100         <span class="keywordflow">elif</span> (isinstance(excluded, float)):
+<a name="l00101"></a>00101             self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a826f4cfb7ebee0706db94a78c4bfe778">_excluded</a> = excluded
+<a name="l00102"></a>00102         <span class="keywordflow">else</span>:
+<a name="l00103"></a>00103             <span class="keywordflow">raise</span> TypeError(<span class="stringliteral">&quot;&#39;excluded&#39; must be a float or a str (X%)&quot;</span>)
+<a name="l00104"></a>00104         <span class="keyword">assert</span> self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#a826f4cfb7ebee0706db94a78c4bfe778">_excluded</a> &lt; 1., <span class="stringliteral">&quot;Cannot exclude more than 100% of the extreme values&quot;</span>
+<a name="l00105"></a>00105 
+<a name="l00106"></a>00106     <span class="keyword">def </span>__repr__(self):
+<a name="l00107"></a>00107         rpr = <span class="stringliteral">&quot;DisplayConfig object :\n&quot;</span>
+<a name="l00108"></a>00108         rpr+= <span class="stringliteral">&quot;\tGradient colors: &quot;</span> + str(self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#aad7d4675303fbdf926ded6041ae876cf">_colors</a>) + <span class="stringliteral">&quot;\n&quot;</span>
+<a name="l00109"></a>00109         rpr+= <span class="stringliteral">&quot;\tNA color: &quot;</span> + str(self.<a class="code" href="classnavicom_1_1displayConfig_1_1DisplayConfig.html#ad8f95c1e3b29ac5622a18b7328b07f50">na_color</a>)
+<a name="l00110"></a>00110         <span class="keywordflow">return</span>(rpr)
+<a name="l00111"></a>00111 
 </pre></div></div>
 </div>
-<hr class="footer"/><address class="footer"><small>Generated on Wed May 27 2015 18:05:00 for navicom by&nbsp;
+<hr class="footer"/><address class="footer"><small>Generated on Fri May 29 2015 14:28:04 for navicom by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.7.1 </small></address>
 </body>

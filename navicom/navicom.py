@@ -899,9 +899,9 @@ class NaviCom():
             print(samples)
         self.display(disp_selection, samples)
 
-    def displayTranscriptome(self, dataName, group="all: 1.0", samplesDisplay="", samples=list(), binsNb=10):
+    def displayOmics(self, dataName, group="all: 1.0", samplesDisplay="", samples=list(), binsNb=10):
         """
-        Display one transcriptome data as map staining, with optionnaly some extra displays (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes)
+        Display one -omics datatable as map staining, with optionnaly some extra information displayed on top (samples as heatmap or barplot, mutations as glyphs, a glyph for the most highly expressed genes, distribution as heatmap)
         Args:
             dataName (str or tuple): name or identifier of the data.
             group (str): Identifier of the group to display
