@@ -549,12 +549,14 @@ class NaviCom():
             else:
                 self._nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, False)
 
-            ## Size configuration TODO add zero if present
-            for glyph_id in range(1, MAX_GLYPHS):
-                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                    self._nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self._display_config.na_size)
+        ## Size configuration TODO add zero if present
+        for glyph_id in range(1, MAX_GLYPHS):
+            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                self._nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self._display_config.na_size)
 
-            self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_COLOR)
+        self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_COLOR)
+        self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_SIZE)
+        self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_SHAPE)
         
     # Display data
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
