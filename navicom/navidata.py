@@ -26,8 +26,9 @@ TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"
 TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
 TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics"], "protein level")
-TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "miRNA expression data")
-TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
+TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "microRNA expression data")
+TYPES_SPEC["mutations"] = (["mutations"], "Continuous copy number data")
+#TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
 TYPES_SPEC["unknown"] = (["unknown"], "mRNA expression data") # If the type of data cannot be identified, consider continuous data by default
 METHODS_TYPE = dict()
 TYPES_BIOTYPE = dict()
@@ -37,10 +38,10 @@ for bt in TYPES_SPEC:
         METHODS_TYPE[cat.lower()] = bt
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
-PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "mutationQuantification"]
-PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "mutationQuantification":"Continuous copy number data"}
+PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "mutationQuantification", "textMutations"]
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "mutationQuantification":"Continuous copy number data", "textMutations":"Mutations"}
 DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
-CONTINOUS_BIOTYPES = ["mRNA expression data", "miRNA expression data", "protein level", "Continuous copy number data"]
+CONTINOUS_BIOTYPES = ["mRNA expression data", "microRNA expression data", "protein level", "Continuous copy number data"]
 
 class NaviData():
     """

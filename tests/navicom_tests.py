@@ -1,14 +1,16 @@
 #!/usr/bin/python3
 #-*-coding:utf-8-*-
-
-import timing
+import time
+itime = time.time()
 from navicom import *; navicom.DEBUG_NAVICOM = True
 nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", display_config = DisplayConfig(5, na_color="ffffff"))
 # nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", browser_command="chromium-browser --allow-file-access-from-files %s")
-timing.logTime("NaviCom import")
+print("NaviCom loading: " + str(time.time() - itime)); itime=time.time()
+nc.completeDisplay('TCGA.04.1331.01')
+print("Complete display: " + str(time.time() - itime)); itime=time.time()
+
+nc.completeDisplay()
 nc.displayMutations('TCGA.04.1331.01')
-timing.logTime("displayMutations")
-timing.endlog()
 
 nc.displayMethylome(['TCGA.04.1331.01'], "raw", "mRNA", "size")
 

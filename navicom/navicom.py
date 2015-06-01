@@ -282,6 +282,8 @@ class NaviCom():
         Update adequate arrays when processed data are generated
         """
         assert processing in self._processings, "Processing " + processing + " is not handled"
+        if (method in self._data[processing]):
+            warn("'" + method + "' already exist for processing '" + processing + "'")
         self._data[processing][method] = data
         self._exported_data[processing][method] = False
         self._nameData(method, processing)
@@ -307,7 +309,9 @@ class NaviCom():
                         mutations.data[rr][cc] = 0
                     else:
                         mutations.data[rr][cc] = 1
+            self._newProcessedData(method, "textMutations", self._data["raw"][method]) # TODO Get rid of mutations quantification (in PROCESSINGS and elsewhere in the code
             self._newProcessedData(method, "mutationQuantification", mutations)
+            self._newProcessedData(method, "raw", mutations)
 
     def defineModules(self, modules_dict=""):
         """
@@ -498,6 +502,10 @@ class NaviCom():
                     minval = -maxval
                 elif (maxval > -minval):
                     maxval = -minval
+            # TODO Remove NaN tables in loadData
+            if (np.isnan(minval)): # Imply maxval is also nan
+                minval = -1
+                maxval = 1
 
             if (len(ftable[np.isnan(ftable)]) > 0):
                 navicell_offset = 1 # First value is nan
@@ -561,11 +569,17 @@ class NaviCom():
             else:
                 self._nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, False)
 
-        ## Size configuration TODO add zero if present
-        if (len(dtable[np.isnan(dtable)]) > 0):
-            for glyph_id in range(1, MAX_GLYPHS):
-                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                    self._nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self._display_config.na_size)
+        ## Size configuration 
+        if (dtable.dtype.char == "U"): # String array
+            if (len(dtable[dtable=="nan"]) > 0):
+                for glyph_id in range(1, MAX_GLYPHS):
+                    for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                        self._nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self._display_config.na_size)
+        else: # float array TODO add zero if present
+            if (len(dtable[np.isnan(dtable)]) > 0):
+                for glyph_id in range(1, MAX_GLYPHS):
+                    for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                        self._nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self._display_config.na_size)
 
         self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_COLOR)
         self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_SIZE)
@@ -876,16 +890,41 @@ class NaviCom():
                     raise ValueError("Sample " + group + " does not exist")
         return((groups, values))
 
-    def completeDisplay(self, processing="raw"):
+    def completeDisplay(self, sample="all: 1.0", processing="raw"):
         """
             Display as many data as possible on one map. If available draw CNV as map staining, mRNA or protein level as barplot, methylation as glyphs size, and mutations as a blue glyph.
 
             Args:
+                sample (str): The sample or group to display
                 processing (str): Processing for the data to display
         """
+        disp_selection = []
+
+        # TODO put everything as barplots when available in NaviCell
         mrna = self.getTranscriptomicsData(processing)
         if (len(mrna) > 0):
-            display(())
+            disp_selection.append( ((processing, mrna[0]), "size1") )
+        prot = self.getProteomicsData(processing)
+        if (len(prot) > 0):
+            disp_selection.append( ((processing, prot[0]), "size2") )
+        mirna = self.getmiRNAData(processing)
+        if (len(mirna) > 0):
+            disp_selection.append( ((processing, mirna[0]), "size3") )
+
+        cna = self.getGenomicData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, cna[0]), "map_staining") )
+
+        mut = self.getMutationsData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, mut[0]), "size4") )
+
+        methylation = self.getMethylationData(processing)
+        if (len(methylation) > 0):
+            disp_selection.append( ((processing, methylation[0]), "barplot") )
+
+        # Display all the information
+        self.display(disp_selection, sample)
 
     def getTranscriptomicsData(self, processing="raw"):
         """
@@ -894,7 +933,7 @@ class NaviCom():
         return(self.getMRNAData(processing))
     def getMRNAData(self, processing="raw"):
         """
-        Returns the names of the mRNA datatables in the dataset
+            Returns the names of the mRNA datatables in the dataset
         """
         mrna_datas = list()
         for mrna in TYPES_SPEC["mRNA"][0]:
@@ -906,12 +945,27 @@ class NaviCom():
         if (len(mrna_datas) == 0):
             warn("No mRNA data available")
         return(mrna_datas)
+
+    def getmiRNAData(self, processing="raw"):
+        """
+            Returns the names of the miRNA datatables in the dataset
+        """
+        mirna_datas = list()
+        for mirna in TYPES_SPEC["miRNA"][0]:
+            if (mirna in self._data[processing]):
+                mirna_datas.append(mirna)
+        for method in self._data[processing]:
+            if (re.search("mirna", method.lower()) and not method.lower in mirna_datas):
+                mirna_datas.append(method)
+        if (len(mirna_datas) == 0):
+            warn("No miRNA data available")
+        return(mirna_datas)
     
     def getGenomicData(self, processing="raw"):
         """
-        Returns the names of CNV datatables in the dataset
+            Returns the names of CNV datatables in the dataset
         """
-        return(self.getGenomicData(processing))
+        return(self.getCNAData(processing))
     def getCNAData(self, processing="raw"):
         """
         Returns the names of CNV datatables in the dataset
@@ -951,7 +1005,7 @@ class NaviCom():
             warn("No proteomics data available")
         return(proteomics_datas)
     
-    def getMutationsData(self, processing="raw"):
+    def getMutationsData(self, processing="mutationQuantification"):
         """
         Returns the names of the mutations datatables in the dataset
         """
