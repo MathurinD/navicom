@@ -8,8 +8,9 @@ from curie.navicell import *
 from .navidata import *
 from .displayConfig import *
 
-DEBUG_NAVICOM = True
+DEBUG_NAVICOM = False
 VERBOSE_NAVICOM = True
+
 
 def getLine(ll, split_char="\t"):
     ll = re.sub('\"', '', ll.strip())
@@ -21,6 +22,17 @@ def getLine(ll, split_char="\t"):
         except:
             pass
     return(ll)
+
+# Aliases by biotype
+MRNA_ALIASES = ["MRNA", "RNA"]
+DNA_ALIASES = ["CNV", "CNA", "CCNA", "CCNV", "DNA"]
+PROTEIN_ALIASES = ["PROTEINS", "PROTEOMICS", "PROTEIN"]
+METHYLATION_ALIASES = ["HISTONE", "HISTONES", "METHYLATION"]
+# Complete list of aliases
+BIOTYPES_ALIASES = {"mRNA":MRNA_ALIASES, "dna":DNA_ALIASES, "proteins":PROTEIN_ALIASES, "methylation":METHYLATION_ALIASES}
+ALL_ALIASES = []
+for aliases in BIOTYPES_ALIASES.values():
+    ALL_ALIASES += aliases
 
 class NaviCom():
     """
@@ -454,15 +466,15 @@ class NaviCom():
         """
         Changes the Color and Size Configuration for the datatable to the one precised by the user.
         """
+        dname = self.getDataName((method, processing))
+        dtable = self._data[processing][method].data
         if (getBiotype(method, processing) in CONTINOUS_BIOTYPES):
             ## Color configuration
-            dname = self.getDataName((method, processing))
             print("Configuring display for " + dname)
             step_count = self._display_config.step_count
             for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                 self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step
 
-            dtable = self._data[processing][method].data
             ftable = dtable.flatten()
             ftable.sort()
             # Remove extreme values if applicable
@@ -498,7 +510,7 @@ class NaviCom():
                 half_count = step_count//2
                 if (half_count != 1):
                     # Negative values
-                    if (minval > 0): minval = -1
+                    if (minval >= 0): minval = -1
                     step = -minval/half_count
                     values_list = [signif(val) for val in np.arange(minval, step/2, step)][:-1]
                     for ii in range(half_count):
@@ -515,7 +527,7 @@ class NaviCom():
                             self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, self._display_config._colors[half_count])
                         offset += 1
                     # Positive values
-                    if (maxval < 0): maxval = 1
+                    if (maxval <= 0): maxval = 1
                     step = maxval/half_count
                     values_list = [signif(val) for val in np.arange(0., maxval+step/2, step)][1:]
                     for ii in range(half_count):
@@ -550,9 +562,10 @@ class NaviCom():
                 self._nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, False)
 
         ## Size configuration TODO add zero if present
-        for glyph_id in range(1, MAX_GLYPHS):
-            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                self._nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self._display_config.na_size)
+        if (len(dtable[np.isnan(dtable)]) > 0):
+            for glyph_id in range(1, MAX_GLYPHS):
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    self._nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self._display_config.na_size)
 
         self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_COLOR)
         self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_SIZE)
@@ -561,11 +574,12 @@ class NaviCom():
     # Display data
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
         """
-        Display data on the NaviCell map
-        Args :
-            perform_list (list of 2-tuples): each tuple must contain the name of the data to display and the mode of display ("glyphN_(color|size|shape)", "barplot", "heatmap" or "map_staining"). Barplots and heatmaps cannot be displayed simultaneously. Several data types can be specified for heatmaps. Specifying "glyph" (without number) will automatically select a new glyph for each data using the same properties (shape, color or size) in glyphs (maximum of 5 glyphs).
-            colors : range of colors to use (NOT IMPLEMENTED YET)
-            default_samples (str or list of str) : Samples to use. Only the first sample is used for glyphs and map staining, all default_samples from the list are used for heatmaps and barplots. Use 'all_samples' to use all default_samples or ['annot1:...:annotn', 'all_groups'] to use all groups corresponding to the combinations of annot1...annotn.
+            Display data on the NaviCell map
+
+            Args:
+                perform_list (list_of_2_or_3-tuple): each tuple (datatable, display_mode[, sample]) must contain the name of the data to display and the mode of display ("glyphN_(color|size|shape)", "barplot", "heatmap" or "map_staining"). Barplots and heatmaps cannot be displayed simultaneously. Several data types can be specified for heatmaps. Specifying "glyph" (without number) will automatically select a new glyph for each data using the same properties (shape, color or size) in glyphs (maximum of 5 glyphs).
+                colors : range of colors to use (NOT IMPLEMENTED YET)
+                default_samples (str_or_list_of_str) : Samples to use. Only the first sample is used for glyphs and map staining, all default_samples from the list are used for heatmaps and barplots. Use 'all_samples' to use all default_samples or ['annot1:...:annotn', 'all_groups'] to use all groups corresponding to the combinations of annot1...annotn.
         """
         # Correct if the user give a single tuple
         if (isinstance(perform_list, tuple)):
@@ -583,13 +597,14 @@ class NaviCom():
         for perf_id in range(len(perform_list)):
             data_name = perform_list[perf_id][0]
             perform = perform_list[perf_id]
-            if (isinstance(data_name, str)):
-                if (not data_name in self._associated_data):
-                    data_name = data_name + "_raw"
-                data_name = self._associated_data[data_name]
-            processing = data_name[0]
-            method = data_name[1]
-            assert processing in self._processings, "Processing " + processing + " does not exist"
+            processing, method = self.getDataTuple(data_name)
+            #if (isinstance(data_name, str)):
+                #if (not data_name in self._associated_data):
+                    #data_name = data_name + "_raw"
+                #data_name = self._associated_data[data_name]
+            #processing = data_name[0]
+            #method = data_name[1]
+            #assert processing in self._processings, "Processing " + processing + " does not exist"
             self._exportData(method, processing)
             if (len(perform) >= 3 and perform[2] != default_samples):
                 perform_list[perf_id] = (self._data_names[processing][method], perform[1], perform[2])
@@ -861,10 +876,16 @@ class NaviCom():
                     raise ValueError("Sample " + group + " does not exist")
         return((groups, values))
 
-    def completeDisplay(self):
+    def completeDisplay(self, processing="raw"):
         """
-        Display as many data as possible on one map. If available draw CNV as map staining, mRNA or protein level as barplot, methylation as glyphs size, and mutations as a blue glyph.
+            Display as many data as possible on one map. If available draw CNV as map staining, mRNA or protein level as barplot, methylation as glyphs size, and mutations as a blue glyph.
+
+            Args:
+                processing (str): Processing for the data to display
         """
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            display(())
 
     def getTranscriptomicsData(self, processing="raw"):
         """
@@ -882,6 +903,8 @@ class NaviCom():
         for method in self._data[processing]:
             if (re.search("mrna", method.lower()) and not method.lower() in mrna_datas):
                 mrna_datas.append(method)
+        if (len(mrna_datas) == 0):
+            warn("No mRNA data available")
         return(mrna_datas)
     
     def getGenomicData(self, processing="raw"):
@@ -900,6 +923,8 @@ class NaviCom():
                 cnv_datas.append(method)
             if (method.lower() in TYPES_SPEC["dCNA"][0]):
                 dcnv_datas.append(method)
+        if (len(dcnv_datas + cnv_datas) == 0):
+            warn("No copy number data available")
         return(cnv_datas+dcnv_datas)
 
     def getMethylationData(self, processing="raw"):
@@ -910,6 +935,8 @@ class NaviCom():
         for method in self._data[processing]:
             if ( method.lower() in TYPES_SPEC["methylation"][0] or re.search("methylation", method.lower()) ):
                 methylation_datas.append(method)
+        if (len(methylation_datas) == 0):
+            warn("No methylation data available")
         return(methylation_datas)
     
     def getProteomicsData(self, processing="raw"):
@@ -920,6 +947,8 @@ class NaviCom():
         for method in self._data[processing]:
             if ( method.lower() in TYPES_SPEC["protein"][0] or re.search("protein", method.lower()) ):
                 proteomics_datas.append(method)
+        if (len(proteomics_datas) == 0):
+            warn("No proteomics data available")
         return(proteomics_datas)
     
     def getMutationsData(self, processing="raw"):
@@ -930,7 +959,38 @@ class NaviCom():
         for method in self._data[processing]:
             if ( method.lower() in TYPES_SPEC["mutations"][0] or re.search("mutations", method.lower()) ):
                 mutations_datas.append(method)
+        if (len(mutations_datas) == 0):
+            warn("No mutations data available")
         return(mutations_datas)
+
+    def selectDataFromBiotype(self, data_spec, processing="raw", restrict=ALL_ALIASES):
+        """
+            Select the name of the data based on biological types.
+
+            Args:
+                data_spec (str): Biological type. mRNA, CNA, proteomics, mutations, methylation and miRNA are currently implemented. See navicom.BIOTYPES_ALIASES for the complete list of aliases
+                restrict (list): 
+        """
+        data_spec = data_spec.upper()
+        assert data_spec in restrict + ["NO", ""], "Invalid biotype " + data_spec
+        if (data_spec in ["NO", ""]):
+            return ""
+        elif (data_spec in MRNA_ALIASES):
+            datas = self.getMRNAData(processing)
+            if (len(datas) > 0):
+                return datas[0]
+        elif (data_spec in DNA_ALIASES):
+            datas = self.getCNAData(processing)
+            if (len(datas) > 0):
+                return datas[0]
+        elif (data_spec in METHYLATION_ALIASES):
+            datas = self.getMethylationData(processing)
+            if (len(datas) > 0):
+                return datas[0]
+        elif (data_spec in PROTEIN_ALIASES):
+            datas = self.getProteomicsData(processing)
+            if (len(datas) > 0):
+                return datas[0]
 
     def displayMethylome(self, samples="all: 1.0", processing="raw", background="mRNA", methylation="size"):
         """
@@ -941,31 +1001,18 @@ class NaviCom():
                 methylation (str): The display mode for the methylation data (either 'heatmap' or 'size')
         """
         # Groups cannot be used for now because of limitations in NaviCell unless the median is taken as grouping operation
-        mrna_alias = ["MRNA"] # TODO Define what to put here
-        gene_alias = ["CNV", "CNA", "CCNA", "CCNV", "DNA"]
-        background = background.upper()
-        assert background in mrna_alias + gene_alias + ["NO", ""], "Select either genes, mRNA or no data for the map staining"
         assert methylation in ["glyph", "glyphs", "heatmap", "size", "glyph_size"], "Cannot use " + methylation + " to display methylation data"
         if (methylation != "heatmap"): methylation="size" # TODO Change default to barplot when available
         assert processing in self._data, "Processing " + processing + " does not exist"
 
         # Select all methylation data and display as heatmap
         disp_selection = list()
-        for method in self._data[processing]:
-            included = method.lower() in METHODS_TYPE
-            if (re.search("methylation", method.lower()) or (included and METHODS_TYPE[method.lower()] == "methylation")):
-                disp_selection.append((self._data_names[processing][method], methylation)) # TODO Change to barplot when several datatables can be used
-        # Display mRNA or gene data as map staining
-        if (background in mrna_alias):
-            for mrna in TYPES_SPEC["mRNA"][0]:
-                if (mrna in self._data[processing]):
-                    disp_selection.append((self._data_names[processing][mrna], "map_staining"))
-                    break
-        elif (background in gene_alias):
-            for gene in TYPES_SPEC["cCNA"]+TYPES_SPEC["dCNA"]:
-                if (gene in self._data[processing]):
-                    disp_selection.append((self._data_names[processing][mrna], "map_staining"))
-                    break
+        methods = self.getMethylationData(processing)
+        if (len(methods) > 0):
+            disp_selection.append( (self.getDataName((processing, methods[0])), methylation) ) # TODO Change to barplot when several datatables can be used
+        method = self.selectDataFromBiotype(background)
+        if (method != ""):
+            disp_selection.append( (self.getDataName((processing, method)), "map_staining") )
         if (DEBUG_NAVICOM):
             print(disp_selection)
             print(samples)
@@ -1041,6 +1088,32 @@ class NaviCom():
         self._newProcessedData( distName, "distribution", NaviData(newData, data.genes, distSamples) )
 
         return(distName, distSamples)
+    
+    def displayMutations(self, sample="all: 1.0", background="CNA", background_sample="", processing="raw"):
+        """
+            Highlight mutated genes with glyphs for one sample or group and add some genomic data in the background.
+
+            Args:
+                samples (str): Sample or group to display.
+                background (str): Datatable to display in the background.
+        """
+        assert isinstance(sample, str)
+        if (background_sample == ""):
+            background_sample = sample
+        else:
+            assert isinstance(background_sample, str)
+
+        disp_selection = []
+
+        mutations = self.getMutationsData()
+        assert len(mutations) > 0, "No mutations data available!"
+        disp_selection.append( (("mutationQuantification", mutations[0]), "size1", sample) )
+
+        background = self.selectDataFromBiotype(background, processing)
+        if (background != ""):
+            disp_selection.append( ((processing, background), "map_staining", background_sample) )
+
+        self.display(disp_selection)
 
     def _colorsOverlay(self, red="uniform", green="uniform", blue="uniform", processing=""):
         """
