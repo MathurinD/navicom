@@ -292,11 +292,12 @@ class NaviCom():
     def quantifyMutations(self, method, keep_nan=False):
         """
         Transform the qualitative mutation datas into a quantitative one, where 1 means a mutation and 0 no mutation.
+
         Args:
             keep_nan : Should nan values be converted to O (no mutations) or kept as missing data
         """
-        if (method in self._data["raw"] and METHODS_TYPE[method.lower()] == "mutations"):
-            mutations = NaviData(np.zeros(self._data["raw"][method].data.shape), self._data["raw"][method].rows_names, self._data["raw"][method].columns_names, method, "mutationQuantification")
+        if (method in self._data["raw"] and METHODS_TYPE[method.lower()] == "mutations" and self._data["raw"][method].data.dtype.char == "U"):
+            mutations = NaviData(np.zeros(self._data["raw"][method].data.shape), self._data["raw"][method].rows_names, self._data["raw"][method].columns_names, method, "raw")
             for rr in range(len(self._data["raw"][method].rows_names)):
                 for cc in range(len(self._data["raw"][method].columns_names)):
                     value = self._data["raw"][method][rr][cc]
@@ -309,8 +310,8 @@ class NaviCom():
                         mutations.data[rr][cc] = 0
                     else:
                         mutations.data[rr][cc] = 1
-            self._newProcessedData(method, "textMutations", self._data["raw"][method]) # TODO Get rid of mutations quantification (in PROCESSINGS and elsewhere in the code
-            self._newProcessedData(method, "mutationQuantification", mutations)
+            self._newProcessedData(method, "textMutations", self._data["raw"][method])
+            self._data["textMutations"][method].processing = "textMutations"
             self._newProcessedData(method, "raw", mutations)
 
     def defineModules(self, modules_dict=""):
@@ -1005,7 +1006,7 @@ class NaviCom():
             warn("No proteomics data available")
         return(proteomics_datas)
     
-    def getMutationsData(self, processing="mutationQuantification"):
+    def getMutationsData(self, processing="raw"):
         """
         Returns the names of the mutations datatables in the dataset
         """
@@ -1161,7 +1162,7 @@ class NaviCom():
 
         mutations = self.getMutationsData()
         assert len(mutations) > 0, "No mutations data available!"
-        disp_selection.append( (("mutationQuantification", mutations[0]), "size1", sample) )
+        disp_selection.append( ((processing, mutations[0]), "size1", sample) )
 
         background = self.selectDataFromBiotype(background, processing)
         if (background != ""):
@@ -1229,28 +1230,36 @@ class NaviCom():
         self._data["colors"][mset] = NaviData(dataset, self._data[processing][method].rows, self._data[processing][method].columns, method="unknown", processing="colors")
 
     # Saving data
-    def saveAllData(self, folder="", indFiles=False):
+    def saveAllData(self, folder="", sepFiles=False, keep_processings = list()):
         """
         Save all data in an .ncc file. Does not save the distribution nor color data.
 
         Args:
-            folder (str): folder where the data will be save, the name is automatically attributed from the name of the dataset, the method and the processing
-            indFiles (bool): whether the data should be saved in a single file or in separate files
+            folder (str): folder where the data will be save, the name is automatically attributed from the name of the dataset, the method and the processing.
+            sepFiles (bool): whether the data should be saved in a single file or in separated files.
+            keep_processings (list): list of processings to keep (by default, all processings except the distribution which is very specific to a sample).
         """
         if (folder != ""):
             folder = re.sub("/?$", "/", folder)
         fname = folder + self.name + ".ncc"
         print("Saving as " + fname)
-        if (indFiles):
+        if (sepFiles):
             wmode = "w"
         else:
             wmode = "a"
             ff = open(fname, "w")
             ff.close()
+        # Build a custom list of processings, do not save data built specifically for NaviCell
         allProcessings = list(self._data)
         allProcessings.remove("uniform")
         allProcessings.remove("distribution")
         allProcessings.remove("colors")
+        if (len(keep_processings) > 0):
+            allProcessings = list()
+            for processing in keep_processings:
+                assert processing in self._data, "Processing '" + processing + "' does not exist"
+                allProcessings.append(processing)
+        allProcessings = list(set(allProcessings))
         for processing in allProcessings:
             for method in self._data[processing]:
                 print("Saving " + processing + ", " + method)# + ", " + str(self._data[processing][method]))

@@ -38,8 +38,8 @@ for bt in TYPES_SPEC:
         METHODS_TYPE[cat.lower()] = bt
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
-PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "mutationQuantification", "textMutations"]
-PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "mutationQuantification":"Continuous copy number data", "textMutations":"Mutations"}
+PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "textMutations"]
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "textMutations":"Mutations"}
 DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
 CONTINOUS_BIOTYPES = ["mRNA expression data", "microRNA expression data", "protein level", "Continuous copy number data"]
 
