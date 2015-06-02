@@ -39,7 +39,7 @@ class NaviCom():
     NaviComm class to handle data and display them in a standardized way on NaviCell maps
     """
 
-    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict="", browser_command="firefox %s", display_config=DisplayConfig()):
+    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict="", browser_command="firefox %s", display_config=DisplayConfig(), name="no name"):
         """
         Initialize a Navicell communication object.
         Args:
@@ -56,7 +56,7 @@ class NaviCom():
         options.browser_command = browser_command # TODO Add user control
         self._nv = NaviCell(options)
         ## Name of the dataset
-        self.name = "no_name" 
+        self.name = name
         # NaviCell export control
         self._exported_annotations = False
         self._browser_opened = False
@@ -167,9 +167,8 @@ class NaviCom():
             ll = 0
         # Name the dataset according to the filename, and issue a warning if the name changes
         dname = parseFilename(fname)[0]
-        if (dname != self.name and self.name != "no_name"):
-            warn("Name of the dataset " + self.name + " has been changed to " + dname)
-        self.name = dname
+        if (dname == "no_name"):
+            self.name = dname
 
         dataRegex = "^M |^GENE"
         annotRegex = "^ANNOTATIONS|^NAME"

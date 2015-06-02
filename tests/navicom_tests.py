@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 #-*-coding:utf-8-*-
+# TODO Test if the code works when non annotations are provided
 import time
 itime = time.time()
 from navicom import *; navicom.DEBUG_NAVICOM = True
