@@ -220,10 +220,9 @@ class NaviCom():
                     ll += 1
                 if (processing in self._data and method in self._data[processing]):
                     warn("Overwriting data for method " + method + " with processing " + processing)
-                self._data[processing][method] = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"], method, processing)
-                self._exported_data[processing][method] = False
-                self.quantifyMutations(method)
-                self._nameData(method, processing)
+                new_data = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"], method, processing)
+                self._newProcessedData(method, processing, data)
+                self.quantifyMutations(method, False)
                 if (not "uniform" in self._data):
                     self._defineUniformData(profile_data["samples"], profile_data["genes"])
             elif (re.search(annotRegex, ff[ll])):
@@ -296,23 +295,24 @@ class NaviCom():
         Args:
             keep_nan : Should nan values be converted to O (no mutations) or kept as missing data
         """
-        if (method in self._data["raw"] and METHODS_TYPE[method.lower()] == "mutations" and self._data["raw"][method].data.dtype.char == "U"):
-            mutations = NaviData(np.zeros(self._data["raw"][method].data.shape), self._data["raw"][method].rows_names, self._data["raw"][method].columns_names, method, "raw")
-            for rr in range(len(self._data["raw"][method].rows_names)):
-                for cc in range(len(self._data["raw"][method].columns_names)):
-                    value = self._data["raw"][method][rr][cc]
-                    if ( re.match("nan|na", value.lower()) ):
-                        if (keep_nan):
-                            mutations.data[rr][cc] = np.nan
-                        else:
+        for processing in ["raw", "textMutations"]:
+            if (method in self._data[processing] and METHODS_TYPE[method.lower()] == "mutations" and self._data[processing][method].data.dtype.char == "U"):
+                mutations = NaviData(np.zeros(self._data[processing][method].data.shape), self._data[processing][method].rows_names, self._data[processing][method].columns_names, method, processing)
+                for rr in range(len(self._data[processing][method].rows_names)):
+                    for cc in range(len(self._data[processing][method].columns_names)):
+                        value = self._data[processing][method][rr][cc]
+                        if ( re.match("nan|na", value.lower()) ):
+                            if (keep_nan):
+                                mutations.data[rr][cc] = np.nan
+                            else:
+                                mutations.data[rr][cc] = 0
+                        elif ( value == "" ):
                             mutations.data[rr][cc] = 0
-                    elif ( value == "" ):
-                        mutations.data[rr][cc] = 0
-                    else:
-                        mutations.data[rr][cc] = 1
-            self._newProcessedData(method, "textMutations", self._data["raw"][method])
-            self._data["textMutations"][method].processing = "textMutations"
-            self._newProcessedData(method, "raw", mutations)
+                        else:
+                            mutations.data[rr][cc] = 1
+                self._newProcessedData(method, "textMutations", self._data[processing][method])
+                self._data["textMutations"][method].processing = "textMutations"
+                self._newProcessedData(method, "raw", mutations)
 
     def defineModules(self, modules_dict=""):
         """
@@ -1264,6 +1264,8 @@ class NaviCom():
             for method in self._data[processing]:
                 print("Saving " + processing + ", " + method)# + ", " + str(self._data[processing][method]))
                 self._data[processing][method].saveData(fname, wmode)
+        for method in self._data["textMutations"]:
+            self._data["textMutations"][method].saveData(fname, wmode)
         print("Saving Annotations")
         self._annotations.saveData(fname, wmode)
 

@@ -3,7 +3,7 @@
 The navicom package intends to provide standard methods to visualise high-throughput data in NaviCell web service. It also provide several processing method to get some extra meaning out of the data.
 
 \author Mathurin Dorel
-\par License:\n GNU Public License.
+\par License:\n Lesser GNU Public License.
 
 \section start Getting started
 
