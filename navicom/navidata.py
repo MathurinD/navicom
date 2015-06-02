@@ -18,14 +18,17 @@ DEBUG_NAVIDATA = True
 MAX_GLYPHS = 5
 GLYPH_TYPES = ["color", "size", "shape"]
 # Identify the categories of cBioportal data as (aliases, biotype)
+# Also add some generic designations for each type of biological data
+# The first in the list are prefered for display when several are available
 TYPES_SPEC = dict()
-TYPES_SPEC["mRNA"] = (["mrna", "zscores", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_mrna", "rna_seq_v2_mrna", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_median", "mrna_zbynorm", "mrna_outliers", "rna_seq_rna", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data")
+TYPES_SPEC["mRNA"] = (["mrna", "rna_seq_v2_mrna", "rna_seq_mrna", "rna_seq_rna", "zscores", "mrna_median", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_zbynorm", "mrna_outliers", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data")
 TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
 TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
-TYPES_SPEC["protein"] = (["RPPA_protein_level"], "protein level")
-TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "miRNA expression data")
-TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
+TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics"], "protein level")
+TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "microRNA expression data")
+TYPES_SPEC["mutations"] = (["mutations"], "Continuous copy number data")
+#TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
 TYPES_SPEC["unknown"] = (["unknown"], "mRNA expression data") # If the type of data cannot be identified, consider continuous data by default
 METHODS_TYPE = dict()
 TYPES_BIOTYPE = dict()
@@ -35,11 +38,10 @@ for bt in TYPES_SPEC:
         METHODS_TYPE[cat.lower()] = bt
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
-PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "mutationQuantification"]
-PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "mutationQuantification":"Continuous copy number data"}
+PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "textMutations"]
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "textMutations":"Mutations"}
 DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
-CONTINOUS_BIOTYPES = ["mRNA expression data", "miRNA expression data", "protein level", "Continuous copy number data"]
-
+CONTINOUS_BIOTYPES = ["mRNA expression data", "microRNA expression data", "protein level", "Continuous copy number data"]
 
 class NaviData():
     """
@@ -52,7 +54,7 @@ class NaviData():
         method (str) : name of the experimental method used to get the original ("raw") data
         dType (str) : "data" or "annotations", whether the NaviData object contains datas or annotations (Note : this should be left to default, this is used by NaviAnnotations to change some internal variables)
     """
-    def __init__(self, data, rows_list, columns_list, processing="raw", method="unknown", dType="data"):
+    def __init__(self, data, rows_list, columns_list, method="unknown", processing="raw", dType="data"):
         assert(len(data) == len(rows_list))
         for line in data:
             assert len(line) == len(columns_list), "Incorrect length of line : " + str(line) + ", length = " + str(len(line)) + ", expected " + str(len(columns_list))
@@ -61,24 +63,27 @@ class NaviData():
         self.method = method
         self.biotype = getBiotype(method, processing)
         # Initialise data and indexes
+        ## Raw datatable as a numpy array
         self.data = np.array(data)
-        self.rows = listToDictKeys(rows_list)
-        self.rows_names = list(self.rows.keys())
-        self.columns = listToDictKeys(columns_list)
-        self.columns_names = list(self.columns.keys())
+        self._rows = listToDictKeys(rows_list)
+        ## Names of the rows
+        self.rows_names = list(self._rows.keys())
+        self._columns = listToDictKeys(columns_list)
+        ## Names of the columns
+        self.columns_names = list(self._columns.keys())
         if (dType == "annotations"):
             self.inColumns = "annotations"
-            self.annotations = self.columns
+            self._annotations = self._columns
             self.annotations_names = self.columns_names
             self.inRows = "samples"
-            self.samples = self.rows
+            self._samples = self._rows
             self.samples_names = self.rows_names
         elif (dType == "data"):
             self.inRows = "genes"
-            self.genes = self.rows
+            self._genes = self._rows
             self.genes_names = self.rows_names
             self.inColumns = "samples"
-            self.samples = self.columns
+            self._samples = self._columns
             self.samples_names = self.columns_names
         elif (dType == "old_annotations"):
             self.inRows = "annotations"
@@ -94,10 +99,10 @@ class NaviData():
         if (isinstance(index, int)):
             return(self.data[index])
         elif (isinstance(index, str)):
-            if (index in self.rows):
-                return( NaviSlice(self.data[self.rows[index],:], self.columns) )
-            elif (index in self.columns):
-                return( NaviSlice(self.data[:,self.columns[index]], self.rows) )
+            if (index in self._rows):
+                return( NaviSlice(self.data[self._rows[index],:], self._columns) )
+            elif (index in self._columns):
+                return( NaviSlice(self.data[:,self._columns[index]], self._rows) )
             else:
                 raise IndexError("'" + index + "' is neither a gene or sample name")
         elif (isinstance(index, list) or isinstance(index, tuple)):
@@ -105,20 +110,20 @@ class NaviData():
             for ii in index:
                 result.append(self[ii].data)
             result = np.array(result)
-            if (index[0] in self.rows):
-                assert np.all([idx in self.rows for idx in index]), "Not all index are gene names"
-                genes = self.rows.copy()
-                for gene in self.rows:
+            if (index[0] in self._rows):
+                assert np.all([idx in self._rows for idx in index]), "Not all index are gene names"
+                genes = self._rows.copy()
+                for gene in self._rows:
                     if (not gene in index):
                         genes.pop(gene)
-                return( NaviData(result, genes, self.columns) )
-            elif (index[0] in self.columns):
-                assert np.all([idx in self.columns for idx in index]), "Not all index are sample names"
-                samples = self.columns.copy()
-                for sample in self.columns:
+                return( NaviData(result, genes, self._columns) )
+            elif (index[0] in self._columns):
+                assert np.all([idx in self._columns for idx in index]), "Not all index are sample names"
+                samples = self._columns.copy()
+                for sample in self._columns:
                     if(not sample in index):
                         samples.pop(sample)
-                return( NaviData(result.transpose(), self.rows, samples) )
+                return( NaviData(result.transpose(), self._rows, samples) )
 
     def __iter__(self, by="genes"):
         if (not by in ["genes", "samples"]):
@@ -130,10 +135,10 @@ class NaviData():
     def __next__(self):
         try:
             if (self.iter_mode == "genes"):
-                key = list(self.rows.keys())[self.index]
+                key = list(self._rows.keys())[self.index]
                 result = [key] + list(self.data[self.index,:])
             elif (self.iter_mode == "samples"):
-                key = list(self.columns.keys())[self.index]
+                key = list(self._columns.keys())[self.index]
                 result = [key] + list(self.data[:,self.index])
         except IndexError:
             raise StopIteration
@@ -141,11 +146,11 @@ class NaviData():
         return(result)
 
     def __repr__(self):
-        rpr = "NaviData array with " + str(len(self.rows)) + " " + self.inRows + " and "
-        rpr += str(len(self.columns)) + " " + self.inColumns
+        rpr = "NaviData array with " + str(len(self._rows)) + " " + self.inRows + " and "
+        rpr += str(len(self._columns)) + " " + self.inColumns
         return(rpr)
 
-    def makeData(self, hugo_map=""):
+    def _makeData(self, hugo_map=""):
         """ Builds a string suitable for NaviCell Web Service from a python matrix of gene/sample values or a NaviCom object.
 
         Matrix format:
@@ -173,16 +178,32 @@ class NaviData():
     def exportToNaviCell(self, nv, biotype, dataName):
         """
         Export data to a NaviCell map
+        
+        Args:
+            nv (NaviCell): a NaviCell communication object
+            biotype (str): biotype of the datatable in NaviCell
+            dataName (str): name of the datatable in NaviCell
         """
-        nv.importDatatables(self.makeData(nv.getHugoList()), dataName, biotype) # Remove name once in self
-        #nv.importDatatables(self.makeData(nv.getHugoList()), dataName, self.biotype)
+        nv.importDatatables(self._makeData(nv.getHugoList()), dataName, biotype) # Remove name once in self
+        #nv.importDatatables(self._makeData(nv.getHugoList()), dataName, self.biotype)
 
-    def saveData(self, baseName="", mode="w"):
+    def saveData(self, baseName="", mode="w", fullName=False):
         """
         Save the NaviData datas in a file that can be used in NaviCell, but can also be loaded as NaviData
+
+        Args:
+            baseName (str): first part of the name of the file where the data will be written. The processing and method are added to file name if fullName is False.
+            mode (str): How the file should be opened ('a' or 'w')
+            fullName (bool): Whether the baseName should be used alone (True) or with the extra information of the method and processing.
         """
-        fname = baseName + "[" + self.processing + "]" + "[" + self.method + "].ncd"
-        if (mode == "a"):
+        assert mode in ["a", "w"], ValueError("Cannot open the file with this mode to save data")
+        # Build filename
+        if (self.dType == "data"):
+            fname = baseName + "[" + self.processing + "]" + "[" + self.method + "].ncd"
+        elif (self.dType == "annotations"):
+            fname = baseName + "_annotations.nca"
+        # Save data
+        if (mode == "a" or fullName):
             fname = baseName
         with open(fname, mode) as ff:
             # First line, and first word in the 
@@ -213,12 +234,12 @@ class NaviAnnotations(NaviData):
         NaviData.__init__(self, data, rows_list, columns_list, dType=dType)
         # Get the values for each annotations and which samples are associated to a value
         self.categoriesPerAnnotation = dict()
-        self.samplesPerCategory = dict()
+        self._samplesPerCategory = dict()
         modified_data = list()
         modified_annot = list()
-        for annot in self.annotations:
+        for annot in self._annotations:
             self.categoriesPerAnnotation[annot] = list()
-            self.samplesPerCategory[annot] = dict()
+            self._samplesPerCategory[annot] = dict()
             reduced = False
             # Reduce the annotations set if they are continuous integers with too many values
             if (len(np.unique(self[annot].data)) > MAX_GROUPS):
@@ -235,34 +256,34 @@ class NaviAnnotations(NaviData):
                     modified_data.append(self[annot].data.copy())
                     modified_annot.append(annot)
                     for cat in new_categories:
-                        self.samplesPerCategory[annot][cat] = list()
-                    for sample in self.samples:
+                        self._samplesPerCategory[annot][cat] = list()
+                    for sample in self._samples:
                         annot_value = float(self[annot][sample])
                         if (np.isnan(annot_value)):
-                            self.samplesPerCategory[annot]["NaN"].append(sample)
+                            self._samplesPerCategory[annot]["NaN"].append(sample)
                         else:
                             icat = 0
                             while (signif(annot_value) >= new_values[icat+1]):
                                 icat += 1
-                            self.samplesPerCategory[annot][new_categories[icat]].append(sample)
+                            self._samplesPerCategory[annot][new_categories[icat]].append(sample)
                             self[annot][sample] = new_categories[icat]
                     reduced = True
                 except ValueError: 
                     reduced = False
             # Non numeric values or with few enough levels are not modified and simply indexed
             if (not reduced):
-                for sample in self.samples:
+                for sample in self._samples:
                     annot_value = self[annot][sample]
                     if (not annot_value in self.categoriesPerAnnotation[annot]):
                         self.categoriesPerAnnotation[annot].append(annot_value)
-                        self.samplesPerCategory[annot][annot_value] = [sample]
+                        self._samplesPerCategory[annot][annot_value] = [sample]
                     else:
-                        self.samplesPerCategory[annot][annot_value].append(sample)
+                        self._samplesPerCategory[annot][annot_value].append(sample)
 
         if (DEBUG_NAVIDATA):
             print("Discretised annotations:" + str(modified_annot))
         if (len(modified_annot) > 0):
-            self.old_annots = NaviData(modified_data, modified_annot, self.rows, "old_annotations")
+            self.old_annots = NaviData(modified_data, modified_annot, self._rows, dType="old_annotations")
         else:
             self.old_annots = list()
 
@@ -391,7 +412,6 @@ def signif(x, n=3):
         return 0.
     return(round(x, -int(math.log10(np.abs(x)))+(n-1) ))
 
-
 def getBiotype(method, processing="raw"):
     """
     Get the biotype from the method and the processing
@@ -403,6 +423,8 @@ def getBiotype(method, processing="raw"):
             biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[METHODS_TYPE[method.lower()]])
         else:
             biotype = PROCESSINGS_BIOTYPE[processing]
+    elif (method == "uniform"):
+        biotype = "Discrete Copy number data" # TODO Continuous is better for grouping but posses problems with glyphs
     else:
         biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
     return biotype

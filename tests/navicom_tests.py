@@ -1,18 +1,39 @@
 #!/usr/bin/python3
 #-*-coding:utf-8-*-
-
-from navicom import *
+import time
+itime = time.time()
+from navicom import *; navicom.DEBUG_NAVICOM = True
 nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", display_config = DisplayConfig(5, na_color="ffffff"))
 # nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", browser_command="chromium-browser --allow-file-access-from-files %s")
-nc.exportData("log2CNA")
+print("NaviCom loading: " + str(time.time() - itime)); itime=time.time()
+nc.completeDisplay('TCGA.04.1331.01')
+print("Complete display: " + str(time.time() - itime)); itime=time.time()
+
+nc.completeDisplay()
+nc.displayMutations('TCGA.04.1331.01')
+
+nc.displayMethylome(['TCGA.04.1331.01'], "raw", "mRNA", "size")
+
+for alias in navicom.ALL_ALIASES:
+    nc.selectDataFromBiotype(alias)
+nc.displayMutations('TCGA.04.1331.01')
 
 nc.listData()
+nc.getCNAData()
+nc.getMRNAData()
+nc.getMethylationData()
+nc.getProteomicsData()
+nc.getMutationsData()
+
+nc._exportData("log2CNA")
+
 nc.listAnnotations()
 
 nc.displayMethylome(['TCGA.04.1331.01'], "raw", "mRNA", "size")
-nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", '')
+nc.displayOmics('log2CNA', 'OS_STATUS: LIVING', "barplot")
+nc.displayOmics('log2CNA', 'OS_STATUS: LIVING', "barplot", '')
 
-nc.colorsOverlay("mrna_median", "log2CNA", processing="raw")
+nc._colorsOverlay("mrna_median", "log2CNA", processing="raw")
 nc.listData()
 nc.saveData( "mrna_median_log2CNA", "colors")
 
@@ -24,9 +45,9 @@ dd=nc.generateDistributionData(nc.getDataName('log2CNA'), 'OS_STATUS: LIVING')
 nc.distData[dd[0]].exportToNaviCell(nc.nv, TYPES_BIOTYPE['mRNA'], dd[0])
 
 nc.exportAnnotations()
-nc.displayTranscriptome('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
+nc.displayOmics('log2CNA', 'OS_STATUS: LIVING', "barplot", 'quantiles')
 
-nc.displayTranscriptome('log2CNA', 'OS_STATUS: NA', "barplot", 'TCGA.04.1331.01')
+nc.displayOmics('log2CNA', 'OS_STATUS: NA', "barplot", 'TCGA.04.1331.01')
 
 nc.defineModules("data/cellcycle_v1.0.gmt")
 nc.averageModule("gistic") # TODO Warning might be to fix
@@ -44,7 +65,7 @@ nc.display([('log2CNA', 'barplot')], ['OS_STATUS; SEQUENCED', 'all_groups'])
 nc.display([('log2CNA', 'heatmap')], 'OS_STATUS: NA')
 nc.display([('log2CNA', 'heatmap'), ('gistic', 'heatmap')], ['OS_STATUS', 'all_groups'])
 
-nc.exportData("gistic")
+nc._exportData("gistic")
 
 nc.display([('log2CNA', 'barplot')], 'TCGA.04.1331.01')
 
@@ -59,5 +80,5 @@ nc.display([(('gistic', 'raw'), "map_staining"), (('gistic', 'raw'), "map_staini
 
 nc.defineModules("data/cellcycle_v1.0.gmt")
 nc.averageModule("gistic") # TODO Warning might be to fix
-nc.exportData("gistic", "moduleAverage")
+nc._exportData("gistic", "moduleAverage")
 
