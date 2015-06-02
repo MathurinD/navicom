@@ -276,12 +276,12 @@ class NaviCom():
         self._data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples, "uniform")
         # TODO change to 1.0 when < is changed to <= for continuous data
 
-    def _newProcessedData(self, method, processing, data):
+    def _newProcessedData(self, method, processing, data, warnings=True):
         """
         Update adequate arrays when processed data are generated
         """
         assert processing in self._processings, "Processing " + processing + " is not handled"
-        if (method in self._data[processing]):
+        if (warnings and method in self._data[processing]):
             warn("'" + method + "' already exist for processing '" + processing + "'")
         self._data[processing][method] = data
         self._exported_data[processing][method] = False
@@ -310,9 +310,9 @@ class NaviCom():
                             mutations.data[rr][cc] = 0
                         else:
                             mutations.data[rr][cc] = 1
-                self._newProcessedData(method, "textMutations", self._data[processing][method])
+                self._newProcessedData(method, "textMutations", self._data[processing][method], False)
                 self._data["textMutations"][method].processing = "textMutations"
-                self._newProcessedData(method, "raw", mutations)
+                self._newProcessedData(method, "raw", mutations, False)
 
     def defineModules(self, modules_dict=""):
         """
