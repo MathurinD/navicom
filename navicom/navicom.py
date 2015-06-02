@@ -221,7 +221,7 @@ class NaviCom():
                 if (processing in self._data and method in self._data[processing]):
                     warn("Overwriting data for method " + method + " with processing " + processing)
                 new_data = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"], method, processing)
-                self._newProcessedData(method, processing, data)
+                self._newProcessedData(method, processing, new_data)
                 self.quantifyMutations(method, False)
                 if (not "uniform" in self._data):
                     self._defineUniformData(profile_data["samples"], profile_data["genes"])
