@@ -221,7 +221,7 @@ class NaviCom():
                 if (processing in self._data and method in self._data[processing]):
                     warn("Overwriting data for method " + method + " with processing " + processing)
                 new_data = NaviData(profile_data["data"], profile_data["genes"], profile_data["samples"], method, processing)
-                self._newProcessedData(method, processing, data)
+                self._newProcessedData(method, processing, new_data)
                 self.quantifyMutations(method, False)
                 if (not "uniform" in self._data):
                     self._defineUniformData(profile_data["samples"], profile_data["genes"])
@@ -276,12 +276,12 @@ class NaviCom():
         self._data["uniform"] = NaviData( np.array([[1] * len(samples) for nn in genes]), genes, samples, "uniform")
         # TODO change to 1.0 when < is changed to <= for continuous data
 
-    def _newProcessedData(self, method, processing, data):
+    def _newProcessedData(self, method, processing, data, warnings=True):
         """
         Update adequate arrays when processed data are generated
         """
         assert processing in self._processings, "Processing " + processing + " is not handled"
-        if (method in self._data[processing]):
+        if (warnings and method in self._data[processing]):
             warn("'" + method + "' already exist for processing '" + processing + "'")
         self._data[processing][method] = data
         self._exported_data[processing][method] = False
@@ -310,9 +310,9 @@ class NaviCom():
                             mutations.data[rr][cc] = 0
                         else:
                             mutations.data[rr][cc] = 1
-                self._newProcessedData(method, "textMutations", self._data[processing][method])
+                self._newProcessedData(method, "textMutations", self._data[processing][method], False)
                 self._data["textMutations"][method].processing = "textMutations"
-                self._newProcessedData(method, "raw", mutations)
+                self._newProcessedData(method, "raw", mutations, False)
 
     def defineModules(self, modules_dict=""):
         """
