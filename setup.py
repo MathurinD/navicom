@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-here = path.abspath(path.dirname(__file__))
+#here = path.abspath(path.dirname(__file__))
 # Get the long description from the relevant file
 #with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
 #long_description = f.read()
