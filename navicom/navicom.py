@@ -598,7 +598,7 @@ class NaviCom():
         # Correct if the user give a single tuple
         if (isinstance(perform_list, tuple)):
             perform_list = [perform_list]
-        assert isinstance(perform_list, list), "perform list must be a list"
+        assert isinstance(perform_list, list) and len(perform_list)>0, "'perform list' must be a non empty list"
         assert isinstance(perform_list[0], tuple) and (len(perform_list[0]) == 2 or len(perform_list[0]) == 3), "perform list must be a list of (2/3)-tuples"
         self._checkBrowser()
         self.exportAnnotations()
