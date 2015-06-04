@@ -25,7 +25,7 @@ TYPES_SPEC["mRNA"] = (["mrna", "rna_seq_v2_mrna", "rna_seq_mrna", "rna_seq_rna",
 TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
 TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
-TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics"], "protein level")
+TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics"], "Protein Expression Data")
 TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "microRNA expression data")
 TYPES_SPEC["mutations"] = (["mutations"], "Continuous copy number data")
 #TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
@@ -41,7 +41,7 @@ for bt in TYPES_SPEC:
 PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "textMutations"]
 PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "textMutations":"Mutations"}
 DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
-CONTINOUS_BIOTYPES = ["mRNA expression data", "microRNA expression data", "protein level", "Continuous copy number data"]
+CONTINOUS_BIOTYPES = ["mRNA expression data", "microRNA expression data", "Protein Expression Data", "Continuous copy number data"]
 
 class NaviData():
     """

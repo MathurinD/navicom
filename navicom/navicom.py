@@ -15,6 +15,7 @@ VERBOSE_NAVICOM = True
 def getLine(ll, split_char="\t"):
     ll = re.sub('\"', '', ll.strip())
     ll = re.sub('\tNA', '\tNaN', ll) # Python float can convert "NaN" -> nan but not "NA" -> nan
+    ll = re.sub('\tnull', '\tNaN', ll) # Same for null
     ll = ll.split(split_char)
     for ii in range(len(ll)):
         try:
