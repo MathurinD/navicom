@@ -49,19 +49,8 @@ class NaviCom():
             modules_dict (str): name of the module definition file (.gmt) to load
             browser_command (str): command to open the browser
         """
-        # Build options for the navicell connexion
-        options = Options()
-        options.map_url = map_url
-        idx = options.map_url.find('/navicell/')
-        options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
-        options.browser_command = browser_command # TODO Add user control
-        self._nv = NaviCell(options)
-        ## Name of the dataset
+        # Name of the dataset
         self.name = name
-        # NaviCell export control
-        self._exported_annotations = False
-        self._browser_opened = False
-        self._biotypes = dict()
         # Representation of the data
         self._display_config = display_config
         # Data, indexed by processing then type of data
@@ -83,6 +72,10 @@ class NaviCom():
         if (fname != ""):
             self.loadData(fname)
             self.defineModules(modules_dict)
+        # NaviCell connexion
+        self._map_url = None
+        self._browser_command = None
+        self.newNaviCell(map_url, browser_command)
         # Remember how many samples and datatables were selected in NaviCell in the heatmap and barplot editors
         self._hsid = 0
         self._hdid = 0
@@ -153,6 +146,42 @@ class NaviCom():
         """
         dTuple = self.getDataTuple(data_name)
         return(self._data[dTuple[0]][dTuple[1]])
+
+    def newNaviCell(self, map_url=None, browser_command=None):
+        """
+        Link a new NaviCell map to the NaviCom object, allow the use of several display function in a row without erasing the previous ones. The new NaviCell map will be the active map, and the other one cannot be recovered.
+
+        Args:
+            map_url (str): URL of the new map, if none specified, 
+        """
+        if (isinstance(map_url, str)):
+            self._map_url = map_url
+        elif (self._map_url):
+            map_url = self._map_url
+        else:
+            raise ValueError("A map url has to be provided")
+        if (isinstance(browser_command, str)):
+            self._browser_command = browser_command
+        elif (self._browser_opened):
+            browser_command = self._browser_command
+        # Build options for the navicell connexion
+        options = Options()
+        options.map_url = map_url
+        idx = options.map_url.find('/navicell/')
+        options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
+        options.browser_command = browser_command
+        self._nv = NaviCell(options)
+
+        # NaviCell export control
+        self._exported_annotations = False
+        self._browser_opened = False
+        self._biotypes = dict()
+        for processing in self._exported_data:
+            if (isinstance(self._exported_data[processing], bool)):
+                self._exported_data[processing] = False
+            else:
+                for method in self._exported_data[processing]:
+                    self._exported_data[processing][method] = False
 
     # Load new data
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", keep_mutations_nan=False):
@@ -440,6 +469,10 @@ class NaviCom():
                 pass # Exported on creation, TODO change for multiple NaviCell
             else:
                 raise KeyError("Method '" + method + "' with processing '" + processing + "' does not exist")
+        # NaviCell connexion
+        self._map_url = None
+        self._browser_command = None
+        self.newNaviCell(map_url, browser_command)
         else:
             raise KeyError("Processing '" + processing + "' does not exist")
 
