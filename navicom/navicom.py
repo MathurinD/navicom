@@ -389,7 +389,7 @@ class NaviCom():
 
         # Calculate average expression for each module
         data = self._data["raw"][method]
-        samples = list(data.samples.keys())
+        samples = list(data._samples.keys())
         module_expression = dict()
         for module in self.modules:
             module_expression[module] = [0 for sample in samples]
@@ -412,9 +412,9 @@ class NaviCom():
 
         # Calculate average module expression for each gene
         gene_module_average = list()
-        for gene in data.genes:
+        for gene in data_.genes:
             if gene in self._associated_modules:
-                gene_module_average.append(np.array([0. for sample in data.samples]))
+                gene_module_average.append(np.array([0. for sample in data._samples]))
                 for module in self._associated_modules[gene]:
                     gene_module_average[-1] += module_expression[module] / len(self._associated_modules[gene])
             else:
@@ -423,7 +423,7 @@ class NaviCom():
 
         # Put the averaging in a NaviData structure
         #self._data["moduleAverage"][method] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples) # Usefull if NaviCell allow modules values one day
-        self._newProcessedData(method, "moduleAverage", NaviData(gene_module_average, list(data.genes), samples))
+        self._newProcessedData(method, "moduleAverage", NaviData(gene_module_average, list(data._genes), samples))
 
     def _pcaComp(self, method, colors=["red", "green", "blue"]):
         """
@@ -906,14 +906,11 @@ class NaviCom():
         for select in selections:
             subName = select.split(":")
             group = subName[0].strip()
-            if (group in self._annotations._annotations):
+            if (group in self._annotations._annotations): # Groups
                 value = subName[1].strip()
                 groups.append(group)
-                try:
-                    values.append(float(value))
-                except ValueError:
-                    values.append(value)
-            elif (not (group in self._annotations._samples or re.match("sub", group) or group == "NaN")):
+                values.append(value)
+            elif (not (group in self._annotations._samples or re.match("sub", group) or group == "NaN")): # Samples
                 if (len(subName) > 1):
                     raise ValueError("Annotation " + group + " does not exist")
                 else:
@@ -1160,7 +1157,7 @@ class NaviCom():
             step = max(-minq/(binsNb/2), maxq/(binsNb/2))
         qseq = np.arange(minq, maxq + step * 1.01, step)
         newData = list()
-        for gene in data.genes:
+        for gene in data._genes:
             newData.append([0 for ii in range(binsNb+1)])
             for value in data[gene]:
                 if (np.isnan(value)):
@@ -1170,7 +1167,7 @@ class NaviCom():
                     while (value > qseq[idx+1]):
                         idx += 1
                     newData[-1][idx] += 1
-        self._newProcessedData( distName, "distribution", NaviData(newData, data.genes, distSamples) )
+        self._newProcessedData( distName, "distribution", NaviData(newData, data._genes, distSamples) )
 
         return(distName, distSamples)
     
