@@ -469,10 +469,6 @@ class NaviCom():
                 pass # Exported on creation, TODO change for multiple NaviCell
             else:
                 raise KeyError("Method '" + method + "' with processing '" + processing + "' does not exist")
-        # NaviCell connexion
-        self._map_url = None
-        self._browser_command = None
-        self.newNaviCell(map_url, browser_command)
         else:
             raise KeyError("Processing '" + processing + "' does not exist")
 
@@ -1060,7 +1056,7 @@ class NaviCom():
                 restrict (list): 
         """
         data_spec = data_spec.upper()
-        assert data_spec in restrict + ["NO", ""], "Invalid biotype " + data_spec
+        assert data_spec in restrict + ["NO", ""], "Invalid biotype: '" + data_spec + "'"
         if (data_spec in ["NO", ""]):
             return ""
         elif (data_spec in MRNA_ALIASES):
@@ -1079,6 +1075,7 @@ class NaviCom():
             datas = self.getProteomicsData(processing)
             if (len(datas) > 0):
                 return datas[0]
+        return ""
 
     def displayMethylome(self, samples="all: 1.0", processing="raw", background="mRNA", methylation="size"):
         """
