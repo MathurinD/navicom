@@ -242,14 +242,14 @@ class NaviAnnotations(NaviData):
             self._samplesPerCategory[annot] = dict()
             reduced = False
             # Reduce the annotations set if they are continuous integers with too many values
-            if (len(np.unique(self[annot].data)) > MAX_GROUPS):
+            if (len(np.unique(self[annot].data)) > 1.5 * MAX_GROUPS):
                 try:
-                    values = [float(value) for value in np.unique(self[annot].data)]
+                    values = [float(value) for value in np.unique(self[annot].data)] # ValueError if not floats
                     # Define the new annotations
                     min_value = min(values)
                     max_value = max(values)
                     step = (max_value-min_value)/MAX_GROUPS
-                    new_values = [signif(cat) for cat in np.arange(min_value, max_value+step/2, 1.01*step)]
+                    new_values = [signif(cat,4) for cat in np.arange(min_value, max_value+step/2, 1.01*step)]
                     new_categories = [str(new_values[icat])+"<X<"+str(new_values[icat+1]) for icat in range(len(new_values)-1)] + ["NaN"]
                     self.categoriesPerAnnotation[annot] = new_categories
                     # Attribute the new annotations to samples
