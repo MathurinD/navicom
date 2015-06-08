@@ -412,7 +412,7 @@ class NaviCom():
 
         # Calculate average module expression for each gene
         gene_module_average = list()
-        for gene in data_.genes:
+        for gene in data._genes:
             if gene in self._associated_modules:
                 gene_module_average.append(np.array([0. for sample in data._samples]))
                 for module in self._associated_modules[gene]:
@@ -1121,7 +1121,7 @@ class NaviCom():
                 if (samples == "quantiles"):
                     distName, distSamples = self._generateDistributionData(dataName, group, binsNb)
                     self._data["distribution"][distName].exportToNaviCell(self._nv, TYPES_BIOTYPE['mRNA'], distName)
-                    self.display([(distName, samplesDisplay)], distSamples, reset=False)
+                    self.display([((distName, "distribution"), samplesDisplay)], distSamples, reset=False)
                 else:
                     self.display([(dataName, samplesDisplay)], [samples], reset=False)
 
@@ -1133,7 +1133,7 @@ class NaviCom():
         if (len(groups) < 1):
             raise ValueError("Cannot generate a distribution without a valid group")
         # Each distribution 
-        distName = "distribution_" + dataName + "_" + re.sub(" ", "_", group) + "_" + str(binsNb)
+        distName = dataName + "_" + re.sub(" ", "_", group) + "_" + str(binsNb)
         distSamples = ["sub" + str(ii) for ii in range(binsNb)] + ["NaN"]
         if (distName in self._data["distribution"]):
             return(distName)
