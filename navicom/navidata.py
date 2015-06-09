@@ -39,7 +39,7 @@ for bt in TYPES_SPEC:
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
 PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "textMutations"]
-PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "textMutations":"Mutations"}
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "textMutations":"Mutations", "distribution":"Continuous Copy number data"}
 DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
 CONTINOUS_BIOTYPES = ["mRNA expression data", "microRNA expression data", "Protein Expression Data", "Continuous copy number data"]
 
@@ -177,7 +177,7 @@ class NaviData():
 
     def exportToNaviCell(self, nv, biotype, dataName):
         """
-        Export data to a NaviCell map
+        Export the datatable to a NaviCell map
         
         Args:
             nv (NaviCell): a NaviCell communication object

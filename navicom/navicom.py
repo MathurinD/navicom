@@ -445,20 +445,15 @@ class NaviCom():
 
         if (processing in self._processings):
             if (method in self._data[processing]):
-                if(method.lower() in METHODS_TYPE):
-                    if (not self._exported_data[processing][method]):
-                        name = self._nameData(method, processing, name)
-                        print("Exporting '" + name + "' to NaviCell...")
-                        # Processing change the type of data, like discrete data into continuous, or anything to color data
-                        biotype = getBiotype(method, processing)
-                        self._nv.importDatatables(self._data[processing][method]._makeData(self._nv.getHugoList()), name, biotype)
-                        self._configureDisplay(method, processing)
-                        self._exported_data[processing][method] = True
-                        done_export = True
-                elif (method in self._data['distribution']):
-                    pass # Avoid bug
-                else:
-                    raise ValueError("Biotype of '" + method + "' is unknown")
+                if (not self._exported_data[processing][method]):
+                    name = self._nameData(method, processing, name)
+                    print("Exporting '" + name + "' to NaviCell...")
+                    # Processing change the type of data, like discrete data into continuous, or anything to color data
+                    biotype = getBiotype(method, processing)
+                    self._nv.importDatatables(self._data[processing][method]._makeData(self._nv.getHugoList()), name, biotype)
+                    self._configureDisplay(method, processing)
+                    self._exported_data[processing][method] = True
+                    done_export = True
             elif (method == "uniform"): # Uniform data for glyphs
                 if (not self._exported_data["uniform"]):
                     print("Exporting 'uniform'  to NaviCell...")
@@ -1120,7 +1115,7 @@ class NaviCom():
             elif (isinstance(samples, str) and samples != ""):
                 if (samples == "quantiles"):
                     distName, distSamples = self._generateDistributionData(dataName, group, binsNb)
-                    self._data["distribution"][distName].exportToNaviCell(self._nv, TYPES_BIOTYPE['mRNA'], distName)
+                    #self._data["distribution"][distName].exportToNaviCell(self._nv, TYPES_BIOTYPE['mRNA'], distName)
                     self.display([((distName, "distribution"), samplesDisplay)], distSamples, reset=False)
                 else:
                     self.display([(dataName, samplesDisplay)], [samples], reset=False)
