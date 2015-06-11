@@ -606,9 +606,11 @@ class NaviCom():
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                         self._nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self._display_config.na_size)
 
-        self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_COLOR)
-        self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_SIZE)
-        self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_SHAPE)
+        for config in [NaviCell.CONFIG_COLOR, NaviCell.CONFIG_SIZE, NaviCell.CONFIG_SHAPE]:
+            self._nv.datatableConfigSwitchSampleTab('', dname, config)
+            self._nv.datatableConfigApply('', dname, config)
+            self._nv.datatableConfigSwitchGroupTab('', dname, config)
+            self._nv.datatableConfigApply('', dname, config)
         
     # Display data
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
@@ -944,6 +946,9 @@ class NaviCom():
         methylation = self.getMethylationData(processing)
         if (len(methylation) > 0):
             disp_selection.append( ((processing, methylation[0]), "barplot") )
+            # TODO when multiple barplots are available
+            #for mdt in methylation:
+                #disp_selection.append( ((processing, mdt), "barplot") )
 
         # Display all the information
         self.display(disp_selection, sample)
