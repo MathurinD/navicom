@@ -15,6 +15,7 @@ VERBOSE_NAVICOM = True
 def getLine(ll, split_char="\t"):
     ll = re.sub('\"', '', ll.strip())
     ll = re.sub('\tNA', '\tNaN', ll) # Python float can convert "NaN" -> nan but not "NA" -> nan
+    ll = re.sub('\tnull', '\tNaN', ll) # Same for null
     ll = ll.split(split_char)
     for ii in range(len(ll)):
         try:
@@ -39,7 +40,7 @@ class NaviCom():
     NaviComm class to handle data and display them in a standardized way on NaviCell maps
     """
 
-    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict="", browser_command="firefox %s", display_config=DisplayConfig()):
+    def __init__(self, map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="", modules_dict="", browser_command="firefox %s", display_config=DisplayConfig(), name="no name"):
         """
         Initialize a Navicell communication object.
         Args:
@@ -48,19 +49,8 @@ class NaviCom():
             modules_dict (str): name of the module definition file (.gmt) to load
             browser_command (str): command to open the browser
         """
-        # Build options for the navicell connexion
-        options = Options()
-        options.map_url = map_url
-        idx = options.map_url.find('/navicell/')
-        options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
-        options.browser_command = browser_command # TODO Add user control
-        self._nv = NaviCell(options)
-        ## Name of the dataset
-        self.name = "no_name" 
-        # NaviCell export control
-        self._exported_annotations = False
-        self._browser_opened = False
-        self._biotypes = dict()
+        # Name of the dataset
+        self.name = name
         # Representation of the data
         self._display_config = display_config
         # Data, indexed by processing then type of data
@@ -82,6 +72,10 @@ class NaviCom():
         if (fname != ""):
             self.loadData(fname)
             self.defineModules(modules_dict)
+        # NaviCell connexion
+        self._map_url = None
+        self._browser_command = None
+        self.newNaviCell(map_url, browser_command)
         # Remember how many samples and datatables were selected in NaviCell in the heatmap and barplot editors
         self._hsid = 0
         self._hdid = 0
@@ -153,6 +147,58 @@ class NaviCom():
         dTuple = self.getDataTuple(data_name)
         return(self._data[dTuple[0]][dTuple[1]])
 
+    def newNaviCell(self, map_url=None, browser_command=None):
+        """
+        Link a new NaviCell map to the NaviCom object, allow the use of several display function in a row without erasing the previous ones. The new NaviCell map will be the active map, and the other one cannot be recovered.
+
+        Args:
+            map_url (str): URL of the new map, if none specified, 
+        """
+        if (isinstance(map_url, str)):
+            self._map_url = map_url
+        elif (self._map_url):
+            map_url = self._map_url
+        else:
+            raise ValueError("A map url has to be provided")
+        if (isinstance(browser_command, str)):
+            self._browser_command = browser_command
+        elif (self._browser_opened):
+            browser_command = self._browser_command
+        # Build options for the navicell connexion
+        options = Options()
+        options.map_url = map_url
+        idx = options.map_url.find('/navicell/')
+        options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
+        options.browser_command = browser_command
+        self._nv = NaviCell(options)
+
+        self._resetExport()
+
+    def _resetExport(self):
+        """ Reset the export status of all table, used when connecting to a new NaviCell instance  """
+        # NaviCell export control
+        self._exported_annotations = False
+        self._browser_opened = False
+        self._biotypes = dict()
+        for processing in self._exported_data:
+            if (isinstance(self._exported_data[processing], bool)):
+                self._exported_data[processing] = False
+            else:
+                for method in self._exported_data[processing]:
+                    self._exported_data[processing][method] = False
+
+    def _attachSession(self, map_url, session_id):
+        """
+            Attach the NaviCom object to a new NaviCell session. Consider that the session is already openend, it is used server side to control the client session.
+
+            Args:
+                map_url (str): URL of the new map.
+                session_id (str): ID of the session to bind to.
+        """
+        self.newNaviCell(map_url)
+        self._nv.attachSession(str(session_id))
+        self._browser_opened = True
+
     # Load new data
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", keep_mutations_nan=False):
         """
@@ -167,9 +213,8 @@ class NaviCom():
             ll = 0
         # Name the dataset according to the filename, and issue a warning if the name changes
         dname = parseFilename(fname)[0]
-        if (dname != self.name and self.name != "no_name"):
-            warn("Name of the dataset " + self.name + " has been changed to " + dname)
-        self.name = dname
+        if (dname == "no_name"):
+            self.name = dname
 
         dataRegex = "^M |^GENE"
         annotRegex = "^ANNOTATIONS|^NAME"
@@ -360,7 +405,7 @@ class NaviCom():
 
         # Calculate average expression for each module
         data = self._data["raw"][method]
-        samples = list(data.samples.keys())
+        samples = list(data._samples.keys())
         module_expression = dict()
         for module in self.modules:
             module_expression[module] = [0 for sample in samples]
@@ -383,9 +428,9 @@ class NaviCom():
 
         # Calculate average module expression for each gene
         gene_module_average = list()
-        for gene in data.genes:
+        for gene in data._genes:
             if gene in self._associated_modules:
-                gene_module_average.append(np.array([0. for sample in data.samples]))
+                gene_module_average.append(np.array([0. for sample in data._samples]))
                 for module in self._associated_modules[gene]:
                     gene_module_average[-1] += module_expression[module] / len(self._associated_modules[gene])
             else:
@@ -394,7 +439,7 @@ class NaviCom():
 
         # Put the averaging in a NaviData structure
         #self._data["moduleAverage"][method] = NaviData(list(module_expression.values()), list(self.modules.keys()), samples) # Usefull if NaviCell allow modules values one day
-        self._newProcessedData(method, "moduleAverage", NaviData(gene_module_average, list(data.genes), samples))
+        self._newProcessedData(method, "moduleAverage", NaviData(gene_module_average, list(data._genes), samples))
 
     def _pcaComp(self, method, colors=["red", "green", "blue"]):
         """
@@ -416,20 +461,15 @@ class NaviCom():
 
         if (processing in self._processings):
             if (method in self._data[processing]):
-                if(method.lower() in METHODS_TYPE):
-                    if (not self._exported_data[processing][method]):
-                        name = self._nameData(method, processing, name)
-                        print("Exporting '" + name + "' to NaviCell...")
-                        # Processing change the type of data, like discrete data into continuous, or anything to color data
-                        biotype = getBiotype(method, processing)
-                        self._nv.importDatatables(self._data[processing][method]._makeData(self._nv.getHugoList()), name, biotype)
-                        self._configureDisplay(method, processing)
-                        self._exported_data[processing][method] = True
-                        done_export = True
-                elif (method in self._data['distribution']):
-                    pass # Avoid bug
-                else:
-                    raise ValueError("Biotype of '" + method + "' is unknown")
+                if (not self._exported_data[processing][method]):
+                    name = self._nameData(method, processing, name)
+                    print("Exporting '" + name + "' to NaviCell...")
+                    # Processing change the type of data, like discrete data into continuous, or anything to color data
+                    biotype = getBiotype(method, processing)
+                    self._nv.importDatatables(self._data[processing][method]._makeData(self._nv.getHugoList()), name, biotype)
+                    self._configureDisplay(method, processing)
+                    self._exported_data[processing][method] = True
+                    done_export = True
             elif (method == "uniform"): # Uniform data for glyphs
                 if (not self._exported_data["uniform"]):
                     print("Exporting 'uniform'  to NaviCell...")
@@ -582,9 +622,11 @@ class NaviCom():
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                         self._nv.datatableConfigSetSizeAt("", dname, NaviCell.CONFIG_SIZE, tab, 0, self._display_config.na_size)
 
-        self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_COLOR)
-        self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_SIZE)
-        self._nv.datatableConfigApply('', dname, NaviCell.CONFIG_SHAPE)
+        for config in [NaviCell.CONFIG_COLOR, NaviCell.CONFIG_SIZE, NaviCell.CONFIG_SHAPE]:
+            self._nv.datatableConfigSwitchSampleTab('', dname, config)
+            self._nv.datatableConfigApply('', dname, config)
+            self._nv.datatableConfigSwitchGroupTab('', dname, config)
+            self._nv.datatableConfigApply('', dname, config)
         
     # Display data
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
@@ -599,7 +641,7 @@ class NaviCom():
         # Correct if the user give a single tuple
         if (isinstance(perform_list, tuple)):
             perform_list = [perform_list]
-        assert isinstance(perform_list, list), "perform list must be a list"
+        assert isinstance(perform_list, list) and len(perform_list)>0, "'perform list' must be a non empty list"
         assert isinstance(perform_list[0], tuple) and (len(perform_list[0]) == 2 or len(perform_list[0]) == 3), "perform list must be a list of (2/3)-tuples"
         self._checkBrowser()
         self.exportAnnotations()
@@ -877,14 +919,11 @@ class NaviCom():
         for select in selections:
             subName = select.split(":")
             group = subName[0].strip()
-            if (group in self._annotations._annotations):
+            if (group in self._annotations._annotations): # Groups
                 value = subName[1].strip()
                 groups.append(group)
-                try:
-                    values.append(float(value))
-                except ValueError:
-                    values.append(value)
-            elif (not (group in self._annotations._samples or re.match("sub", group) or group == "NaN")):
+                values.append(value)
+            elif (not (group in self._annotations._samples or re.match("sub", group) or group == "NaN")): # Samples
                 if (len(subName) > 1):
                     raise ValueError("Annotation " + group + " does not exist")
                 else:
@@ -923,6 +962,9 @@ class NaviCom():
         methylation = self.getMethylationData(processing)
         if (len(methylation) > 0):
             disp_selection.append( ((processing, methylation[0]), "barplot") )
+            # TODO when multiple barplots are available
+            #for mdt in methylation:
+                #disp_selection.append( ((processing, mdt), "barplot") )
 
         # Display all the information
         self.display(disp_selection, sample)
@@ -1027,7 +1069,7 @@ class NaviCom():
                 restrict (list): 
         """
         data_spec = data_spec.upper()
-        assert data_spec in restrict + ["NO", ""], "Invalid biotype " + data_spec
+        assert data_spec in restrict + ["NO", ""], "Invalid biotype: '" + data_spec + "'"
         if (data_spec in ["NO", ""]):
             return ""
         elif (data_spec in MRNA_ALIASES):
@@ -1046,6 +1088,7 @@ class NaviCom():
             datas = self.getProteomicsData(processing)
             if (len(datas) > 0):
                 return datas[0]
+        return ""
 
     def displayMethylome(self, samples="all: 1.0", processing="raw", background="mRNA", methylation="size"):
         """
@@ -1093,8 +1136,8 @@ class NaviCom():
             elif (isinstance(samples, str) and samples != ""):
                 if (samples == "quantiles"):
                     distName, distSamples = self._generateDistributionData(dataName, group, binsNb)
-                    self._data["distribution"][distName].exportToNaviCell(self._nv, TYPES_BIOTYPE['mRNA'], distName)
-                    self.display([(distName, samplesDisplay)], distSamples, reset=False)
+                    #self._data["distribution"][distName].exportToNaviCell(self._nv, TYPES_BIOTYPE['mRNA'], distName)
+                    self.display([((distName, "distribution"), samplesDisplay)], distSamples, reset=False)
                 else:
                     self.display([(dataName, samplesDisplay)], [samples], reset=False)
 
@@ -1106,7 +1149,7 @@ class NaviCom():
         if (len(groups) < 1):
             raise ValueError("Cannot generate a distribution without a valid group")
         # Each distribution 
-        distName = "distribution_" + dataName + "_" + re.sub(" ", "_", group) + "_" + str(binsNb)
+        distName = dataName + "_" + re.sub(" ", "_", group) + "_" + str(binsNb)
         distSamples = ["sub" + str(ii) for ii in range(binsNb)] + ["NaN"]
         if (distName in self._data["distribution"]):
             return(distName)
@@ -1130,7 +1173,7 @@ class NaviCom():
             step = max(-minq/(binsNb/2), maxq/(binsNb/2))
         qseq = np.arange(minq, maxq + step * 1.01, step)
         newData = list()
-        for gene in data.genes:
+        for gene in data._genes:
             newData.append([0 for ii in range(binsNb+1)])
             for value in data[gene]:
                 if (np.isnan(value)):
@@ -1140,7 +1183,7 @@ class NaviCom():
                     while (value > qseq[idx+1]):
                         idx += 1
                     newData[-1][idx] += 1
-        self._newProcessedData( distName, "distribution", NaviData(newData, data.genes, distSamples) )
+        self._newProcessedData( distName, "distribution", NaviData(newData, data._genes, distSamples) )
 
         return(distName, distSamples)
     

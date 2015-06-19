@@ -25,7 +25,7 @@ TYPES_SPEC["mRNA"] = (["mrna", "rna_seq_v2_mrna", "rna_seq_mrna", "rna_seq_rna",
 TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
 TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
-TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics"], "protein level")
+TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics"], "Protein Expression Data")
 TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "microRNA expression data")
 TYPES_SPEC["mutations"] = (["mutations"], "Continuous copy number data")
 #TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
@@ -39,9 +39,9 @@ for bt in TYPES_SPEC:
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
 PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "textMutations"]
-PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "textMutations":"Mutations"}
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "textMutations":"Mutations", "distribution":"Continuous Copy number data"}
 DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
-CONTINOUS_BIOTYPES = ["mRNA expression data", "microRNA expression data", "protein level", "Continuous copy number data"]
+CONTINOUS_BIOTYPES = ["mRNA expression data", "microRNA expression data", "Protein Expression Data", "Continuous copy number data"]
 
 class NaviData():
     """
@@ -177,7 +177,7 @@ class NaviData():
 
     def exportToNaviCell(self, nv, biotype, dataName):
         """
-        Export data to a NaviCell map
+        Export the datatable to a NaviCell map
         
         Args:
             nv (NaviCell): a NaviCell communication object
@@ -242,14 +242,14 @@ class NaviAnnotations(NaviData):
             self._samplesPerCategory[annot] = dict()
             reduced = False
             # Reduce the annotations set if they are continuous integers with too many values
-            if (len(np.unique(self[annot].data)) > MAX_GROUPS):
+            if (len(np.unique(self[annot].data)) > 1.5 * MAX_GROUPS):
                 try:
-                    values = [float(value) for value in np.unique(self[annot].data)]
+                    values = [float(value) for value in np.unique(self[annot].data)] # ValueError if not floats
                     # Define the new annotations
                     min_value = min(values)
                     max_value = max(values)
                     step = (max_value-min_value)/MAX_GROUPS
-                    new_values = [signif(cat) for cat in np.arange(min_value, max_value+step/2, 1.01*step)]
+                    new_values = [signif(cat,4) for cat in np.arange(min_value, max_value+step/2, 1.01*step)]
                     new_categories = [str(new_values[icat])+"<X<"+str(new_values[icat+1]) for icat in range(len(new_values)-1)] + ["NaN"]
                     self.categoriesPerAnnotation[annot] = new_categories
                     # Attribute the new annotations to samples

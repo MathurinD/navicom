@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 #-*-coding:utf-8-*-
+# TODO Test if the code works when non annotations are provided
 import time
 itime = time.time()
 from navicom import *; navicom.DEBUG_NAVICOM = True
@@ -7,6 +8,7 @@ nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/i
 # nc = NaviCom(map_url='https://navicell.curie.fr/navicell/maps/cellcycle/master/index.php', fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", browser_command="chromium-browser --allow-file-access-from-files %s")
 print("NaviCom loading: " + str(time.time() - itime)); itime=time.time()
 nc.displayMutations('TCGA.04.1331.01')
+print("Mutations display " + str(time.time() - itime)); itime=time.time()
 nc.completeDisplay('TCGA.04.1331.01')
 print("Complete display: " + str(time.time() - itime)); itime=time.time()
 
