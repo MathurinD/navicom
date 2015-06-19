@@ -172,6 +172,10 @@ class NaviCom():
         options.browser_command = browser_command
         self._nv = NaviCell(options)
 
+        self._resetExport()
+
+    def _resetExport(self):
+        """ Reset the export status of all table, used when connecting to a new NaviCell instance  """
         # NaviCell export control
         self._exported_annotations = False
         self._browser_opened = False
@@ -182,6 +186,18 @@ class NaviCom():
             else:
                 for method in self._exported_data[processing]:
                     self._exported_data[processing][method] = False
+
+    def _attachSession(self, map_url, session_id):
+        """
+            Attach the NaviCom object to a new NaviCell session. Consider that the session is already openend, it is used server side to control the client session.
+
+            Args:
+                map_url (str): URL of the new map.
+                session_id (str): ID of the session to bind to.
+        """
+        self.newNaviCell(map_url)
+        self._nv.attachSession(str(session_id))
+        self._browser_opened = True
 
     # Load new data
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", keep_mutations_nan=False):
