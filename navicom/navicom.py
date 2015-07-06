@@ -487,6 +487,22 @@ class NaviCom():
         if (not self._exported_data["uniform"]):
             self._exportData("uniform")
 
+    def completeExport(self, with_processings=list()):
+        """
+            Export all data available to NaviCell, and perform the required processings on all those data
+
+            Args:
+                with_processings (list): list of processings to apply to the data before exporting everything (raw data + processed data)
+        """
+        assert isinstance(with_processings, list), "'with_processings' must be a list of processings"
+        for processing in with_processings:
+            if (not processing in PROCESSINGS):
+                raise ValueError("Processing " + processing + " does not exist.")
+
+        for processing in self._data:
+            for method in self._data:
+                self._exportData(method, processing)
+
     def _checkBrowser(self):
         """
         Check if the browser is opened or open it
