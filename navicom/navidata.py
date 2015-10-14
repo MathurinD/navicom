@@ -39,8 +39,8 @@ for bt in TYPES_SPEC:
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
 PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "textMutations"]
-PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "textMutations":"Mutations", "distribution":"Continuous Copy number data"}
-DISCRETE_BIOTYPES = ["Mutations", "Discrete Copy number data"]
+PROCESSINGS_BIOTYPE = {"moduleAverage":"Discrete->Continuous", "pcaComp":"Color", "geoSmooth":"Discrete->Continuous", "textMutations":"Mutations data", "distribution":"Continuous Copy number data"}
+DISCRETE_BIOTYPES = ["Mutations data", "Discrete Copy number data"]
 CONTINOUS_BIOTYPES = ["mRNA expression data", "microRNA expression data", "Protein Expression Data", "Continuous copy number data"]
 
 class NaviData():
