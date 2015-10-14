@@ -500,7 +500,7 @@ class NaviCom():
                 raise ValueError("Processing " + processing + " does not exist.")
 
         for processing in self._data:
-            for method in self._data:
+            for method in self._data[processing]:
                 self._exportData(method, processing)
 
     def _checkBrowser(self):
