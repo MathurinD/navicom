@@ -460,7 +460,13 @@ class NaviCom():
         done_export = False
 
         if (processing in self._processings):
-            if (method in self._data[processing]):
+            if (method == "uniform"): # Uniform data for glyphs
+                if (not self._exported_data["uniform"]):
+                    print("Exporting 'uniform'  to NaviCell...")
+                    self._nv.importDatatables( self._data["uniform"]._makeData(self._nv.getHugoList()), "uniform", getBiotype("uniform") )
+                    done_export = True
+                    self._exported_data["uniform"] = True
+            elif (method in self._data[processing]):
                 if (not self._exported_data[processing][method]):
                     name = self._nameData(method, processing, name)
                     print("Exporting '" + name + "' to NaviCell...")
@@ -470,12 +476,6 @@ class NaviCom():
                     self._configureDisplay(method, processing)
                     self._exported_data[processing][method] = True
                     done_export = True
-            elif (method == "uniform"): # Uniform data for glyphs
-                if (not self._exported_data["uniform"]):
-                    print("Exporting 'uniform'  to NaviCell...")
-                    self._nv.importDatatables( self._data["uniform"]._makeData(self._nv.getHugoList()), "uniform", getBiotype("uniform") )
-                    done_export = True
-                    self._exported_data["uniform"] = True
             elif (method in self._data["distribution"]):
                 pass # Exported on creation, TODO change for multiple NaviCell
             else:
@@ -499,7 +499,7 @@ class NaviCom():
             if (not processing in PROCESSINGS):
                 raise ValueError("Processing " + processing + " does not exist.")
 
-        for processing in self._data:
+        for processing in self._processings:
             for method in self._data[processing]:
                 self._exportData(method, processing)
 
