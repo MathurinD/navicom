@@ -496,7 +496,7 @@ class NaviCom():
                 with_processings (list): list of processings to apply to the data before exporting everything (raw data + processed data)
         """
         assert isinstance(with_processings, list), "'with_processings' must be a list of processings"
-        if (len(processing) > 0):
+        if (len(with_processings) > 0):
             for processing in with_processings:
                 if (not processing in PROCESSINGS):
                     raise ValueError("Processing " + processing + " does not exist.")
