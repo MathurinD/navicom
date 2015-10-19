@@ -496,13 +496,14 @@ class NaviCom():
                 with_processings (list): list of processings to apply to the data before exporting everything (raw data + processed data)
         """
         assert isinstance(with_processings, list), "'with_processings' must be a list of processings"
-        for processing in with_processings:
-            if (not processing in PROCESSINGS):
-                raise ValueError("Processing " + processing + " does not exist.")
-
-        for processing in self._processings:
-            for method in self._data[processing]:
-                self._exportData(method, processing)
+        if (len(processing) > 0):
+            for processing in with_processings:
+                if (not processing in PROCESSINGS):
+                    raise ValueError("Processing " + processing + " does not exist.")
+        else:
+            for processing in self._processings:
+                for method in self._data[processing]:
+                    self._exportData(method, processing)
 
     def _checkBrowser(self):
         """
@@ -984,7 +985,10 @@ class NaviCom():
                 #disp_selection.append( ((processing, mdt), "barplot") )
 
         # Display all the information
-        self.display(disp_selection, sample)
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using completeDisplay")
 
     def getTranscriptomicsData(self, processing="raw"):
         """
@@ -1131,7 +1135,10 @@ class NaviCom():
         if (DEBUG_NAVICOM):
             print(disp_selection)
             print(samples)
-        self.display(disp_selection, samples)
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, samples)
+        else:
+            warn("No valid data for methylome display")
 
     def displayOmics(self, dataName, group="all: 1.0", samplesDisplay="", samples=list(), binsNb=10):
         """
