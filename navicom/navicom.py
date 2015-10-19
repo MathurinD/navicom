@@ -198,15 +198,16 @@ class NaviCom():
         self.newNaviCell(map_url)
         self._nv.attachSession(str(session_id))
         self._browser_opened = True
+        self._resetExport()
 
     # Load new data
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", keep_mutations_nan=False):
         """
-        Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method.
+            Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method.
 
-        Args:
-            fname (str): name of the file from which the data should be loaded
-            keep_mutations_nan(str): whether nan in mutations data should be considered as no mutation (False) or missing value (True)
+            Args:
+                fname (str): name of the file from which the data should be loaded
+                keep_mutations_nan(str): whether nan in mutations data should be considered as no mutation (False) or missing value (True)
         """
         with open(fname) as file_conn:
             ff = file_conn.readlines()
@@ -460,7 +461,13 @@ class NaviCom():
         done_export = False
 
         if (processing in self._processings):
-            if (method in self._data[processing]):
+            if (method == "uniform"): # Uniform data for glyphs
+                if (not self._exported_data["uniform"]):
+                    print("Exporting 'uniform'  to NaviCell...")
+                    self._nv.importDatatables( self._data["uniform"]._makeData(self._nv.getHugoList()), "uniform", getBiotype("uniform") )
+                    done_export = True
+                    self._exported_data["uniform"] = True
+            elif (method in self._data[processing]):
                 if (not self._exported_data[processing][method]):
                     name = self._nameData(method, processing, name)
                     print("Exporting '" + name + "' to NaviCell...")
@@ -470,12 +477,6 @@ class NaviCom():
                     self._configureDisplay(method, processing)
                     self._exported_data[processing][method] = True
                     done_export = True
-            elif (method == "uniform"): # Uniform data for glyphs
-                if (not self._exported_data["uniform"]):
-                    print("Exporting 'uniform'  to NaviCell...")
-                    self._nv.importDatatables( self._data["uniform"]._makeData(self._nv.getHugoList()), "uniform", getBiotype("uniform") )
-                    done_export = True
-                    self._exported_data["uniform"] = True
             elif (method in self._data["distribution"]):
                 pass # Exported on creation, TODO change for multiple NaviCell
             else:
@@ -495,13 +496,14 @@ class NaviCom():
                 with_processings (list): list of processings to apply to the data before exporting everything (raw data + processed data)
         """
         assert isinstance(with_processings, list), "'with_processings' must be a list of processings"
-        for processing in with_processings:
-            if (not processing in PROCESSINGS):
-                raise ValueError("Processing " + processing + " does not exist.")
-
-        for processing in self._data:
-            for method in self._data[processing]:
-                self._exportData(method, processing)
+        if (len(processing) > 0):
+            for processing in with_processings:
+                if (not processing in PROCESSINGS):
+                    raise ValueError("Processing " + processing + " does not exist.")
+        else:
+            for processing in self._processings:
+                for method in self._data[processing]:
+                    self._exportData(method, processing)
 
     def _checkBrowser(self):
         """
@@ -733,7 +735,7 @@ class NaviCom():
                         glyph_setup = [parse_setup[1]]
                 elif (len(parse_setup) != 1):
                     raise ValueError("Glyph specification '" + dmode + "' incorrect")
-                try: # Use the number is specified...
+                try: # Use the number if specified...
                     glyph_number = int(glyph_setup[0][-1])
                     glyph_type = glyph_setup[0][:-1]
                 except ValueError: # ... or use the first free slot for the type selected
@@ -818,7 +820,7 @@ class NaviCom():
         default_samples = self._processSampleSelection(default_samples)
         if (glyph_set):
             for glyph_id in range(MAX_GLYPHS):
-                nsets = sum(1 for cs in GLYPH_TYPES if glyph[cs][glyph_id])
+                nsets = sum(1 for gt in GLYPH_TYPES if glyph[gt][glyph_id])
                 if (nsets > 0):
                     if (sample_for_glyph[glyph_id]):
                         self._nv.glyphEditorSelectSample(module, glyph_id+1, self._processSampleSelection(glyph_samples[glyph_id]))
@@ -983,7 +985,10 @@ class NaviCom():
                 #disp_selection.append( ((processing, mdt), "barplot") )
 
         # Display all the information
-        self.display(disp_selection, sample)
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using completeDisplay")
 
     def getTranscriptomicsData(self, processing="raw"):
         """
@@ -1130,7 +1135,10 @@ class NaviCom():
         if (DEBUG_NAVICOM):
             print(disp_selection)
             print(samples)
-        self.display(disp_selection, samples)
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, samples)
+        else:
+            warn("No valid data for methylome display")
 
     def displayOmics(self, dataName, group="all: 1.0", samplesDisplay="", samples=list(), binsNb=10):
         """
