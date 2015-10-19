@@ -198,15 +198,16 @@ class NaviCom():
         self.newNaviCell(map_url)
         self._nv.attachSession(str(session_id))
         self._browser_opened = True
+        self._resetExport()
 
     # Load new data
     def loadData(self, fname="data/Ovarian_Serous_Cystadenocarcinoma_TCGA_Nature_2011.txt", keep_mutations_nan=False):
         """
-        Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method.
+            Load data from a .txt or .ncc file containing several datas, or from a .tsv, .ncd or .nca file containing data from one method.
 
-        Args:
-            fname (str): name of the file from which the data should be loaded
-            keep_mutations_nan(str): whether nan in mutations data should be considered as no mutation (False) or missing value (True)
+            Args:
+                fname (str): name of the file from which the data should be loaded
+                keep_mutations_nan(str): whether nan in mutations data should be considered as no mutation (False) or missing value (True)
         """
         with open(fname) as file_conn:
             ff = file_conn.readlines()
@@ -733,7 +734,7 @@ class NaviCom():
                         glyph_setup = [parse_setup[1]]
                 elif (len(parse_setup) != 1):
                     raise ValueError("Glyph specification '" + dmode + "' incorrect")
-                try: # Use the number is specified...
+                try: # Use the number if specified...
                     glyph_number = int(glyph_setup[0][-1])
                     glyph_type = glyph_setup[0][:-1]
                 except ValueError: # ... or use the first free slot for the type selected
@@ -818,7 +819,7 @@ class NaviCom():
         default_samples = self._processSampleSelection(default_samples)
         if (glyph_set):
             for glyph_id in range(MAX_GLYPHS):
-                nsets = sum(1 for cs in GLYPH_TYPES if glyph[cs][glyph_id])
+                nsets = sum(1 for gt in GLYPH_TYPES if glyph[gt][glyph_id])
                 if (nsets > 0):
                     if (sample_for_glyph[glyph_id]):
                         self._nv.glyphEditorSelectSample(module, glyph_id+1, self._processSampleSelection(glyph_samples[glyph_id]))
