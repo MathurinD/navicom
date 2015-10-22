@@ -25,7 +25,7 @@ TYPES_SPEC["mRNA"] = (["mrna", "rna_seq_v2_mrna", "rna_seq_mrna", "rna_seq_rna",
 TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
 TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
-TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics"], "Protein Expression Data")
+TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics", "rppa", "rppa_zscores"], "Protein Expression Data")
 TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "microRNA expression data")
 TYPES_SPEC["mutations"] = (["mutations"], "Continuous copy number data")
 #TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
@@ -416,16 +416,20 @@ def getBiotype(method, processing="raw"):
     """
     Get the biotype from the method and the processing
     """
-    if (processing in PROCESSINGS_BIOTYPE):
-        transform_biotype = PROCESSINGS_BIOTYPE[processing]
-        if (re.search('->', transform_biotype)):
-            modes = transform_biotype.split("->")
-            biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[METHODS_TYPE[method.lower()]])
+    try:
+        if (processing in PROCESSINGS_BIOTYPE):
+            transform_biotype = PROCESSINGS_BIOTYPE[processing]
+            if (re.search('->', transform_biotype)):
+                modes = transform_biotype.split("->")
+                biotype = re.sub(modes[0], modes[1], TYPES_BIOTYPE[METHODS_TYPE[method.lower()]])
+            else:
+                biotype = PROCESSINGS_BIOTYPE[processing]
+        elif (method == "uniform"):
+            biotype = "Discrete Copy number data" # TODO Continuous is better for grouping but posses problems with glyphs
         else:
-            biotype = PROCESSINGS_BIOTYPE[processing]
-    elif (method == "uniform"):
-        biotype = "Discrete Copy number data" # TODO Continuous is better for grouping but posses problems with glyphs
-    else:
-        biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
+            biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
+    except:
+        biotype = "unknown"
+        warn("Biotype of " + method.lower() + " is unknown")
     return biotype
 
