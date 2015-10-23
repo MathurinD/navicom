@@ -98,10 +98,10 @@ class NaviCom():
     def __repr__(self):
         rpr = "NaviCom object with " + str(len(self._data)) + " types of data:\n"
         for method in self._data:
-            rpr += method + ": " + self._data[method] + "\n"
+            rpr += method + ": " + str(self._data[method]) + "\n"
         rpr += "and " + str(len(self.moduleAverage)) + " modules average:\n"
         for method in self.moduleAverage:
-            rpr += method + ": " + self.moduleAverage[method] + "\n"
+            rpr += method + ": " + str(self.moduleAverage[method]) + "\n"
         return(repr)
     
     def _nameData(self, method, processing="raw", name=""):
@@ -119,6 +119,8 @@ class NaviCom():
             data_name (str or tuple): Identifier of the data
         """
         dTuple = self.getDataTuple(data_name)
+        if (dTuple[0] == 'uniform'):
+            return('uniform')
         return(self._data_names[dTuple[0]][dTuple[1]])
 
     def getDataTuple(self, data_name):
@@ -126,12 +128,16 @@ class NaviCom():
         Return tuple corresponding to the data name or tuple
         """
         if (isinstance(data_name, str)):
-            if (data_name in self._associated_data):
+            if (data_name == 'uniform'):
+                return(('uniform', 'uniform'))
+            elif (data_name in self._associated_data):
                 return(self._associated_data[data_name])
             elif (data_name + "_raw" in self._associated_data):
                 return(self._associated_data[data_name + "_raw"])
         elif (isinstance(data_name, tuple) and len(data_name) == 2):
-            if (data_name[0] in self._processings):
+            if (data_name[0] == 'uniform' or data_name[1] == 'uniform'):
+                return(('uniform', 'uniform'))
+            elif (data_name[0] in self._processings):
                 return(data_name)
             elif (data_name[1] in self._processings):
                 return((data_name[1],data_name[0]))
@@ -465,6 +471,7 @@ class NaviCom():
                 if (not self._exported_data["uniform"]):
                     print("Exporting 'uniform'  to NaviCell...")
                     self._nv.importDatatables( self._data["uniform"]._makeData(self._nv.getHugoList()), "uniform", getBiotype("uniform") )
+                    self._configureDisplay('uniform')
                     done_export = True
                     self._exported_data["uniform"] = True
             elif (method in self._data[processing]):
@@ -530,9 +537,22 @@ class NaviCom():
         Changes the Color and Size Configuration for the datatable to the one precised by the user.
         """
         dname = self.getDataName((method, processing))
-        dtable = self._data[processing][method].data
-        if (getBiotype(method, processing) in CONTINOUS_BIOTYPES):
+        if (method == "uniform" or processing == "uniform"):
+            # One extra step for uniform data, as grouping does < instead of <=
+            dtable = self._data['uniform'].data
+            print("Configuring display for uniform")
+            color = self._display_config.uniform_color
+            self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, NaviCell.TABNAME_SAMPLES, 0, color)
+            for tab in [NaviCell.TABNAME_GROUPS]:
+                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, 1)
+                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, 0, 1)
+                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, 0, color)
+                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, 1, 2)
+                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, 1, color)
+                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SHAPE, tab, 0, 2)
+        elif (getBiotype(method, processing) in CONTINOUS_BIOTYPES):
             ## Color configuration
+            dtable = self._data[processing][method].data
             print("Configuring display for " + dname)
             step_count = self._display_config.step_count
             for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
@@ -627,6 +647,8 @@ class NaviCom():
                 self._nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, True)
             else:
                 self._nv.datatableConfigSetSampleAbsoluteValue("", dname, NaviCell.CONFIG_COLOR, False)
+        else:
+            dtable = self._data[processing][method].data
 
         ## Size configuration 
         if (dtable.dtype.char == "U"): # String array
