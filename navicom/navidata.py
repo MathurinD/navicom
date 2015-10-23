@@ -429,7 +429,7 @@ def getBiotype(method, processing="raw"):
         else:
             biotype = TYPES_BIOTYPE[METHODS_TYPE[method.lower()]]
     except:
-        biotype = "unknown"
+        biotype = TYPES_BIOTYPE["unknown"]
         warn("Biotype of " + method.lower() + " is unknown")
     return biotype
 
