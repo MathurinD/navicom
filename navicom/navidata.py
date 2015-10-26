@@ -11,6 +11,7 @@ from collections import OrderedDict as oDict
 from pprint import pprint
 import math
 from warnings import warn
+from .displayConfig import *
 
 DEBUG_NAVIDATA = True
 
@@ -21,21 +22,23 @@ GLYPH_TYPES = ["color", "size", "shape"]
 # Also add some generic designations for each type of biological data
 # The first in the list are prefered for display when several are available
 TYPES_SPEC = dict()
-TYPES_SPEC["mRNA"] = (["mrna", "rna_seq_v2_mrna", "rna_seq_mrna", "rna_seq_rna", "zscores", "mrna_median", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_zbynorm", "mrna_outliers", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data")
-TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data")
-TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data")
-TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data")
-TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics", "rppa", "rppa_zscores"], "Protein Expression Data")
-TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "microRNA expression data")
-TYPES_SPEC["mutations"] = (["mutations"], "Continuous copy number data")
+TYPES_SPEC["mRNA"] = (["mrna", "rna_seq_v2_mrna", "rna_seq_mrna", "rna_seq_rna", "zscores", "mrna_median", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_zbynorm", "mrna_outliers", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data", "none")
+TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data", "none")
+TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data", "none")
+TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data", ("ff7000", "diamond"))
+TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics", "rppa", "rppa_zscores"], "Protein Expression Data", ("ffff00", "circle"))
+TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "microRNA expression data", ("8800ff", "hexagon"))
+TYPES_SPEC["mutations"] = (["mutations"], "Continuous copy number data", ("0000ff", "triangle"))
 #TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
-TYPES_SPEC["unknown"] = (["unknown"], "mRNA expression data") # If the type of data cannot be identified, consider continuous data by default
+TYPES_SPEC["unknown"] = (["unknown"], "mRNA expression data", "none") # If the type of data cannot be identified, consider continuous data by default
 METHODS_TYPE = dict()
 TYPES_BIOTYPE = dict()
+TYPE_CONFIG = dict()
 for bt in TYPES_SPEC:
     TYPES_BIOTYPE[bt] = TYPES_SPEC[bt][1]
-    for cat in TYPES_SPEC[bt][0]:
-        METHODS_TYPE[cat.lower()] = bt
+    TYPE_CONFIG[bt] = TYPES_SPEC[bt][2]
+    for method in TYPES_SPEC[bt][0]:
+        METHODS_TYPE[method.lower()] = bt
 
 # Inform what the processing does to the biotype, if -> it changes only some biotypes, if "something" it turns everything to something, see exportData and saveData
 PROCESSINGS = ["raw", "moduleAverage", "pcaComp", "geoSmooth", "distribution", "colors", "textMutations"]
@@ -53,8 +56,9 @@ class NaviData():
         processing (str) : name of the computer processing applied to the data
         method (str) : name of the experimental method used to get the original ("raw") data
         dType (str) : "data" or "annotations", whether the NaviData object contains datas or annotations (Note : this should be left to default, this is used by NaviAnnotations to change some internal variables)
+        display_config (GlyphConfig): An optionnal configuration if those data are to be used as glyphs, to set a constant color and glyph symbol
     """
-    def __init__(self, data, rows_list, columns_list, method="unknown", processing="raw", dType="data"):
+    def __init__(self, data, rows_list, columns_list, method="unknown", processing="raw", dType="data", display_config=""):
         assert(len(data) == len(rows_list))
         for line in data:
             assert len(line) == len(columns_list), "Incorrect length of line : " + str(line) + ", length = " + str(len(line)) + ", expected " + str(len(columns_list))
@@ -94,6 +98,18 @@ class NaviData():
         # For the iterator
         self.itermode = ""
         self.index = 0
+        if (isinstance(display_config, GlyphConfig)):
+            self.display_config = display_config
+        elif (display_config == "gradient"):
+            self.display_config = display_config
+        elif (display_config == ""):
+            config = TYPE_CONFIG[getDataType(method, processing)]
+            if (config == "none"):
+                self.display_config = "gradient"
+            else:
+                self.display_config = GlyphConfig(config[0], config[1]) # Use predefined configs
+        else:
+            raise ValueError("Invalid display configuration: " + display_config)
 
     def __getitem__(self, index):
         if (isinstance(index, int)):
@@ -414,7 +430,7 @@ def signif(x, n=3):
 
 def getBiotype(method, processing="raw"):
     """
-    Get the biotype from the method and the processing
+        Get the biotype from the method and the processing
     """
     try:
         if (processing in PROCESSINGS_BIOTYPE):
@@ -433,3 +449,12 @@ def getBiotype(method, processing="raw"):
         warn("Biotype of " + method.lower() + " is unknown")
     return biotype
 
+def getDataType(method, processing="raw"):
+    """
+        Get the type of data from the method and the processing
+    """
+    try:
+        datatype = METHODS_TYPE[method.lower()]
+    except:
+        datatype = "unknown"
+    return datatype

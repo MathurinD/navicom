@@ -586,6 +586,7 @@ class NaviCom():
                 minval = -1
                 maxval = 1
 
+            # Set the color and size for NA
             if (len(ftable[np.isnan(ftable)]) > 0):
                 navicell_offset = 1 # First value is nan
                 for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
@@ -593,54 +594,72 @@ class NaviCom():
             else:
                 navicell_offset = 0
 
-            if (self._display_config._zero_color != ""):
-                half_count = step_count//2
-                if (half_count != 1):
-                    # Negative values
-                    if (minval >= 0): minval = -1
-                    step = -minval/half_count
-                    values_list = [signif(val) for val in np.arange(minval, step/2, step)][:-1]
-                    for ii in range(half_count):
-                       value = values_list[ii]
-                       color = self._display_config._colors[ii]
-                       for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                           self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
-                           self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
-                    # Zero if present
-                    offset = half_count
-                    if (step_count%2 == 1):
-                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                            self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, 0)
-                            self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, self._display_config._colors[half_count])
-                        offset += 1
-                    # Positive values
-                    if (maxval <= 0): maxval = 1
-                    step = maxval/half_count
-                    values_list = [signif(val) for val in np.arange(0., maxval+step/2, step)][1:]
-                    for ii in range(half_count):
-                        value = values_list[ii]
-                        color = self._display_config._colors[offset + ii]
-                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                            self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, value)
-                            self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, color)
-                else:
-                    if (step_count == 2):
-                        values_list = [minval, maxval]
+            data = self.getData((processing, method))
+            if (data.display_config == "gradient"):
+                if (self._display_config._zero_color != ""):
+                    half_count = step_count//2
+                    if (half_count != 1):
+                        # Negative values
+                        if (minval >= 0): minval = -1
+                        step = -minval/half_count
+                        values_list = [signif(val) for val in np.arange(minval, step/2, step)][:-1]
+                        for ii in range(half_count):
+                           value = values_list[ii]
+                           color = self._display_config._colors[ii]
+                           for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                               self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
+                               self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+                        # Zero if present
+                        offset = half_count
+                        if (step_count%2 == 1):
+                            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, 0)
+                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, self._display_config._colors[half_count])
+                            offset += 1
+                        # Positive values
+                        if (maxval <= 0): maxval = 1
+                        step = maxval/half_count
+                        values_list = [signif(val) for val in np.arange(0., maxval+step/2, step)][1:]
+                        for ii in range(half_count):
+                            value = values_list[ii]
+                            color = self._display_config._colors[offset + ii]
+                            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, value)
+                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, color)
                     else:
-                        values_list = [minval, 0, maxval]
-                    for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                        for ii in range(len(values_list)):
-                            self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, values_list[ii])
-                            self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, self._display_config._colors[ii])
+                        if (step_count == 2):
+                            values_list = [minval, maxval]
+                        else:
+                            values_list = [minval, 0, maxval]
+                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                            for ii in range(len(values_list)):
+                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, values_list[ii])
+                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, self._display_config._colors[ii])
+                else:
+                    for ii in range(step_count):
+                        value = np.percentile(dtable, ii*100/(step_count-1))
+                        if (ii==0): value = minval
+                        elif (ii==(step_count-1)): value = maxval
+                        color = self._display_config._colors[ii]
+                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                            self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
+                            self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
             else:
+                # Use the glyph config to set a uniform color and shape
                 for ii in range(step_count):
                     value = np.percentile(dtable, ii*100/(step_count-1))
                     if (ii==0): value = minval
                     elif (ii==(step_count-1)): value = maxval
-                    color = self._display_config._colors[ii]
+                    color = data.display_config.color
+                    shape = data.display_config.shape
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
                         self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+                        self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SHAPE, tab, navicell_offset + ii, value)
+                        self._nv.datatableConfigSetShapeAt('', dname, NaviCell.CONFIG_SHAPE, tab, navicell_offset + ii, shape)
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    self._nv.datatableConfigSetSizeAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset, data.display_config.min_size)
+
 
             self._nv.datatableConfigSetSampleMethod('', dname, NaviCell.CONFIG_COLOR, NaviCell.METHOD_CONTINUOUS_MEDIAN) # TODO change to MEAN when group mean is corrected to <= instead of <
             if self._display_config.use_absolute_values:
@@ -714,8 +733,8 @@ class NaviCom():
             glyph = dict()
             for gtype in GLYPH_TYPES:
                 glyph[gtype] = [False] * MAX_GLYPHS
-            sample_for_glyph = [False] * MAX_GLYPHS
             glyph_samples = [""] * MAX_GLYPHS
+            glyph_data = [""] * MAX_GLYPHS
             glyph_set = False
             heatmap = False
             barplot = False
@@ -723,7 +742,7 @@ class NaviCom():
             map_staining = False
             default_samples = self._processSampleSelection(default_samples)
             samples = default_samples
-            lastWasDefault = True
+            lastSampleWasDefault = True
             valid_default = (len(default_samples) == 1 and default_samples != "all_groups" and default_samples != "all_samples")
         # Perform the display depending of the selected mode
         for perform in perform_list:
@@ -734,12 +753,12 @@ class NaviCom():
             dmode = dmode.lower()
             # Check groups in NaviCell and get a valid list of samples, reload default if not the last used
             if (perform[2] == ''):
-                if (not lastWasDefault):
+                if (not lastSampleWasDefault):
                     samples = self._processSampleSelection(default_samples)
-                    lastWasDefault = True
+                    lastSampleWasDefault = True
             else:
                 samples = self._processSampleSelection(perform[2])
-                lastWasDefault = False
+                lastSampleWasDefault = False
             if (samples == "all_groups"):
                 all_groups = True
             elif (samples == "all_samples"):
@@ -777,13 +796,14 @@ class NaviCom():
                 if (len(samples) != 1 or samples == "all_groups" or samples == "all_samples"):
                     raise ValueError("Only one group or sample can be used for glyphs")
 
-                if (lastWasDefault):
+                if (lastSampleWasDefault):
                     pass
                 elif (glyph_samples[glyph_id] == ""):
                     glyph_samples[glyph_id] = samples[0]
-                    sample_for_glyph[glyph_id] = True
                 elif (glyph_samples[glyph_id] != samples[0]):
                     raise ValueError("Only one sample can be specified per glyph")
+
+                glyph_data[glyph_id] = data_name
 
                 cmd="self._nv.glyphEditorSelect" + glyph_type.capitalize() + "Datatable('" + module +  "', " + str(glyph_number) + ", '" + data_name + "')"
                 if (DEBUG_NAVICOM):
@@ -844,7 +864,7 @@ class NaviCom():
             for glyph_id in range(MAX_GLYPHS):
                 nsets = sum(1 for gt in GLYPH_TYPES if glyph[gt][glyph_id])
                 if (nsets > 0):
-                    if (sample_for_glyph[glyph_id]):
+                    if (glyph_samples[glyph_id] != ""):
                         self._nv.glyphEditorSelectSample(module, glyph_id+1, self._processSampleSelection(glyph_samples[glyph_id]))
                     elif (valid_default):
                         print("Using default sample for glyph " + str(glyph_id+1))
@@ -852,11 +872,11 @@ class NaviCom():
                     else:
                         raise ValueError("No samples specified for glyph " + str(glyph_id+1) + " and default_samples is invalid")
                     if (not glyph["color"][glyph_id]):
-                        self._nv.glyphEditorSelectColorDatatable(module, glyph_id+1, "uniform")
+                        self._nv.glyphEditorSelectColorDatatable(module, glyph_id+1, glyph_data[glyph_id])
                     if (not glyph["shape"][glyph_id]):
-                       self._nv.glyphEditorSelectShapeDatatable(module, glyph_id+1, "uniform")
+                       self._nv.glyphEditorSelectShapeDatatable(module, glyph_id+1, glyph_data[glyph_id])
                     if (not glyph["size"][glyph_id]):
-                        self._nv.glyphEditorSelectSizeDatatable(module, glyph_id+1, "uniform")
+                        self._nv.glyphEditorSelectSizeDatatable(module, glyph_id+1, glyph_data[glyph_id])
                     self._nv.glyphEditorApply(module, glyph_id+1)
 
     def resetDisplay(self):
