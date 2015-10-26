@@ -557,6 +557,8 @@ class NaviCom():
             step_count = self._display_config.step_count
             for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                 self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step
+                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SHAPE, tab, step_count-1) # NaviCell has one default step
+                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SIZE, tab, step_count-1) # NaviCell has one default step
 
             ftable = dtable.flatten()
             ftable.sort()
@@ -604,11 +606,11 @@ class NaviCom():
                         step = -minval/half_count
                         values_list = [signif(val) for val in np.arange(minval, step/2, step)][:-1]
                         for ii in range(half_count):
-                           value = values_list[ii]
-                           color = self._display_config._colors[ii]
-                           for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                               self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
-                               self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+                            value = values_list[ii]
+                            color = self._display_config._colors[ii]
+                            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
+                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
                         # Zero if present
                         offset = half_count
                         if (step_count%2 == 1):
@@ -648,6 +650,7 @@ class NaviCom():
                 # Use the glyph config to set a uniform color and shape
                 for ii in range(step_count):
                     value = np.percentile(dtable, ii*100/(step_count-1))
+                    if (value == 0): value= 1 / (len(data._columns)+1)
                     if (ii==0): value = minval
                     elif (ii==(step_count-1)): value = maxval
                     color = data.display_config.color
@@ -992,7 +995,7 @@ class NaviCom():
 
     def completeDisplay(self, sample="all: 1.0", processing="raw"):
         """
-            Display as many data as possible on one map. If available draw CNV as map staining, mRNA or protein level as barplot, methylation as glyphs size, and mutations as a blue glyph.
+            Display as many data as possible on one map. If available draw mRNA as map staining, CNA as barplot, and mutations, methylation, proteomics and miRNA as glyphs.
 
             Args:
                 sample (str): The sample or group to display
@@ -1003,7 +1006,14 @@ class NaviCom():
         # TODO put everything as barplots when available in NaviCell
         mrna = self.getTranscriptomicsData(processing)
         if (len(mrna) > 0):
-            disp_selection.append( ((processing, mrna[0]), "size1") )
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        cna = self.getGenomicData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, cna[0]), "barplot") )
+
+        mut = self.getMutationsData(processing)
+        if (len(mut) > 0):
+            disp_selection.append( ((processing, mut[0]), "size1") )
         prot = self.getProteomicsData(processing)
         if (len(prot) > 0):
             disp_selection.append( ((processing, prot[0]), "size2") )
@@ -1011,17 +1021,9 @@ class NaviCom():
         if (len(mirna) > 0):
             disp_selection.append( ((processing, mirna[0]), "size3") )
 
-        cna = self.getGenomicData(processing)
-        if (len(cna) > 0):
-            disp_selection.append( ((processing, cna[0]), "map_staining") )
-
-        mut = self.getMutationsData(processing)
-        if (len(cna) > 0):
-            disp_selection.append( ((processing, mut[0]), "size4") )
-
         methylation = self.getMethylationData(processing)
         if (len(methylation) > 0):
-            disp_selection.append( ((processing, methylation[0]), "barplot") )
+            disp_selection.append( ((processing, methylation[0]), "size4") )
             # TODO when multiple barplots are available
             #for mdt in methylation:
                 #disp_selection.append( ((processing, mdt), "barplot") )
@@ -1278,6 +1280,19 @@ class NaviCom():
             disp_selection.append( ((processing, background), "map_staining", background_sample) )
 
         self.display(disp_selection)
+
+    def displayExpressionWithProteomics(self, sample="all: 1.0"):
+        """
+            Display mRNA expression data with proteomics data as barplot
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        prot = self.getProteomicsData(processing)
+        if (len(prot) > 0):
+            disp_selection.append( ((processing, prot[0]), "barplot") )
 
     def _colorsOverlay(self, red="uniform", green="uniform", blue="uniform", processing=""):
         """
