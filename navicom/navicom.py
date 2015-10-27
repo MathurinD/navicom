@@ -642,6 +642,7 @@ class NaviCom():
                         value = np.percentile(dtable, ii*100/(step_count-1))
                         if (ii==0): value = minval
                         elif (ii==(step_count-1)): value = maxval
+                        if ( np.isnan(value) ): value = maxval
                         color = self._display_config._colors[ii]
                         for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                             self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
@@ -656,6 +657,7 @@ class NaviCom():
                     if (value == 0): # Make sure that sizes different from min_size apply to a value different from 0 (i.e. 0 has min_size)
                         value= v0 / (len(data._columns)+1)
                         v0 += 1.1
+                    elif ( np.isnan(value) ): value = maxval
                     color = data.display_config.color
                     shape = data.display_config.shape
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
