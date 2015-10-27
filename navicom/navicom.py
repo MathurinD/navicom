@@ -213,7 +213,7 @@ class NaviCom():
 
             Args:
                 fname (str): name of the file from which the data should be loaded
-                keep_mutations_nan(str): whether nan in mutations data should be considered as no mutation (False) or missing value (True)
+                keep_mutations_nan (str): whether nan in mutations data should be considered as no mutation (False) or missing value (True)
         """
         with open(fname) as file_conn:
             ff = file_conn.readlines()
@@ -357,11 +357,11 @@ class NaviCom():
                             if (keep_nan):
                                 mutations.data[rr][cc] = np.nan
                             else:
-                                mutations.data[rr][cc] = 0
+                                mutations.data[rr][cc] = 0.
                         elif ( value == "" ):
-                            mutations.data[rr][cc] = 0
+                            mutations.data[rr][cc] = 0.
                         else:
-                            mutations.data[rr][cc] = 1
+                            mutations.data[rr][cc] = 1.
                 self._newProcessedData(method, "textMutations", self._data[processing][method], False)
                 self._data["textMutations"][method].processing = "textMutations"
                 self._newProcessedData(method, "raw", mutations, False)
@@ -556,9 +556,9 @@ class NaviCom():
             print("Configuring display for " + dname)
             step_count = self._display_config.step_count
             for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step
-                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SHAPE, tab, step_count-1) # NaviCell has one default step
-                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SIZE, tab, step_count-1) # NaviCell has one default step
+                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step for Color
+                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SHAPE, tab, step_count) # But not for Shape
+                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SIZE, tab, step_count) # Nor Size
 
             ftable = dtable.flatten()
             ftable.sort()

@@ -69,11 +69,11 @@ class NaviData():
         # Initialise data and indexes
         ## Raw datatable as a numpy array
         self.data = np.array(data)
-        self._rows = listToDictKeys(rows_list)
         ## Names of the rows
+        self._rows = listToDictKeys(rows_list)
         self.rows_names = list(self._rows.keys())
-        self._columns = listToDictKeys(columns_list)
         ## Names of the columns
+        self._columns = listToDictKeys(columns_list)
         self.columns_names = list(self._columns.keys())
         if (dType == "annotations"):
             self.inColumns = "annotations"
@@ -370,9 +370,16 @@ def listToDictKeys(ilist):
     res = oDict()
     ii = 0
     for key in ilist:
-        res[str(key)] = ii
+        res[validateDimNames(str(key))] = ii
         ii += 1
     return(res)
+
+def validateDimNames(dimname):
+    """
+        Make sure the names of the rows and columns are valid to be used as javascript selectors
+    """
+    out = re.sub("#|\.|@|\+", "_", dimname)
+    return( out )
 
 def buildLine(line, sep="\t"):
     ret = ""
