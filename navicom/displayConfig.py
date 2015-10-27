@@ -50,7 +50,7 @@ class DisplayConfig():
     DisplayConfig class to set the color gradients configuration in NaviCell
     """
 
-    def __init__(self, step_count=3, color_gradient=["00FF00", "FF0000"], zero_color="ffffff", na_color="ffffff", uniform_color="0000ff", zero_size=0, na_size=0, use_absolute_values = False, excluded="10%"):
+    def __init__(self, step_count=5, color_gradient=["00FF00", "FF0000"], zero_color="ffffff", na_color="ffffff", uniform_color="0000ff", zero_size=0, na_size=0, use_absolute_values = False, excluded="10%"):
         """
         Initialise a color gradient configuration
         Args:
@@ -109,4 +109,35 @@ class DisplayConfig():
         rpr+= "\tGradient colors: " + str(self._colors) + "\n"
         rpr+= "\tNA color: " + str(self.na_color)
         return(rpr)
+
+SHAPE_ID = dict()
+SHAPE_ID["triangle"] = 0
+SHAPE_ID["square"] = 1
+SHAPE_ID["rectangle"] = 2
+SHAPE_ID["diamond"] = 3
+SHAPE_ID["hexagon"] = 4
+SHAPE_ID["circle"] = 5
+class GlyphConfig():
+    """
+        GlyphConfig class to specify the color and shape configuration of glyphs for continuous data
+    """
+
+    def __init__(self, color="0000ff", shape="triangle", min_size=0, na_size=0):
+        """
+            Initialise a color and a shape for glyph that will be used for all values of a continuous data
+
+            Args:
+                color (str): Color to use for the glyph
+                shape (str): Shape to use for the glyph
+                min_size (int): Size of the glyph for the smallest value
+                na_color (int): Size of the glyph for the NA value
+        """
+        assert isinstance(min_size, int), ValueError("'min_size' must be an integer")
+        assert isinstance(na_size, int), ValueError("'na_size' must be an integer")
+        assert isinstance(color, str), ValueError("'color' must be an string")
+        assert isinstance(shape, str), ValueError("'shape' must be an string")
+        self.min_size = min_size
+        self.na_size = na_size
+        self.color = color
+        self.shape = SHAPE_ID[shape]
 
