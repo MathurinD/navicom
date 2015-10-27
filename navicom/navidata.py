@@ -365,8 +365,6 @@ def listToDictKeys(ilist):
     """
     Convert a list to an ordered dict where each item is a key and gives the id of the item in the list
     """
-    if (isinstance(ilist, dict)):
-        return(oDict(ilist))
     res = oDict()
     ii = 0
     for key in ilist:

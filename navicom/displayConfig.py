@@ -50,7 +50,7 @@ class DisplayConfig():
     DisplayConfig class to set the color gradients configuration in NaviCell
     """
 
-    def __init__(self, step_count=3, color_gradient=["00FF00", "FF0000"], zero_color="ffffff", na_color="ffffff", uniform_color="0000ff", zero_size=0, na_size=0, use_absolute_values = False, excluded="10%"):
+    def __init__(self, step_count=5, color_gradient=["00FF00", "FF0000"], zero_color="ffffff", na_color="ffffff", uniform_color="0000ff", zero_size=0, na_size=0, use_absolute_values = False, excluded="10%"):
         """
         Initialise a color gradient configuration
         Args:
