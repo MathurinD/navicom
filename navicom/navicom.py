@@ -1287,7 +1287,7 @@ class NaviCom():
 
         self.display(disp_selection)
 
-    def displayExpressionWithProteomics(self, sample="all: 1.0"):
+    def displayExpressionWithProteomics(self, sample="all: 1.0", processing="raw"):
         """
             Display mRNA expression data with proteomics data as barplot
         """
@@ -1305,7 +1305,7 @@ class NaviCom():
         else:
             warn("No data to display using displayExpressionWithProteomics")
 
-    def displayExpressionWithmiRNA(self, sample="all: 1.0"):
+    def displayExpressionWithmiRNA(self, sample="all: 1.0", processing="raw"):
         """
             Display mRNA expression data with miRNA as barplot
         """
@@ -1323,7 +1323,7 @@ class NaviCom():
         else:
             warn("No data to display using displayExpressionWithmiRNA")
 
-    def displayExpressionWithMethylation(self, sample="all: 1.0"):
+    def displayExpressionWithMethylation(self, sample="all: 1.0", processing="raw"):
         """
             Display mRNA expression data with Methylation as barplot
         """
