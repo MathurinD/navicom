@@ -20,6 +20,12 @@ def rgbValid(color):
             raise ValueError(str(color) + " is not a valid RGB color (" + str(cc) + " is not an hexadecimal digit)")
     return(color)
 
+def hex2(nb):
+    nb = hex(nb)[2:]
+    if (len(nb) == 1):
+        nb = "0"+nb
+    return(nb)
+
 def getGradient(color0, color1, steps):
     """
     Create a gradient between two colors.
@@ -31,11 +37,6 @@ def getGradient(color0, color1, steps):
         gradient (str): a list of RGB colors (str)
     """
     assert steps >= 2, ValueError("Cannot make a gradient with only one value")
-    def hex2(nb):
-        nb = hex(nb)[2:]
-        if (len(nb) == 1):
-            nb = "0"+nb
-        return(nb)
     c0 = [int(color0[ii:ii+2], 16) for ii in range(0, 6, 2)]
     c1 = [int(color1[ii:ii+2], 16) for ii in range(0, 6, 2)]
     gradient=list()
@@ -44,6 +45,46 @@ def getGradient(color0, color1, steps):
         ccolor = "".join([hex2(el) for el in ccolor])
         gradient.append(ccolor)
     return(gradient)
+
+def numberToColor(color_numbers):
+    """
+        Convert a triplet of base16 int to a color string
+
+        Args:
+            color_numbers (list): 3 base16 integers representing red, green and blue colors
+        Return:
+            color_string (str): A string representing the color
+    """
+    if (isinstance(color_numbers, str)): return(color_numbers)
+    return( "".join([hex2(el) for el in color_numbers]) )
+
+def colorToNumber(color_string):
+    """
+        Convert a color string to a base16 triplet
+
+        Args:
+            color_string (str): A string representing the color
+        Return:
+            color_numbers (list): 3 base16 integers representing red, green and blue colors
+    """
+    if (isinstance(color_string, list)): return(color_string)
+    return( [int(color_string[ii:ii+2], 16) for ii in range(0, 6, 2)] )
+
+def addColors(c0, c1, ratio=0.5):
+    """
+        Mix two colors, like in painting
+
+        Args:
+            c0 (str): The first color
+            c1 (str): The second color
+            ratio (float): Proportion of the first color in the mix
+    """
+    assert ratio >= 0 and ratio <= 1, ValueError("Ratio should be between 0 and 1")
+    c0 = colorToNumber(c0)
+    c1 = colorToNumber(c1)
+    cc = [int(ratio*c0[ii]+(1-ratio)*c1[ii]) for ii in range(3)]
+    return(numberToColor(cc))
+
 
 class DisplayConfig():
     """

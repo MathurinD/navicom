@@ -648,17 +648,22 @@ class NaviCom():
                             self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
                             self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
             else:
-                # Use the glyph config to set a uniform color and shape
-                v0 = 1.
+                # Use the glyph config to set a uniform shape and a color gradient, from a light color to the same color but darker
+                v0 = maxval
+                colors = getGradient(addColors("ffffff", data.display_config.color), data.display_config.color, step_count)
+                prev_value = 0
                 for ii in range(step_count):
                     value = np.percentile(dtable, ii*100/(step_count-1))
                     if (ii==0): value = minval
                     elif (ii==(step_count-1)): value = maxval
                     if (value == 0): # Make sure that sizes different from min_size apply to a value different from 0 (i.e. 0 has min_size)
                         value= v0 / (len(data._columns)+1)
-                        v0 += 1.1
-                    elif ( np.isnan(value) ): value = maxval
-                    color = data.display_config.color
+                        v0 += 1.1 * maxval
+                    elif ( np.isnan(value) ):
+                        value = prev_value + v0 / (len(data._columns)+1)
+                        v0 += 1.1 * maxval
+                    prev_value = value
+                    color = colors[ii]
                     shape = data.display_config.shape
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
@@ -1287,7 +1292,7 @@ class NaviCom():
 
         self.display(disp_selection)
 
-    def displayExpressionWithProteomics(self, sample="all: 1.0"):
+    def displayExpressionWithProteomics(self, sample="all: 1.0", processing="raw"):
         """
             Display mRNA expression data with proteomics data as barplot
         """
@@ -1305,7 +1310,7 @@ class NaviCom():
         else:
             warn("No data to display using displayExpressionWithProteomics")
 
-    def displayExpressionWithmiRNA(self, sample="all: 1.0"):
+    def displayExpressionWithmiRNA(self, sample="all: 1.0", processing="raw"):
         """
             Display mRNA expression data with miRNA as barplot
         """
@@ -1323,7 +1328,7 @@ class NaviCom():
         else:
             warn("No data to display using displayExpressionWithmiRNA")
 
-    def displayExpressionWithMethylation(self, sample="all: 1.0"):
+    def displayExpressionWithMethylation(self, sample="all: 1.0", processing="raw"):
         """
             Display mRNA expression data with Methylation as barplot
         """
