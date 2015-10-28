@@ -648,8 +648,9 @@ class NaviCom():
                             self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
                             self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
             else:
-                # Use the glyph config to set a uniform color and shape
+                # Use the glyph config to set a uniform shape and a color gradient, from a light color to the same color but darker
                 v0 = 1.
+                colors = getGradient(addColors("ffffff", data.display_config.color), data.display_config.color, step_count)
                 for ii in range(step_count):
                     value = np.percentile(dtable, ii*100/(step_count-1))
                     if (ii==0): value = minval
@@ -658,7 +659,7 @@ class NaviCom():
                         value= v0 / (len(data._columns)+1)
                         v0 += 1.1
                     elif ( np.isnan(value) ): value = maxval
-                    color = data.display_config.color
+                    color = colors[ii]
                     shape = data.display_config.shape
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
