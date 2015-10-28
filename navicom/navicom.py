@@ -1013,16 +1013,16 @@ class NaviCom():
         mrna = self.getTranscriptomicsData(processing)
         if (len(mrna) > 0):
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
-        cna = self.getGenomicData(processing)
-        if (len(cna) > 0):
-            disp_selection.append( ((processing, cna[0]), "barplot") )
+        prot = self.getProteomicsData(processing)
+        if (len(prot) > 0):
+            disp_selection.append( ((processing, prot[0]), "barplot") )
 
         mut = self.getMutationsData(processing)
         if (len(mut) > 0):
             disp_selection.append( ((processing, mut[0]), "size1") )
-        prot = self.getProteomicsData(processing)
-        if (len(prot) > 0):
-            disp_selection.append( ((processing, prot[0]), "size2") )
+        cna = self.getGenomicData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, cna[0]), "size2") )
         mirna = self.getmiRNAData(processing)
         if (len(mirna) > 0):
             disp_selection.append( ((processing, mirna[0]), "size3") )
@@ -1299,6 +1299,47 @@ class NaviCom():
         prot = self.getProteomicsData(processing)
         if (len(prot) > 0):
             disp_selection.append( ((processing, prot[0]), "barplot") )
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayExpressionWithProteomics")
+
+    def displayExpressionWithmiRNA(self, sample="all: 1.0"):
+        """
+            Display mRNA expression data with miRNA as barplot
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        mirna = self.getmiRNAData(processing)
+        if (len(mirna) > 0):
+            disp_selection.append( ((processing, mirna[0]), "barplot") )
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayExpressionWithmiRNA")
+
+    def displayExpressionWithMethylation(self, sample="all: 1.0"):
+        """
+            Display mRNA expression data with Methylation as barplot
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        meth = self.getMethylationData(processing)
+        if (len(meth) > 0):
+            disp_selection.append( ((processing, meth[0]), "barplot") )
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayExpressionWithMethylation")
 
     def _colorsOverlay(self, red="uniform", green="uniform", blue="uniform", processing=""):
         """
