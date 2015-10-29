@@ -1056,9 +1056,10 @@ class NaviCom():
         """
         mrna_datas = list()
         lprocessing = [proc.lower() for proc in self._data[processing]]
+        listprocessing = list(self._data[processing].keys())
         for mrna in TYPES_SPEC["mRNA"][0]:
             if (mrna in lprocessing):
-                mrna_datas.append(mrna)
+                mrna_datas.append( listprocessing[lprocessing.index(mrna)] )
         for method in self._data[processing]:
             if (re.search("mrna", method.lower()) and not method.lower() in mrna_datas):
                 mrna_datas.append(method)
@@ -1072,9 +1073,10 @@ class NaviCom():
         """
         mirna_datas = list()
         lprocessing = [proc.lower() for proc in self._data[processing]]
+        listprocessing = list(self._data[processing].keys())
         for mirna in TYPES_SPEC["miRNA"][0]:
             if (mirna in lprocessing):
-                mirna_datas.append(mirna)
+                mirna_datas.append( listprocessing[lprocessing.index(mirna)] )
         for method in self._data[processing]:
             if (re.search("mirna", method.lower()) and not method.lower in mirna_datas):
                 mirna_datas.append(method)
