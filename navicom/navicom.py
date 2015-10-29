@@ -1018,16 +1018,16 @@ class NaviCom():
         mrna = self.getTranscriptomicsData(processing)
         if (len(mrna) > 0):
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
-        prot = self.getProteomicsData(processing)
-        if (len(prot) > 0):
-            disp_selection.append( ((processing, prot[0]), "barplot") )
+        cna = self.getGenomicData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, cna[0]), "barplot") )
 
         mut = self.getMutationsData(processing)
         if (len(mut) > 0):
             disp_selection.append( ((processing, mut[0]), "size1") )
-        cna = self.getGenomicData(processing)
-        if (len(cna) > 0):
-            disp_selection.append( ((processing, cna[0]), "size2") )
+        prot = self.getProteomicsData(processing)
+        if (len(prot) > 0):
+            disp_selection.append( ((processing, prot[0]), "size2") )
         mirna = self.getmiRNAData(processing)
         if (len(mirna) > 0):
             disp_selection.append( ((processing, mirna[0]), "size3") )
@@ -1296,7 +1296,7 @@ class NaviCom():
 
         self.display(disp_selection)
 
-    def displayMutationsWithGenomics(self, sample"all: 1.0", processing="raw"):
+    def displayMutationsWithGenomics(self, sample="all: 1.0", processing="raw"):
         """
             Display mutations as glyphs, with expression as map staining and copy number variations as barplots
         """
