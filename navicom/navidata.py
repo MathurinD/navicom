@@ -22,7 +22,7 @@ GLYPH_TYPES = ["color", "size", "shape"]
 # Also add some generic designations for each type of biological data
 # The first in the list are prefered for display when several are available
 TYPES_SPEC = dict()
-TYPES_SPEC["mRNA"] = (["mrna", "rna_seq_v2_mrna", "rna_seq_mrna", "rna_seq_rna", "zscores", "mrna_median", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_v2_mrna_median_zscores", "mrna_U133", "mrna_U133_zscores", "mrna_zbynorm", "mrna_outliers", "mrna_znormal", "mrna_outlier", "mrna_merged_median_zscores"], "mRNA expression data", "none")
+TYPES_SPEC["mRNA"] = (["mrna_merged_median_zscores", "mrna_U133_zscores", "zscores", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_v2_mrna_median_zscores", "rna_seq_v2_mrna", "rna_seq_mrna", "rna_seq_rna", "mrna_median", "mrna", "mrna_U133", "mrna_zbynorm", "mrna_outliers", "mrna_znormal", "mrna_outlier"], "mRNA expression data", "none")
 TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data", ("ffff00", "circle"))
 TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data", ("ffff00", "circle"))
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data", ("ff7000", "diamond"))
