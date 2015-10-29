@@ -1296,6 +1296,28 @@ class NaviCom():
 
         self.display(disp_selection)
 
+    def displayMutationsWithGenomics(self, sample"all: 1.0", processing="raw"):
+        """
+            Display mutations as glyphs, with expression as map staining and copy number variations as barplots
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        cna = self.getGenomicData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, cna[0]), "barplot") )
+        mut = self.getMutationsData(processing)
+        if (len(mut) > 0):
+            disp_selection.append( ((processing, mut[0]), "size1") )
+
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayMutationsWithGenomics")
+
     def displayExpression(self, sample="all: 1.0", processing="raw"):
         """
             Display mRNA expression data with proteomics data as barplot
@@ -1310,6 +1332,24 @@ class NaviCom():
             self.display(disp_selection, sample)
         else:
             warn("No data to display using displayExpression")
+
+    def displayExpressionWithMutations(self, sample"all: 1.0", processing="raw"):
+        """
+            Display mutations as glyphs, with expression as map staining
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        mut = self.getMutationsData(processing)
+        if (len(mut) > 0):
+            disp_selection.append( ((processing, mut[0]), "size1") )
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayExpressionWithMutations")
 
     def displayExpressionWithCopyNumber(self, sample="all: 1.0", processing="raw"):
         """
