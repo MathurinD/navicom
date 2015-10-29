@@ -1020,7 +1020,7 @@ class NaviCom():
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
         cna = self.getGenomicData(processing)
         if (len(cna) > 0):
-            disp_selection.append( ((processing, cna[0]), "barplot") )
+            disp_selection.append( ((processing, cna[0]), "heatmap") )
 
         mut = self.getMutationsData(processing)
         if (len(mut) > 0):
@@ -1307,7 +1307,7 @@ class NaviCom():
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
         cna = self.getGenomicData(processing)
         if (len(cna) > 0):
-            disp_selection.append( ((processing, cna[0]), "barplot") )
+            disp_selection.append( ((processing, cna[0]), "heatmap") )
         mut = self.getMutationsData(processing)
         if (len(mut) > 0):
             disp_selection.append( ((processing, mut[0]), "size1") )
@@ -1362,7 +1362,7 @@ class NaviCom():
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
         cna = self.getGenomicData(processing)
         if (len(cna) > 0):
-            disp_selection.append( ((processing, cna[0]), "barplot") )
+            disp_selection.append( ((processing, cna[0]), "heatmap") )
 
         if (len(disp_selection) > 0):
             self.display(disp_selection, sample)
