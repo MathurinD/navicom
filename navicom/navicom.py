@@ -1055,8 +1055,9 @@ class NaviCom():
             Returns the names of the mRNA datatables in the dataset
         """
         mrna_datas = list()
+        lprocessing = [proc.lower() for proc in self._data[processing]]
         for mrna in TYPES_SPEC["mRNA"][0]:
-            if (mrna in self._data[processing]):
+            if (mrna in lprocessing):
                 mrna_datas.append(mrna)
         for method in self._data[processing]:
             if (re.search("mrna", method.lower()) and not method.lower() in mrna_datas):
@@ -1070,8 +1071,9 @@ class NaviCom():
             Returns the names of the miRNA datatables in the dataset
         """
         mirna_datas = list()
+        lprocessing = [proc.lower() for proc in self._data[processing]]
         for mirna in TYPES_SPEC["miRNA"][0]:
-            if (mirna in self._data[processing]):
+            if (mirna in lprocessing):
                 mirna_datas.append(mirna)
         for method in self._data[processing]:
             if (re.search("mirna", method.lower()) and not method.lower in mirna_datas):
