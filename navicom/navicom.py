@@ -1296,6 +1296,39 @@ class NaviCom():
 
         self.display(disp_selection)
 
+    def displayExpression(self, sample="all: 1.0", processing="raw"):
+        """
+            Display mRNA expression data with proteomics data as barplot
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayExpression")
+
+    def displayExpressionWithCopyNumber(self, sample="all: 1.0", processing="raw"):
+        """
+            Display mRNA expression data with proteomics data as barplot
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        cna = self.getGenomicData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, cna[0]), "barplot") )
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayExpressionWithCopyNumber")
+
     def displayExpressionWithProteomics(self, sample="all: 1.0", processing="raw"):
         """
             Display mRNA expression data with proteomics data as barplot
