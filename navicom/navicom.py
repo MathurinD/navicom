@@ -704,7 +704,6 @@ class NaviCom():
             self._nv.datatableConfigApply('', dname, config)
             self._nv.datatableConfigSwitchGroupTab('', dname, config)
             self._nv.datatableConfigApply('', dname, config)
-        self._nv.flush()
         
     # Display data
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
@@ -897,6 +896,8 @@ class NaviCom():
                     if (not glyph["size"][glyph_id]):
                         self._nv.glyphEditorSelectSizeDatatable(module, glyph_id+1, glyph_data[glyph_id])
                     self._nv.glyphEditorApply(module, glyph_id+1)
+        
+        self._nv.flush()
 
     def resetDisplay(self):
         """
