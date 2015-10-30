@@ -616,7 +616,7 @@ class NaviCom():
             def setColorConfig(position, value, color):
                 for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                     if (tab == NaviCell.TABNAME_GROUPS):
-                        value = signif(value/10) # Stretch the scale for groups to have clear colors even with averaging
+                        value = signif(value/self._display_config._groups_sharpening) # Stretch the scale for groups to have clear colors even with averaging
                     self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, position, value)
                     self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, position, color)
 
