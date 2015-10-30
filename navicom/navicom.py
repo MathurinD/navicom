@@ -177,6 +177,7 @@ class NaviCom():
         options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
         options.browser_command = browser_command
         self._nv = NaviCell(options)
+        self._nv.setASyncMode(True)
 
         self._resetExport()
 
@@ -700,6 +701,7 @@ class NaviCom():
             self._nv.datatableConfigApply('', dname, config)
             self._nv.datatableConfigSwitchGroupTab('', dname, config)
             self._nv.datatableConfigApply('', dname, config)
+        self._nv.flush()
         
     # Display data
     def display(self, perform_list, default_samples="all: 1.0", colors="", module='', reset=True):
@@ -1333,7 +1335,7 @@ class NaviCom():
         else:
             warn("No data to display using displayExpression")
 
-    def displayExpressionWithMutations(self, sample"all: 1.0", processing="raw"):
+    def displayExpressionWithMutations(self, sample="all: 1.0", processing="raw"):
         """
             Display mutations as glyphs, with expression as map staining
         """
