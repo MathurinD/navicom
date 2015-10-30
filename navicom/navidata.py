@@ -23,10 +23,10 @@ GLYPH_TYPES = ["color", "size", "shape"]
 # The first in the list are prefered for display when several are available
 TYPES_SPEC = dict()
 TYPES_SPEC["mRNA"] = (["mrna_merged_median_zscores", "mrna_U133_zscores", "zscores", "mrna_median_zscores", "rna_seq_mrna_median_zscores", "rna_seq_v2_mrna_median_zscores", "rna_seq_v2_mrna", "rna_seq_mrna", "rna_seq_rna", "mrna_median", "mrna", "mrna_U133", "mrna_zbynorm", "mrna_outliers", "mrna_znormal", "mrna_outlier"], "mRNA expression data", "none")
-TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data", ("ffff00", "circle"))
-TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data", ("ffff00", "circle"))
+TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data", "none")
+TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data", "none")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data", ("ff7000", "diamond"))
-TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics", "rppa", "rppa_zscores"], "Protein Expression Data", "none")
+TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics", "rppa", "rppa_zscores"], "Protein Expression Data", ("ffff00", "circle"))
 TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "microRNA expression data", ("8800ff", "hexagon"))
 TYPES_SPEC["mutations"] = (["mutations"], "Continuous copy number data", ("0000ff", "triangle"))
 #TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
@@ -132,14 +132,14 @@ class NaviData():
                 for gene in self._rows:
                     if (not gene in index):
                         genes.pop(gene)
-                return( NaviData(result, genes, self._columns) )
+                return( NaviData(result, genes, self._columns, self.method, self.processing, self.dType, self.display_config) )
             elif (index[0] in self._columns):
                 assert np.all([idx in self._columns for idx in index]), "Not all index are sample names"
                 samples = self._columns.copy()
                 for sample in self._columns:
                     if(not sample in index):
                         samples.pop(sample)
-                return( NaviData(result.transpose(), self._rows, samples) )
+                return( NaviData(result.transpose(), self._rows, samples, self.method, self.processing, self.dType, self.display_config) )
 
     def __iter__(self, by="genes"):
         if (not by in ["genes", "samples"]):

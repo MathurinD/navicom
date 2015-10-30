@@ -180,5 +180,9 @@ class GlyphConfig():
         self.min_size = min_size
         self.na_size = na_size
         self.color = color
-        self.shape = SHAPE_ID[shape]
+        if (shape in SHAPE_ID):
+            self.shape = SHAPE_ID[shape]
+        else:
+            warn("'" + shape + "' is not a valid shape")
+            self.shape = 0
 

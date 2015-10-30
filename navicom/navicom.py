@@ -80,6 +80,9 @@ class NaviCom():
         self._hsid = 0
         self._hdid = 0
         self._bid = 0
+        # List of genes from the NaviCell map
+        self._map_hugos = list()
+        self._uptodate_hugos = False
 
     def listData(self):
         print("Data available :")
@@ -143,7 +146,7 @@ class NaviCom():
                 return((data_name[1],data_name[0]))
         raise ValueError("Invalid name or tuple for data: " + str(data_name))
 
-    def getData(self, data_name):
+    def getData(self, data_name, genes_subset=[]):
         """
         Return the NaviData entity corresponding to the data name or tuple
 
@@ -151,7 +154,15 @@ class NaviCom():
             data_name (str or tuple): Identifier of the data
         """
         dTuple = self.getDataTuple(data_name)
-        return(self._data[dTuple[0]][dTuple[1]])
+        if (genes_subset == []):
+            return(self._data[dTuple[0]][dTuple[1]])
+        else:
+            valid_genes = list()
+            dd = self._data[dTuple[0]][dTuple[1]]
+            for gene in genes_subset:
+                if (gene in dd.genes_names):
+                    valid_genes.append(gene)
+            return(dd[valid_genes])
 
     def newNaviCell(self, map_url=None, browser_command=None):
         """
@@ -168,7 +179,7 @@ class NaviCom():
             raise ValueError("A map url has to be provided")
         if (isinstance(browser_command, str)):
             self._browser_command = browser_command
-        elif (self._browser_opened):
+        elif (self._browser_command):
             browser_command = self._browser_command
         # Build options for the navicell connexion
         options = Options()
@@ -177,6 +188,7 @@ class NaviCom():
         options.proxy_url = options.map_url[0:idx] + '/cgi-bin/nv_proxy.php'
         options.browser_command = browser_command
         self._nv = NaviCell(options)
+        self._nv.setASyncMode(True)
 
         self._resetExport()
 
@@ -192,6 +204,8 @@ class NaviCom():
             else:
                 for method in self._exported_data[processing]:
                     self._exported_data[processing][method] = False
+        # NaviCell import control
+        self._uptodate_hugos = False
 
     def _attachSession(self, map_url, session_id):
         """
@@ -520,6 +534,9 @@ class NaviCom():
             print("Launching browser...")
             self._nv.launchBrowser()
             self._browser_opened = True
+        if (not self._uptodate_hugos):
+            self._map_hugos = self._nv.getHugoList()
+            self._uptodate_hugos = True
         return(self._browser_opened)
 
     def exportAnnotations(self):
@@ -552,7 +569,7 @@ class NaviCom():
                 self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SHAPE, tab, 0, 2)
         elif (getBiotype(method, processing) in CONTINOUS_BIOTYPES):
             ## Color configuration
-            dtable = self._data[processing][method].data
+            dtable = self.getData((method, processing), self._map_hugos).data
             print("Configuring display for " + dname)
             step_count = self._display_config.step_count
             for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
@@ -596,7 +613,14 @@ class NaviCom():
             else:
                 navicell_offset = 0
 
-            data = self.getData((processing, method))
+            def setColorConfig(position, value, color):
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    if (tab == NaviCell.TABNAME_GROUPS):
+                        value = signif(value/10) # Stretch the scale for groups to have clear colors even with averaging
+                    self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, position, value)
+                    self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, position, color)
+
+            data = self.getData((processing, method), self._map_hugos)
             if (data.display_config == "gradient"):
                 if (self._display_config._zero_color != ""):
                     half_count = step_count//2
@@ -608,15 +632,11 @@ class NaviCom():
                         for ii in range(half_count):
                             value = values_list[ii]
                             color = self._display_config._colors[ii]
-                            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
-                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+                            setColorConfig(navicell_offset + ii, value, color)
                         # Zero if present
                         offset = half_count
                         if (step_count%2 == 1):
-                            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, 0)
-                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, self._display_config._colors[half_count])
+                            setColorConfig(navicell_offset + offset, 0, self._display_config._colors[half_count])
                             offset += 1
                         # Positive values
                         if (maxval <= 0): maxval = 1
@@ -625,18 +645,14 @@ class NaviCom():
                         for ii in range(half_count):
                             value = values_list[ii]
                             color = self._display_config._colors[offset + ii]
-                            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, value)
-                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, color)
+                            setColorConfig(navicell_offset + offset + ii, value, color)
                     else:
                         if (step_count == 2):
                             values_list = [minval, maxval]
                         else:
                             values_list = [minval, 0, maxval]
-                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                            for ii in range(len(values_list)):
-                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, values_list[ii])
-                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, self._display_config._colors[ii])
+                        for ii in range(len(values_list)):
+                            setColorConfig(navicell_offset + ii, values_list[ii], self._display_config._colors[ii])
                 else:
                     for ii in range(step_count):
                         value = np.percentile(dtable, ii*100/(step_count-1))
@@ -644,14 +660,13 @@ class NaviCom():
                         elif (ii==(step_count-1)): value = maxval
                         if ( np.isnan(value) ): value = maxval
                         color = self._display_config._colors[ii]
-                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                            self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
-                            self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+                        setColorConfig(navicell_offset + ii, value, color)
             else:
                 # Use the glyph config to set a uniform shape and a color gradient, from a light color to the same color but darker
                 v0 = maxval
                 colors = getGradient(addColors("ffffff", data.display_config.color), data.display_config.color, step_count)
                 prev_value = 0
+                size = data.display_config.min_size
                 for ii in range(step_count):
                     value = np.percentile(dtable, ii*100/(step_count-1))
                     if (ii==0): value = minval
@@ -665,12 +680,14 @@ class NaviCom():
                     prev_value = value
                     color = colors[ii]
                     shape = data.display_config.shape
+                    size = size + 2
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
                         self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SHAPE, tab, navicell_offset + ii, value)
                         self._nv.datatableConfigSetShapeAt('', dname, NaviCell.CONFIG_SHAPE, tab, navicell_offset + ii, shape)
-                        self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset + ii, value) # Leave default size but change values
+                        self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset + ii, value)
+                        self._nv.datatableConfigSetSizeAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset + ii, size)
                 for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                     self._nv.datatableConfigSetSizeAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset, data.display_config.min_size)
 
@@ -892,6 +909,8 @@ class NaviCom():
                     if (not glyph["size"][glyph_id]):
                         self._nv.glyphEditorSelectSizeDatatable(module, glyph_id+1, glyph_data[glyph_id])
                     self._nv.glyphEditorApply(module, glyph_id+1)
+        
+        self._nv.flush()
 
     def resetDisplay(self):
         """
@@ -1018,16 +1037,16 @@ class NaviCom():
         mrna = self.getTranscriptomicsData(processing)
         if (len(mrna) > 0):
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
-        prot = self.getProteomicsData(processing)
-        if (len(prot) > 0):
-            disp_selection.append( ((processing, prot[0]), "barplot") )
+        cna = self.getGenomicData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, cna[0]), "heatmap") )
 
         mut = self.getMutationsData(processing)
         if (len(mut) > 0):
             disp_selection.append( ((processing, mut[0]), "size1") )
-        cna = self.getGenomicData(processing)
-        if (len(cna) > 0):
-            disp_selection.append( ((processing, cna[0]), "size2") )
+        prot = self.getProteomicsData(processing)
+        if (len(prot) > 0):
+            disp_selection.append( ((processing, prot[0]), "size2") )
         mirna = self.getmiRNAData(processing)
         if (len(mirna) > 0):
             disp_selection.append( ((processing, mirna[0]), "size3") )
@@ -1056,9 +1075,10 @@ class NaviCom():
         """
         mrna_datas = list()
         lprocessing = [proc.lower() for proc in self._data[processing]]
+        listprocessing = list(self._data[processing].keys())
         for mrna in TYPES_SPEC["mRNA"][0]:
             if (mrna in lprocessing):
-                mrna_datas.append(mrna)
+                mrna_datas.append( listprocessing[lprocessing.index(mrna)] )
         for method in self._data[processing]:
             if (re.search("mrna", method.lower()) and not method.lower() in mrna_datas):
                 mrna_datas.append(method)
@@ -1072,9 +1092,10 @@ class NaviCom():
         """
         mirna_datas = list()
         lprocessing = [proc.lower() for proc in self._data[processing]]
+        listprocessing = list(self._data[processing].keys())
         for mirna in TYPES_SPEC["miRNA"][0]:
             if (mirna in lprocessing):
-                mirna_datas.append(mirna)
+                mirna_datas.append( listprocessing[lprocessing.index(mirna)] )
         for method in self._data[processing]:
             if (re.search("mirna", method.lower()) and not method.lower in mirna_datas):
                 mirna_datas.append(method)
@@ -1293,6 +1314,79 @@ class NaviCom():
             disp_selection.append( ((processing, background), "map_staining", background_sample) )
 
         self.display(disp_selection)
+
+    def displayMutationsWithGenomics(self, sample="all: 1.0", processing="raw"):
+        """
+            Display mutations as glyphs, with expression as map staining and copy number variations as barplots
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        cna = self.getGenomicData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, cna[0]), "heatmap") )
+        mut = self.getMutationsData(processing)
+        if (len(mut) > 0):
+            disp_selection.append( ((processing, mut[0]), "size1") )
+
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayMutationsWithGenomics")
+
+    def displayExpression(self, sample="all: 1.0", processing="raw"):
+        """
+            Display mRNA expression data with proteomics data as barplot
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayExpression")
+
+    def displayExpressionWithMutations(self, sample="all: 1.0", processing="raw"):
+        """
+            Display mutations as glyphs, with expression as map staining
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        mut = self.getMutationsData(processing)
+        if (len(mut) > 0):
+            disp_selection.append( ((processing, mut[0]), "size1") )
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayExpressionWithMutations")
+
+    def displayExpressionWithCopyNumber(self, sample="all: 1.0", processing="raw"):
+        """
+            Display mRNA expression data with proteomics data as barplot
+        """
+        disp_selection = []
+
+        mrna = self.getTranscriptomicsData(processing)
+        if (len(mrna) > 0):
+            disp_selection.append( ((processing, mrna[0]), "map_staining") )
+        cna = self.getGenomicData(processing)
+        if (len(cna) > 0):
+            disp_selection.append( ((processing, cna[0]), "heatmap") )
+
+        if (len(disp_selection) > 0):
+            self.display(disp_selection, sample)
+        else:
+            warn("No data to display using displayExpressionWithCopyNumber")
 
     def displayExpressionWithProteomics(self, sample="all: 1.0", processing="raw"):
         """
