@@ -613,6 +613,13 @@ class NaviCom():
             else:
                 navicell_offset = 0
 
+            def setColorConfig(position, value, color):
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    if (tab == NaviCell.TABNAME_GROUPS):
+                        value = signif(value/10) # Stretch the scale for groups to have clear colors even with averaging
+                    self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, position, value)
+                    self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, position, color)
+
             data = self.getData((processing, method), self._map_hugos)
             if (data.display_config == "gradient"):
                 if (self._display_config._zero_color != ""):
@@ -625,15 +632,11 @@ class NaviCom():
                         for ii in range(half_count):
                             value = values_list[ii]
                             color = self._display_config._colors[ii]
-                            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
-                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+                            setColorConfig(navicell_offset + ii, value, color)
                         # Zero if present
                         offset = half_count
                         if (step_count%2 == 1):
-                            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, 0)
-                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, offset + navicell_offset, self._display_config._colors[half_count])
+                            setColorConfig(navicell_offset + offset, 0, self._display_config._colors[half_count])
                             offset += 1
                         # Positive values
                         if (maxval <= 0): maxval = 1
@@ -642,18 +645,14 @@ class NaviCom():
                         for ii in range(half_count):
                             value = values_list[ii]
                             color = self._display_config._colors[offset + ii]
-                            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, value)
-                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + offset + ii, color)
+                            setColorConfig(navicell_offset + offset + ii, value, color)
                     else:
                         if (step_count == 2):
                             values_list = [minval, maxval]
                         else:
                             values_list = [minval, 0, maxval]
-                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                            for ii in range(len(values_list)):
-                                self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, values_list[ii])
-                                self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, self._display_config._colors[ii])
+                        for ii in range(len(values_list)):
+                            setColorConfig(navicell_offset + ii, values_list[ii], self._display_config._colors[ii])
                 else:
                     for ii in range(step_count):
                         value = np.percentile(dtable, ii*100/(step_count-1))
@@ -661,9 +660,7 @@ class NaviCom():
                         elif (ii==(step_count-1)): value = maxval
                         if ( np.isnan(value) ): value = maxval
                         color = self._display_config._colors[ii]
-                        for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                            self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
-                            self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
+                        setColorConfig(navicell_offset + ii, value, color)
             else:
                 # Use the glyph config to set a uniform shape and a color gradient, from a light color to the same color but darker
                 v0 = maxval
