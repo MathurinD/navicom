@@ -653,6 +653,7 @@ class NaviCom():
                 v0 = maxval
                 colors = getGradient(addColors("ffffff", data.display_config.color), data.display_config.color, step_count)
                 prev_value = 0
+                size = data.display_config.min_size
                 for ii in range(step_count):
                     value = np.percentile(dtable, ii*100/(step_count-1))
                     if (ii==0): value = minval
@@ -666,12 +667,14 @@ class NaviCom():
                     prev_value = value
                     color = colors[ii]
                     shape = data.display_config.shape
+                    size = size + 2
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
                         self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SHAPE, tab, navicell_offset + ii, value)
                         self._nv.datatableConfigSetShapeAt('', dname, NaviCell.CONFIG_SHAPE, tab, navicell_offset + ii, shape)
-                        self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset + ii, value) # Leave default size but change values
+                        self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset + ii, value)
+                        self._nv.datatableConfigSetSizeAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset + ii, size)
                 for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                     self._nv.datatableConfigSetSizeAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset, data.display_config.min_size)
 
