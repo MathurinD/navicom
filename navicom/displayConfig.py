@@ -98,7 +98,9 @@ class DisplayConfig():
             step_count (int): number of steps for the color gradients. A step for NAs is automatically attributed.
             color_gradient (list): a list of colors of length 2 or step_count. If length 2 a gradient is built, if the length is step_count the list is used for the colors.
             zero_color (str): an hexadecimal string for the color of the zero, only visible if step_count is odd
-            exclude (str or float): percentage of values to exclude for the color gradient, usefull to avoid a distortion of the colorscale by the extreme values. If str, must match '\d\d?%'.
+            zero_size (int): size of the glyphs for values close to 0
+            excluded (str or float): percentage of values to exclude for the color gradient, usefull to avoid a distortion of the colorscale by the extreme values. If str, must match '\d\d?%'.
+            groups_sharpening (int or float): intensity of shrinkage of the color scales for groups compared to samples
         """
         assert isinstance(step_count, int), ValueError("'step_count' must be an integer")
         assert isinstance(color_gradient, list) and len(color_gradient)>=2, ValueError("'color_gradient' must be list of 2 or more elements")

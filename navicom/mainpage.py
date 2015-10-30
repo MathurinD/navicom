@@ -47,5 +47,14 @@ Each datatable is identified by its method, which is the biological or computati
 The \ref navicom::navicom::NaviCom "NaviCom" class provides several method to display the data in NaviCell:
     \li \b display Generic display function to perform any kind of personnalised display
     \li \b displayOmics Display -omics data as map staining with extra information or data on using the other display modes
+    \li \b completeDisplay Display all types of data available using map staining for expression, heatmap for copy number and glyph size for the others
+    \li \b displayMutations Display mutations data as glyphs
+    \li \b displayMutationsWithGenomics Display expression data as map staining, copy number as heatmaps and mutations as glyphs
+    \li \b displayExpression Display expession data as map staining
+    \li \b displayExpressionWithMutations Display expession data as map staining and mutations as glyphs
+    \li \b displayExpressionWithCopyNumber Display expession data as map staining and copy number as heatmap
+    \li \b displayExpressionWithProteomics Display expession data as map staining and proteomics levels as barplot
+    \li \b displayExpressionWithMethylation Display expession data as map staining and methylation levels as barplot
+    \li \b displayExpressionWithmiRNA Display expession data as map staining and miRNA levels as barplot
 
 """
