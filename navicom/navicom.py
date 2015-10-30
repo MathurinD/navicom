@@ -80,6 +80,9 @@ class NaviCom():
         self._hsid = 0
         self._hdid = 0
         self._bid = 0
+        # List of genes from the NaviCell map
+        self._map_hugos = list()
+        self._uptodate_hugos = False
 
     def listData(self):
         print("Data available :")
@@ -143,7 +146,7 @@ class NaviCom():
                 return((data_name[1],data_name[0]))
         raise ValueError("Invalid name or tuple for data: " + str(data_name))
 
-    def getData(self, data_name):
+    def getData(self, data_name, genes_subset=[]):
         """
         Return the NaviData entity corresponding to the data name or tuple
 
@@ -151,7 +154,15 @@ class NaviCom():
             data_name (str or tuple): Identifier of the data
         """
         dTuple = self.getDataTuple(data_name)
-        return(self._data[dTuple[0]][dTuple[1]])
+        if (genes_subset == []):
+            return(self._data[dTuple[0]][dTuple[1]])
+        else:
+            valid_genes = list()
+            dd = self._data[dTuple[0]][dTuple[1]]
+            for gene in genes_subset:
+                if (gene in dd.genes_names):
+                    valid_genes.append(gene)
+            return(dd[valid_genes])
 
     def newNaviCell(self, map_url=None, browser_command=None):
         """
@@ -168,7 +179,7 @@ class NaviCom():
             raise ValueError("A map url has to be provided")
         if (isinstance(browser_command, str)):
             self._browser_command = browser_command
-        elif (self._browser_opened):
+        elif (self._browser_command):
             browser_command = self._browser_command
         # Build options for the navicell connexion
         options = Options()
@@ -193,6 +204,8 @@ class NaviCom():
             else:
                 for method in self._exported_data[processing]:
                     self._exported_data[processing][method] = False
+        # NaviCell import control
+        self._uptodate_hugos = False
 
     def _attachSession(self, map_url, session_id):
         """
@@ -521,6 +534,9 @@ class NaviCom():
             print("Launching browser...")
             self._nv.launchBrowser()
             self._browser_opened = True
+        if (not self._uptodate_hugos):
+            self._map_hugos = self._nv.getHugoList()
+            self._uptodate_hugos = True
         return(self._browser_opened)
 
     def exportAnnotations(self):
@@ -553,7 +569,7 @@ class NaviCom():
                 self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SHAPE, tab, 0, 2)
         elif (getBiotype(method, processing) in CONTINOUS_BIOTYPES):
             ## Color configuration
-            dtable = self._data[processing][method].data
+            dtable = self.getData((method, processing), self._map_hugos).data
             print("Configuring display for " + dname)
             step_count = self._display_config.step_count
             for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
@@ -597,7 +613,7 @@ class NaviCom():
             else:
                 navicell_offset = 0
 
-            data = self.getData((processing, method))
+            data = self.getData((processing, method), self._map_hugos)
             if (data.display_config == "gradient"):
                 if (self._display_config._zero_color != ""):
                     half_count = step_count//2

@@ -132,14 +132,14 @@ class NaviData():
                 for gene in self._rows:
                     if (not gene in index):
                         genes.pop(gene)
-                return( NaviData(result, genes, self._columns) )
+                return( NaviData(result, genes, self._columns, self.method, self.processing, self.dType, self.display_config) )
             elif (index[0] in self._columns):
                 assert np.all([idx in self._columns for idx in index]), "Not all index are sample names"
                 samples = self._columns.copy()
                 for sample in self._columns:
                     if(not sample in index):
                         samples.pop(sample)
-                return( NaviData(result.transpose(), self._rows, samples) )
+                return( NaviData(result.transpose(), self._rows, samples, self.method, self.processing, self.dType, self.display_config) )
 
     def __iter__(self, by="genes"):
         if (not by in ["genes", "samples"]):
