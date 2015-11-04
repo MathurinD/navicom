@@ -664,7 +664,7 @@ class NaviCom():
             else:
                 # Use the glyph config to set a uniform shape and a color gradient, from a light color to the same color but darker
                 v0 = maxval
-                colors = getGradient(addColors("ffffff", data.display_config.color), data.display_config.color, step_count)
+                colors = [data.display_config.color for ii in range(step_count)]
                 prev_value = 0
                 size = data.display_config.min_size
                 for ii in range(step_count):
