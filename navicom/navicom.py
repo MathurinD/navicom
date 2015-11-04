@@ -584,14 +584,20 @@ class NaviCom():
             if (len(ptable) > 0):
                 keep = math.floor( (1 - self._display_config._excluded) * len(ptable) )
                 ptable = ptable[:keep]
-                maxval = ptable[-1]
+                if (len(ptable) > 0):
+                    maxval = ptable[-1]
+                else:
+                    maxval = np.nanmax(ftable)
             else:
                 maxval = np.nanmax(ftable)
             ntable = ftable[ftable < 0]
             if (len(ntable) > 0):
                 keep = math.ceil( self._display_config._excluded * len(ptable) )
                 ntable = ntable[keep:]
-                minval = ntable[0]
+                if (len(ntable) > 0):
+                    minval = ntable[0]
+                else:
+                    minval = np.nanmin(ftable)
             else:
                 minval = np.nanmin(ftable)
             # Use the same scales for positive and negative values, choose the smallest to enhance contrast
@@ -622,6 +628,10 @@ class NaviCom():
 
             data = self.getData((processing, method), self._map_hugos)
             if (data.display_config == "gradient"):
+                if (maxval < 0):
+                    maxval = 1
+                elif (minval > 0):
+                    minval = -1
                 if (self._display_config._zero_color != ""):
                     half_count = step_count//2
                     if (half_count != 1):
