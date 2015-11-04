@@ -584,14 +584,20 @@ class NaviCom():
             if (len(ptable) > 0):
                 keep = math.floor( (1 - self._display_config._excluded) * len(ptable) )
                 ptable = ptable[:keep]
-                maxval = ptable[-1]
+                if (len(ptable) > 0):
+                    maxval = ptable[-1]
+                else:
+                    maxval = np.nanmax(ftable)
             else:
                 maxval = np.nanmax(ftable)
             ntable = ftable[ftable < 0]
             if (len(ntable) > 0):
                 keep = math.ceil( self._display_config._excluded * len(ptable) )
                 ntable = ntable[keep:]
-                minval = ntable[0]
+                if (len(ntable) > 0):
+                    minval = ntable[0]
+                else:
+                    minval = np.nanmin(ftable)
             else:
                 minval = np.nanmin(ftable)
             # Use the same scales for positive and negative values, choose the smallest to enhance contrast
@@ -616,12 +622,16 @@ class NaviCom():
             def setColorConfig(position, value, color):
                 for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                     if (tab == NaviCell.TABNAME_GROUPS):
-                        value = signif(value/10) # Stretch the scale for groups to have clear colors even with averaging
+                        value = signif(value/self._display_config._groups_sharpening) # Stretch the scale for groups to have clear colors even with averaging
                     self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, position, value)
                     self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, position, color)
 
             data = self.getData((processing, method), self._map_hugos)
             if (data.display_config == "gradient"):
+                if (maxval < 0):
+                    maxval = 1
+                elif (minval > 0):
+                    minval = -1
                 if (self._display_config._zero_color != ""):
                     half_count = step_count//2
                     if (half_count != 1):
@@ -664,7 +674,7 @@ class NaviCom():
             else:
                 # Use the glyph config to set a uniform shape and a color gradient, from a light color to the same color but darker
                 v0 = maxval
-                colors = getGradient(addColors("ffffff", data.display_config.color), data.display_config.color, step_count)
+                colors = [data.display_config.color for ii in range(step_count)]
                 prev_value = 0
                 size = data.display_config.min_size
                 for ii in range(step_count):
@@ -1044,19 +1054,15 @@ class NaviCom():
         mut = self.getMutationsData(processing)
         if (len(mut) > 0):
             disp_selection.append( ((processing, mut[0]), "size1") )
-        prot = self.getProteomicsData(processing)
-        if (len(prot) > 0):
-            disp_selection.append( ((processing, prot[0]), "size2") )
+        methylation = self.getMethylationData(processing)
+        if (len(methylation) > 0):
+            disp_selection.append( ((processing, methylation[0]), "size2") )
         mirna = self.getmiRNAData(processing)
         if (len(mirna) > 0):
             disp_selection.append( ((processing, mirna[0]), "size3") )
-
-        methylation = self.getMethylationData(processing)
-        if (len(methylation) > 0):
-            disp_selection.append( ((processing, methylation[0]), "size4") )
-            # TODO when multiple barplots are available
-            #for mdt in methylation:
-                #disp_selection.append( ((processing, mdt), "barplot") )
+        prot = self.getProteomicsData(processing)
+        if (len(prot) > 0):
+            disp_selection.append( ((processing, prot[0]), "size4") )
 
         # Display all the information
         if (len(disp_selection) > 0):
@@ -1399,7 +1405,7 @@ class NaviCom():
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
         prot = self.getProteomicsData(processing)
         if (len(prot) > 0):
-            disp_selection.append( ((processing, prot[0]), "barplot") )
+            disp_selection.append( ((processing, prot[0]), "size4") )
 
         if (len(disp_selection) > 0):
             self.display(disp_selection, sample)
@@ -1417,7 +1423,7 @@ class NaviCom():
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
         mirna = self.getmiRNAData(processing)
         if (len(mirna) > 0):
-            disp_selection.append( ((processing, mirna[0]), "barplot") )
+            disp_selection.append( ((processing, mirna[0]), "size3") )
 
         if (len(disp_selection) > 0):
             self.display(disp_selection, sample)
@@ -1435,7 +1441,7 @@ class NaviCom():
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
         meth = self.getMethylationData(processing)
         if (len(meth) > 0):
-            disp_selection.append( ((processing, meth[0]), "barplot") )
+            disp_selection.append( ((processing, meth[0]), "size2") )
 
         if (len(disp_selection) > 0):
             self.display(disp_selection, sample)
