@@ -1044,19 +1044,15 @@ class NaviCom():
         mut = self.getMutationsData(processing)
         if (len(mut) > 0):
             disp_selection.append( ((processing, mut[0]), "size1") )
-        prot = self.getProteomicsData(processing)
-        if (len(prot) > 0):
-            disp_selection.append( ((processing, prot[0]), "size2") )
+        methylation = self.getMethylationData(processing)
+        if (len(methylation) > 0):
+            disp_selection.append( ((processing, methylation[0]), "size2") )
         mirna = self.getmiRNAData(processing)
         if (len(mirna) > 0):
             disp_selection.append( ((processing, mirna[0]), "size3") )
-
-        methylation = self.getMethylationData(processing)
-        if (len(methylation) > 0):
-            disp_selection.append( ((processing, methylation[0]), "size4") )
-            # TODO when multiple barplots are available
-            #for mdt in methylation:
-                #disp_selection.append( ((processing, mdt), "barplot") )
+        prot = self.getProteomicsData(processing)
+        if (len(prot) > 0):
+            disp_selection.append( ((processing, prot[0]), "size4") )
 
         # Display all the information
         if (len(disp_selection) > 0):
