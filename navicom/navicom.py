@@ -1405,7 +1405,7 @@ class NaviCom():
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
         prot = self.getProteomicsData(processing)
         if (len(prot) > 0):
-            disp_selection.append( ((processing, prot[0]), "barplot") )
+            disp_selection.append( ((processing, prot[0]), "size4") )
 
         if (len(disp_selection) > 0):
             self.display(disp_selection, sample)
@@ -1423,7 +1423,7 @@ class NaviCom():
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
         mirna = self.getmiRNAData(processing)
         if (len(mirna) > 0):
-            disp_selection.append( ((processing, mirna[0]), "barplot") )
+            disp_selection.append( ((processing, mirna[0]), "size3") )
 
         if (len(disp_selection) > 0):
             self.display(disp_selection, sample)
@@ -1441,7 +1441,7 @@ class NaviCom():
             disp_selection.append( ((processing, mrna[0]), "map_staining") )
         meth = self.getMethylationData(processing)
         if (len(meth) > 0):
-            disp_selection.append( ((processing, meth[0]), "barplot") )
+            disp_selection.append( ((processing, meth[0]), "size2") )
 
         if (len(disp_selection) > 0):
             self.display(disp_selection, sample)
