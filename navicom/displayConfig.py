@@ -168,7 +168,7 @@ class GlyphConfig():
         GlyphConfig class to specify the color and shape configuration of glyphs for continuous data
     """
 
-    def __init__(self, color="0000ff", shape="triangle", min_size=0, na_size=0):
+    def __init__(self, color="0000ff", shape="triangle", step_count=5, min_size=0, na_size=0):
         """
             Initialise a color and a shape for glyph that will be used for all values of a continuous data
 
@@ -180,10 +180,12 @@ class GlyphConfig():
         """
         assert isinstance(min_size, int), ValueError("'min_size' must be an integer")
         assert isinstance(na_size, int), ValueError("'na_size' must be an integer")
+        assert isinstance(step_count, int), ValueError("'step_count' must be an integer")
         assert isinstance(color, str), ValueError("'color' must be an string")
         assert isinstance(shape, str), ValueError("'shape' must be an string")
         self.min_size = min_size
         self.na_size = na_size
+        self.step_count = step_count
         self.color = color
         if (shape in SHAPE_ID):
             self.shape = SHAPE_ID[shape]

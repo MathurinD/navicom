@@ -26,7 +26,7 @@ TYPES_SPEC["mRNA"] = (["mrna_merged_median_zscores", "mrna_U133_zscores", "zscor
 TYPES_SPEC["dCNA"] = (["gistic", "cna", "cna_rae", "cna_consensus", "snp-fasst2"], "Discrete Copy number data", "none")
 TYPES_SPEC["cCNA"] = (["log2cna"], "Continuous copy number data", "none")
 TYPES_SPEC["methylation"] = (["methylation", "methylation_hm27", "methylation_hm450"], "mRNA expression data", ("f205fa", "diamond"))
-TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics", "rppa", "rppa_zscores"], "Protein Expression Data", ("ffff00", "circle"))
+TYPES_SPEC["protein"] = (["protein_level", "rppa_protein_level", "proteomics", "rppa", "rppa_zscores"], "Protein Expression Data", ("ffff00", "circle", 3))
 TYPES_SPEC["miRNA"] = (["mirna", "mirna_median_zscores"], "microRNA expression data", ("ff7200", "hexagon"))
 TYPES_SPEC["mutations"] = (["mutations"], "Continuous copy number data", ("0000ff", "triangle"))
 #TYPES_SPEC["mutations"] = (["mutations"], "Mutations")
@@ -104,10 +104,12 @@ class NaviData():
             self.display_config = display_config
         elif (display_config == ""):
             config = TYPE_CONFIG[getDataType(method, processing)]
+            if (len(config) < 3):
+                config = (config[0], config[1], 5)
             if (config == "none"):
                 self.display_config = "gradient"
             else:
-                self.display_config = GlyphConfig(config[0], config[1]) # Use predefined configs
+                self.display_config = GlyphConfig(config[0], config[1], config[2]) # Use predefined configs
         else:
             raise ValueError("Invalid display configuration: " + display_config)
 
