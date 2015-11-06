@@ -682,21 +682,27 @@ class NaviCom():
                 v0 = maxval
                 colors = [data.display_config.color for ii in range(step_count)]
                 prev_value = 0
+                divide = len(data._columns)+1
+                v0mul = 1.1
+                if (divide > 10 * step_count):
+                    v0mul *= 10 # Make sure to have a meaningful separation for datasets with a lot of samples (each step in size is 10% of the samples)
                 size = data.display_config.min_size
                 shape = data.display_config.shape
+                ftable = dtable[np.invert(np.isnan(dtable))]
+                if (len(ftable) == 0):
+                    ftable = dtable
                 for ii in range(step_count):
-                    value = np.percentile(dtable, ii*100/(step_count-1))
+                    value = np.percentile(ftable, ii*100/(step_count-1))
                     if (ii==0): value = minval
                     elif (ii==(step_count-1)): value = maxval
-                    if (value == 0): # Make sure that sizes different from min_size apply to a value different from 0 (i.e. 0 has min_size)
-                        value= v0 / (len(data._columns)+1)
-                        v0 += 1.1 * maxval
+                    if (value == 0): # Make sure that sizes different from min_size apply to a value different from 0 (i.e. 0 has min_size, this is useful for >0 values)
+                        value = v0 / divide # The first step is simply different from 0
+                        v0 += v0mul * maxval # The others are 10 extra samples steps
                     elif ( np.isnan(value) ):
-                        value = prev_value + v0 / (len(data._columns)+1)
-                        v0 += 1.1 * maxval
+                        value = prev_value + v0 / divide
                     prev_value = value
                     color = colors[ii]
-                    size = size + 2
+                    size += 2
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
                         self._nv.datatableConfigSetColorAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, color)
@@ -704,8 +710,9 @@ class NaviCom():
                         self._nv.datatableConfigSetShapeAt('', dname, NaviCell.CONFIG_SHAPE, tab, navicell_offset + ii, shape)
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset + ii, value)
                         self._nv.datatableConfigSetSizeAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset + ii, size)
-                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                    self._nv.datatableConfigSetSizeAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset, data.display_config.min_size)
+                if (np.nanmin(ftable) >= 0):
+                    for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                        self._nv.datatableConfigSetSizeAt('', dname, NaviCell.CONFIG_SIZE, tab, navicell_offset, data.display_config.min_size)
 
 
             self._nv.datatableConfigSetSampleMethod('', dname, NaviCell.CONFIG_COLOR, NaviCell.METHOD_CONTINUOUS_MEDIAN) # TODO change to MEAN when group mean is corrected to <= instead of <
