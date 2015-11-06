@@ -571,12 +571,6 @@ class NaviCom():
             ## Color configuration
             dtable = self.getData((method, processing), self._map_hugos).data
             print("Configuring display for " + dname)
-            step_count = self._display_config.step_count
-            for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
-                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step for Color
-                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SHAPE, tab, step_count) # But not for Shape
-                self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SIZE, tab, step_count) # Nor Size
-
             ftable = dtable.flatten()
             ftable.sort()
             # Remove extreme values if applicable
@@ -628,6 +622,12 @@ class NaviCom():
 
             data = self.getData((processing, method), self._map_hugos)
             if (data.display_config == "gradient"):
+                step_count = self._display_config.step_count
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step for Color
+                    self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SHAPE, tab, step_count) # But not for Shape
+                    self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SIZE, tab, step_count) # Nor Size
+
                 if (maxval < 0):
                     maxval = 1
                 elif (minval > 0):
@@ -672,11 +672,18 @@ class NaviCom():
                         color = self._display_config._colors[ii]
                         setColorConfig(navicell_offset + ii, value, color)
             else:
+                step_count = data.display_config.step_count
+                for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
+                    self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_COLOR, tab, step_count-1) # NaviCell has one default step for Color
+                    self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SHAPE, tab, step_count) # But not for Shape
+                    self._nv.datatableConfigSetStepCount('', dname, NaviCell.CONFIG_SIZE, tab, step_count) # Nor Size
+
                 # Use the glyph config to set a uniform shape and a color gradient, from a light color to the same color but darker
                 v0 = maxval
                 colors = [data.display_config.color for ii in range(step_count)]
                 prev_value = 0
                 size = data.display_config.min_size
+                shape = data.display_config.shape
                 for ii in range(step_count):
                     value = np.percentile(dtable, ii*100/(step_count-1))
                     if (ii==0): value = minval
@@ -689,7 +696,6 @@ class NaviCom():
                         v0 += 1.1 * maxval
                     prev_value = value
                     color = colors[ii]
-                    shape = data.display_config.shape
                     size = size + 2
                     for tab in [NaviCell.TABNAME_SAMPLES, NaviCell.TABNAME_GROUPS]:
                         self._nv.datatableConfigSetValueAt('', dname, NaviCell.CONFIG_COLOR, tab, navicell_offset + ii, value)
