@@ -685,7 +685,8 @@ class NaviCom():
                 divide = len(data._columns)+1
                 v0mul = 1.1
                 if (divide > 10 * step_count):
-                    v0mul *= 10 # Make sure to have a meaningful separation for datasets with a lot of samples (each step in size is 10% of the samples)
+                    #v0mul *= 10 # Make sure to have a meaningful separation for datasets with a lot of samples (each step in size is 10% of the samples)
+                    v0mul = 2 # Log scale
                 size = data.display_config.min_size
                 shape = data.display_config.shape
                 ftable = dtable[np.invert(np.isnan(dtable))]
@@ -697,9 +698,11 @@ class NaviCom():
                     elif (ii==(step_count-1)): value = maxval
                     if (value == 0): # Make sure that sizes different from min_size apply to a value different from 0 (i.e. 0 has min_size, this is useful for >0 values)
                         value = v0 / divide # The first step is simply different from 0
-                        v0 += v0mul * maxval # The others are 10 extra samples steps
+                        #v0 += v0mul * maxval # The others are 10 extra samples steps
+                        v0 *= v0mul
                     elif ( np.isnan(value) ):
                         value = prev_value + v0 / divide
+                        v0 *= v0mul
                     prev_value = value
                     color = colors[ii]
                     size += 2
