@@ -269,7 +269,7 @@ class NaviCom():
                 print("Importing " + method + " data")
                 profile_data = dict()
                 profile_data["samples"] = oDict()
-                profile_data["genes"] = dict()
+                profile_data["genes"] = oDict()
                 profile_data["data"] = list()
                 ii = 0
                 for el in samples:
@@ -933,7 +933,6 @@ class NaviCom():
                         self._nv.glyphEditorSelectSizeDatatable(module, glyph_id+1, glyph_data[glyph_id])
                     self._nv.glyphEditorApply(module, glyph_id+1)
         
-        self._nv.flush()
 
     def resetDisplay(self):
         """
